@@ -304,6 +304,43 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
   .header-meta{gap:6px;margin-left:0}
 }
 
+
+/* ── Share Card Modal ── */
+.share-overlay{display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)}
+.share-overlay.open{display:flex}
+.share-box{background:var(--white);border-radius:16px;width:min(95vw,440px);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.share-hdr{background:var(--forest);padding:12px 16px;display:flex;align-items:center;gap:8px}
+.share-hdr h3{font-family:'Playfair Display',serif;font-size:.95rem;color:#fff;font-weight:700;flex:1;margin:0}
+.share-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;line-height:1}
+.share-preview{padding:16px;display:flex;justify-content:center;background:var(--stone)}
+.share-preview canvas{border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.15);max-width:100%;height:auto}
+.share-trek-select{padding:10px 16px;border-top:1px solid var(--border)}
+.share-trek-select label{font-size:.7rem;font-weight:700;color:var(--subtle);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px}
+.share-trek-select select{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:.82rem;font-family:inherit;color:var(--text)}
+.share-actions{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border)}
+.share-dl-btn{flex:1;padding:10px;background:var(--pine);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s}
+.share-dl-btn:hover{background:var(--forest)}
+.share-native-btn{flex:1;padding:10px;background:transparent;color:var(--pine);border:1.5px solid var(--pine);border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px}
+.share-native-btn:hover{background:var(--mist)}
+.share-tip{padding:6px 16px 14px;font-size:.67rem;color:var(--subtle);text-align:center;line-height:1.5}
+/* Community feed cards */
+.feed-card{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:10px;background:var(--stone);border:1px solid var(--border);cursor:pointer;transition:border-color .12s}
+.feed-card:hover{border-color:var(--leaf)}
+.feed-card-thumb{width:64px;height:64px;border-radius:8px;object-fit:cover;flex-shrink:0;background:var(--mist)}
+.feed-card-info{flex:1;min-width:0}
+.feed-card-name{font-weight:700;font-size:.82rem;color:var(--forest)}
+.feed-card-trek{font-size:.73rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.feed-card-meta{font-size:.65rem;color:var(--subtle);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
+.feed-card-trail{font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:8px}
+.feed-trail-AT{background:#e8f0e8;color:#2d5a27}
+.feed-trail-PCT{background:#e3eef6;color:#1e4d72}
+.feed-trail-CDT{background:#f6ede3;color:#6b3c1a}
+/* Feed lightbox */
+.feed-lightbox{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.88);align-items:center;justify-content:center}
+.feed-lightbox.open{display:flex}
+.feed-lightbox img{max-width:92vw;max-height:92vh;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.6)}
+.feed-lightbox-close{position:fixed;top:20px;right:20px;background:rgba(255,255,255,.15);border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
 /* ══════════════════════════════════════════
    TREK TRACKER + SLACK PACK — MODAL SYSTEM
 ══════════════════════════════════════════ */
@@ -512,14 +549,30 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
   color:#fff;font-size:1rem;font-weight:700;display:flex;align-items:center;
   justify-content:center;flex-shrink:0;object-fit:cover;letter-spacing:.02em}
 /* Photo upload in post form */
-.pf-photo-row{display:flex;align-items:center;gap:14px;margin-bottom:4px}
-.pf-photo-circle{width:64px;height:64px;border-radius:50%;background:var(--mist);
+.pf-photo-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.pf-photo-circle{width:58px;height:58px;border-radius:50%;background:var(--mist);
   border:2px dashed var(--leaf);display:flex;align-items:center;justify-content:center;
-  font-size:1.5rem;cursor:pointer;overflow:hidden;flex-shrink:0;transition:border-color .15s}
+  font-size:1.3rem;cursor:pointer;overflow:hidden;flex-shrink:0;transition:border-color .15s;position:relative}
 .pf-photo-circle:hover{border-color:var(--forest)}
 .pf-photo-circle img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.pf-photo-hint{font-size:.72rem;color:var(--subtle);line-height:1.4}
+.pf-photo-circle .pf-remove{display:none;position:absolute;top:0;right:0;background:var(--rust);color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;align-items:center;justify-content:center;cursor:pointer;border:none;line-height:1}
+.pf-photo-circle:hover .pf-remove{display:flex}
+.pf-photo-hint{font-size:.72rem;color:var(--subtle);line-height:1.4;flex:1}
 .pf-photo-hint strong{color:var(--pine);display:block;margin-bottom:2px}
+/* Partner card photo gallery strip */
+.pc-photos{display:flex;gap:6px;padding:4px 0}
+.pc-photo-thumb{width:52px;height:52px;border-radius:8px;object-fit:cover;cursor:pointer;border:1.5px solid var(--border);transition:border-color .12s}
+.pc-photo-thumb:hover{border-color:var(--pine)}
+.pc-photo-thumb.main-avatar{border-radius:50%;width:48px;height:48px}
+/* YOYO badge */
+.badge-yoyo{background:linear-gradient(135deg,#2d5a27,#b5451b);color:#fff;padding:2px 8px;
+  border-radius:10px;font-size:.62rem;font-weight:700;letter-spacing:.04em}
+/* Hiked Together */
+.pc-hiked-together{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--sage);font-weight:600;margin-top:2px}
+.pc-hiked-btn{padding:4px 11px;border-radius:12px;border:1.5px solid var(--border);background:var(--white);
+  color:var(--subtle);font-size:.68rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.pc-hiked-btn:hover{border-color:var(--pine);color:var(--pine)}
+.pc-hiked-btn.active{background:var(--mist);border-color:var(--leaf);color:var(--forest)}
 .pc-name{font-size:.85rem;font-weight:700;color:var(--forest)}
 .pc-age{font-size:.65rem;color:var(--subtle);margin-top:1px}
 .pc-route{font-size:.76rem;color:var(--text);display:flex;align-items:center;
@@ -710,6 +763,10 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
     </div>
   </div>
   <div class="header-meta" style="display:flex;align-items:center;gap:14px">
+    <button onclick="openShareCard()" class="support-link" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:5px" title="Share your hike">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      Share
+    </button>
     <a href="https://buymeacoffee.com/staggerlee" target="_blank" class="support-link">☕ Support Stagger Lee</a>
     <span>All data embedded · No internet required</span>
   </div>
@@ -4000,6 +4057,20 @@ function toggleNearMe(btn) {
   renderBoard();
 }
 
+async function loadHikedTogetherCache() {
+  const sb = getSupaClient();
+  if (!sb) return;
+  try {
+    const { data } = await sb.from('slack_pack_hiked_together').select('hiker_a,hiker_b');
+    window._hikedTogetherCache = {};
+    (data || []).forEach(row => {
+      // hiker_b's card shows hiker_a hiked with them
+      if (!window._hikedTogetherCache[row.hiker_b]) window._hikedTogetherCache[row.hiker_b] = [];
+      window._hikedTogetherCache[row.hiker_b].push(row.hiker_a);
+    });
+  } catch(e) { /* non-fatal */ }
+}
+
 async function fetchPosts() {
   const list = document.getElementById('sp-board-list');
   list.innerHTML = '<div class="pc-loading">🥾 Loading the board...</div>';
@@ -4018,6 +4089,8 @@ async function fetchPosts() {
     if (error) throw error;
     allPosts = data || [];
     document.getElementById('sp-board-count').textContent = allPosts.length + ' hikers';
+    // Load Hiked Together cache for this session
+    loadHikedTogetherCache();
     renderBoard();
   } catch(e) {
     list.innerHTML = `<div class="board-empty"><div class="board-empty-icon">⚠️</div>Could not load board.<br><small>${e.message}</small></div>`;
@@ -4076,9 +4149,30 @@ function renderBoard() {
     const avatarColors = ['#1e3a1e','#2d5a27','#4a7c59','#1e4d72','#6b3c1a','#3b6d11','#5b3a29','#854f0b','#1a2e42','#8a5028'];
     const colorIdx = (p.trail_name||'').split('').reduce((a,c)=>a+c.charCodeAt(0),0) % avatarColors.length;
     const avatarBg = avatarColors[colorIdx];
-    const avatarHtml = p.photo_url
-      ? `<img class="pc-avatar" src="${esc(p.photo_url)}" alt="${esc(p.trail_name)}">`
+    // Parse photos array (supports old single photo_url and new JSON array)
+    let photos = [];
+    if (p.photo_url) {
+      try { photos = JSON.parse(p.photo_url); if (!Array.isArray(photos)) photos = [p.photo_url]; }
+      catch { photos = [p.photo_url]; }
+    }
+    const avatarHtml = photos[0]
+      ? `<img class="pc-avatar" src="${esc(photos[0])}" alt="${esc(p.trail_name)}">`
       : `<div class="pc-avatar" style="background:${avatarBg}">${initials}</div>`;
+
+    // Additional photos strip (photos 2 + 3)
+    const extraPhotos = photos.slice(1).map(url =>
+      `<img class="pc-photo-thumb" src="${esc(url)}" alt="photo" onclick="window.open(this.src)">`
+    ).join('');
+    const photosHtml = extraPhotos ? `<div class="pc-photos">${extraPhotos}</div>` : '';
+
+    // YOYO badge (from their post data or if it's the current user)
+    const yoyoBadge = p.is_yoyo ? '<span class="badge-yoyo">🔄 YOYO</span>' : '';
+
+    // Hiked Together button + social proof count
+    const hikedKey = isHikedTogether(p.trail_name);
+    const hikedWithMe = getHikedWithMeList(p.trail_name);
+    const hikedCount = hikedWithMe.length ? `<span style="font-size:.65rem;color:var(--sage);margin-left:4px">${hikedWithMe.length} hiker${hikedWithMe.length>1?'s':''} hiked this trail together</span>` : '';
+    const hikedBtn = `<button class="pc-hiked-btn${hikedKey?' active':''}" onclick="toggleHikedTogether('${esc(p.trail_name)}',this)">${hikedKey?'✅ Hiked Together':'🤝 Hiked Together'}</button>${hikedCount}`;
     const age = timeAgo(p.created_at);
     const dirBadge = p.direction === 'NOBO'
       ? '<span class="pc-badge pc-nobo">↑ NOBO</span>'
@@ -4141,7 +4235,12 @@ function renderBoard() {
         <span class="pc-badge pc-trad">${esc(p.experience||'')}</span>
       </div>
       ${p.about && !p.about.startsWith('__pack__') ? '<div class="pc-about">"' + esc(p.about) + '"</div>' : ''}
+      ${photosHtml}
       ${packHtml}
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px">
+        ${hikedBtn}
+        ${yoyoBadge}
+      </div>
       <button class="pc-contact" data-ctype="${esc(p.contact_type)}" data-cinfo="${esc(p.contact)}" data-cname="${esc(p.trail_name)}" onclick="contactHikerEl(this)">
         ${contactIcon} Contact ${esc(p.trail_name)} via ${esc(p.contact_type)}
       </button>
@@ -4167,23 +4266,597 @@ function contactHiker(type, info, name) {
   }
 }
 
-// Photo upload state
-let _pfPhotoBase64 = null;
+// ── 3 Photos state ──
+let _pfPhotos = [null, null, null];  // base64 strings
+let _pfActiveSlot = 0;
+
+function triggerPhotoUpload(slot) {
+  _pfActiveSlot = slot;
+  document.getElementById('pfPhotoInput').click();
+}
 
 function handlePhotoUpload(e) {
   const file = e.target.files[0];
+  e.target.value = '';
   if (!file) return;
-  if (file.size > 800000) {
-    showToast('Photo too large — please use an image under 800KB.');
-    return;
-  }
+  if (file.size > 800000) { showToast('Photo too large — please use an image under 800KB.'); return; }
   const reader = new FileReader();
   reader.onload = (ev) => {
-    _pfPhotoBase64 = ev.target.result; // data:image/...;base64,...
-    const circle = document.getElementById('pfPhotoCircle');
-    circle.innerHTML = `<img src="${_pfPhotoBase64}" alt="Your photo">`;
+    _pfPhotos[_pfActiveSlot] = ev.target.result;
+    renderPhotoSlots();
   };
   reader.readAsDataURL(file);
+}
+
+function removePhoto(e, slot) {
+  e.stopPropagation();
+  _pfPhotos[slot] = null;
+  // Compact: shift remaining photos down
+  _pfPhotos = _pfPhotos.filter(p=>p).concat([null,null,null]).slice(0,3);
+  renderPhotoSlots();
+}
+
+function renderPhotoSlots() {
+  for (let i = 0; i < 3; i++) {
+    const el = document.getElementById(`pfPhoto${i}`);
+    if (!el) continue;
+    if (_pfPhotos[i]) {
+      el.innerHTML = `<img src="${_pfPhotos[i]}" alt="Photo ${i+1}"><button class="pf-remove" onclick="removePhoto(event,${i})">✕</button>`;
+      el.style.opacity = '1';
+      el.style.borderStyle = 'solid';
+    } else {
+      el.innerHTML = `📷<button class="pf-remove" onclick="removePhoto(event,${i})">✕</button>`;
+      el.style.opacity = i === 0 ? '1' : (_pfPhotos[i-1] ? '1' : '.45');
+      el.style.borderStyle = 'dashed';
+    }
+  }
+}
+
+// ── YOYO Detection ──
+// Called after any trek is logged. Inspects trek log for alternating direction pattern.
+function detectYOYO() {
+  const log = JSON.parse(localStorage.getItem('at_trek_log') || '{}');
+  const completed = Object.entries(log)
+    .filter(([,v]) => v === 'done' || v === 'complete' || v === true)
+    .map(([k]) => parseInt(k))
+    .sort((a,b) => a-b);
+
+  if (completed.length < 4) return false; // Need enough segments to detect pattern
+
+  // Get trail info for each completed trek
+  const treks = (window.ACTIVE_TRAIL||AT).treks;
+  const noboTreks = treks?.nobo || [];
+  const soboTreks = treks?.sobo || [];
+
+  // Map trek IDs to their state regions
+  const completed_states = completed.map(id => {
+    const t = noboTreks.find(t=>t.id===id) || soboTreks.find(t=>t.id===id);
+    return t ? {id, state: t.state, mile: t.cumMileStart} : null;
+  }).filter(Boolean);
+
+  if (completed_states.length < 4) return false;
+
+  // Check for direction reversals: non-monotonic mile progression
+  let reversals = 0;
+  for (let i = 1; i < completed_states.length - 1; i++) {
+    const prev = completed_states[i-1].mile;
+    const curr = completed_states[i].mile;
+    const next = completed_states[i+1].mile;
+    if ((curr < prev && curr < next) || (curr > prev && curr > next)) reversals++;
+  }
+
+  const isYOYO = reversals >= 2;
+  if (isYOYO) localStorage.setItem('at_is_yoyo', '1');
+  else localStorage.removeItem('at_is_yoyo');
+  return isYOYO;
+}
+
+function getYOYOBadge() {
+  return localStorage.getItem('at_is_yoyo') ? '<span class="badge-yoyo">🔄 YOYO</span>' : '';
+}
+
+// ── Hiked Together ──
+// State stored in localStorage keyed by post trail_name
+// When you tap "Hiked Together" on someone's card, you're declaring you hiked with them.
+// Requires connectivity to write to Supabase (adds a record to slack_pack_posts reactions).
+// ── Hiked Together (Option B: public one-way declaration) ──
+function getHikedTogetherKey(trail_name) {
+  return `hiked_with_${trail_name.toLowerCase().replace(/\s+/g,'_')}`;
+}
+function isHikedTogether(trail_name) {
+  return !!localStorage.getItem(getHikedTogetherKey(trail_name));
+}
+async function toggleHikedTogether(trail_name, btn) {
+  const myName = localStorage.getItem('at_last_trail_name') || '';
+  const alreadyHiked = isHikedTogether(trail_name);
+  if (alreadyHiked) {
+    localStorage.removeItem(getHikedTogetherKey(trail_name));
+    btn.classList.remove('active');
+    btn.innerHTML = '🤝 Hiked Together';
+    const sb = getSupaClient();
+    if (sb && myName) {
+      await sb.from('slack_pack_hiked_together').delete()
+        .eq('hiker_a', myName).eq('hiker_b', trail_name);
+    }
+    showToast(`Removed "Hiked Together" with ${trail_name}`);
+    return;
+  }
+  if (!myName) { showToast('Post yourself to the board first!'); return; }
+  if (myName.toLowerCase() === trail_name.toLowerCase()) { showToast("You can't hike with yourself 😄"); return; }
+  localStorage.setItem(getHikedTogetherKey(trail_name), Date.now());
+  btn.classList.add('active');
+  btn.innerHTML = '✅ Hiked Together';
+  showToast(`🤝 You and ${trail_name} walked some miles together.`);
+  const sb = getSupaClient();
+  if (sb) {
+    try {
+      await sb.from('slack_pack_hiked_together').insert([{
+        hiker_a: myName, hiker_b: trail_name,
+        trail: window.ACTIVE_TRAIL_ID || 'AT',
+        segment: getFromTrekObj()?.name || null,
+        declared_at: new Date().toISOString()
+      }]);
+    } catch(e) { console.warn('Hiked Together:', e.message); }
+  }
+}
+
+// ══════════════════════════════════════════
+// SHARE CARD — Phase 1
+// Renders a 1080×1080 canvas image shareable to any social platform
+// ══════════════════════════════════════════
+
+function openShareCard() {
+  const overlay = document.getElementById('shareOverlay');
+  overlay.classList.add('open');
+  populateShareTrekSelect();
+  renderShareCard();
+}
+
+function closeShareCard() {
+  document.getElementById('shareOverlay').classList.remove('open');
+}
+
+function populateShareTrekSelect() {
+  const sel = document.getElementById('shareTrekSelect');
+  const status = getTrekStatus();
+  const treks  = getTreks();
+  // Show completed (status=2) first, then partial (1), then all
+  const done    = treks.filter(t => status[t.id] === 2);
+  const partial = treks.filter(t => status[t.id] === 1);
+  const none    = treks.filter(t => !status[t.id]);
+
+  sel.innerHTML = '<option value="">— Choose a trek —</option>';
+
+  if (done.length) {
+    const og = document.createElement('optgroup'); og.label = '✅ Completed';
+    done.forEach(t => { const o=document.createElement('option'); o.value=t.id; o.textContent=t.name; sel.appendChild(o); }); // append directly for now
+    // rebuild properly
+  }
+
+  sel.innerHTML = '<option value="">— Choose a trek —</option>';
+  if (done.length)    { sel.innerHTML += `<optgroup label="✅ Completed">${done.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</optgroup>`; }
+  if (partial.length) { sel.innerHTML += `<optgroup label="🔄 In Progress">${partial.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</optgroup>`; }
+  if (none.length)    { sel.innerHTML += `<optgroup label="📋 Planned">${none.map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</optgroup>`; }
+
+  // Auto-select first completed
+  if (done.length) sel.value = done[0].id;
+}
+
+function renderShareCard() {
+  const canvas = document.getElementById('shareCanvas');
+  const ctx    = canvas.getContext('2d');
+  const W = 1080, H = 1080;
+  ctx.clearRect(0, 0, W, H);
+
+  const trail  = window.ACTIVE_TRAIL || AT;
+  const trailId = window.ACTIVE_TRAIL_ID || 'AT';
+  const status = getTrekStatus();
+  const treks  = getTreks();
+  const selId  = parseInt(document.getElementById('shareTrekSelect').value);
+  const trek   = treks.find(t => t.id === selId);
+
+  // ── Trail theme colours ──
+  const themes = {
+    AT:  { bg: '#1e3a1e', mid: '#2d5a27', accent: '#6ba368', light: '#e8f0e8', text: '#c8e8c8' },
+    PCT: { bg: '#1b2f45', mid: '#1e4d72', accent: '#4a90b8', light: '#e3eef6', text: '#b8d8ee' },
+    CDT: { bg: '#3b2010', mid: '#6b3c1a', accent: '#b8773c', light: '#f6ede3', text: '#f0d0a8' },
+  };
+  const th = themes[trailId] || themes.AT;
+
+  // ── Background gradient ──
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0,   th.bg);
+  bgGrad.addColorStop(0.6, th.mid);
+  bgGrad.addColorStop(1,   '#0a0f0a');
+  ctx.fillStyle = bgGrad;
+  ctx.roundRect(0, 0, W, H, 48);
+  ctx.fill();
+
+  // ── Subtle texture dots ──
+  ctx.fillStyle = 'rgba(255,255,255,0.02)';
+  for (let i = 0; i < 120; i++) {
+    const x = Math.random()*W, y = Math.random()*H, r = Math.random()*3+1;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+  }
+
+  // ── Trail logo emoji + name ──
+  const trailEmoji = { AT: '🌿', PCT: '🏔', CDT: '⛰' }[trailId] || '🥾';
+  const trailName  = { AT: 'Appalachian Trail', PCT: 'Pacific Crest Trail', CDT: 'Continental Divide Trail' }[trailId] || 'Triple Crown';
+  const trailMiles = { AT: '2,185 mi', PCT: '2,653 mi', CDT: '2,980 mi' }[trailId] || '';
+
+  // Top badge pill
+  ctx.fillStyle = 'rgba(255,255,255,0.10)';
+  ctx.beginPath(); ctx.roundRect(W/2-160, 72, 320, 56, 28); ctx.fill();
+  ctx.fillStyle = th.text;
+  ctx.font = 'bold 26px DM Sans, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${trailEmoji}  ${trailName}`, W/2, 107);
+
+  // ── Big stats or trek name ──
+  if (trek) {
+    const trekStatus = status[trek.id];
+    const statusLabel = trekStatus === 2 ? '✅ COMPLETED' : trekStatus === 1 ? '🔄 IN PROGRESS' : '📋 PLANNED';
+
+    // Status chip
+    ctx.fillStyle = trekStatus === 2 ? 'rgba(107,163,104,0.3)' : 'rgba(200,168,75,0.2)';
+    ctx.beginPath(); ctx.roundRect(W/2-90, 158, 180, 38, 19); ctx.fill();
+    ctx.fillStyle = trekStatus === 2 ? '#aed89e' : '#e8c86a';
+    ctx.font = 'bold 18px DM Sans, sans-serif';
+    ctx.fillText(statusLabel, W/2, 183);
+
+    // Trek name — wrap long names
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${trek.name.length > 28 ? '38' : '46'}px Playfair Display, serif`;
+    wrapText(ctx, trek.name, W/2, 290, 860, trek.name.length > 28 ? 52 : 60);
+
+    // ── Elevation silhouette ──
+    drawElevSilhouette(ctx, trail, trek, th, 390, 560, 900, 200);
+
+    // ── Stats row ──
+    const stats = [
+      { label: 'MILES', value: trek.miles?.toFixed(1) || '—' },
+      { label: 'ASCENT', value: trek.ascentFtPerMi ? Math.round(trek.ascentFtPerMi * trek.miles).toLocaleString() + ' ft' : '—' },
+      { label: 'TREK', value: `${trek.id} of ${treks.length}` },
+    ];
+    const statW = W / stats.length;
+    stats.forEach((s, i) => {
+      const x = statW * i + statW / 2;
+      // dividers
+      if (i > 0) {
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.fillRect(statW * i - 1, 620, 2, 90);
+      }
+      ctx.fillStyle = 'rgba(255,255,255,0.40)';
+      ctx.font = '600 20px DM Sans, sans-serif';
+      ctx.fillText(s.label, x, 648);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold 44px DM Sans, sans-serif`;
+      ctx.fillText(s.value, x, 702);
+    });
+
+    // ── Hiker name ──
+    const hikerName = localStorage.getItem('at_last_trail_name') || '';
+    if (hikerName) {
+      ctx.fillStyle = th.accent;
+      ctx.font = 'bold 30px Playfair Display, serif';
+      ctx.fillText(hikerName, W/2, 790);
+    }
+
+    // ── State badge ──
+    const stateInfo = trail.stateInfo?.[trek.state];
+    if (stateInfo) {
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.beginPath(); ctx.roundRect(W/2-120, 820, 240, 40, 20); ctx.fill();
+      ctx.fillStyle = th.text;
+      ctx.font = '600 20px DM Sans, sans-serif';
+      ctx.fillText(stateInfo.name, W/2, 846);
+    }
+
+  } else {
+    // No trek selected — show overall stats
+    const allDone = treks.filter(t => status[t.id] === 2).length;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 120px DM Sans, sans-serif';
+    ctx.fillText(allDone, W/2, 520);
+    ctx.fillStyle = th.text;
+    ctx.font = 'bold 36px DM Sans, sans-serif';
+    ctx.fillText(`of ${treks.length} treks completed`, W/2, 580);
+
+    // Mini elevation silhouette of full trail
+    drawFullElevSilhouette(ctx, trail, th, 90, 650, 900, 150);
+  }
+
+  // ── Bottom watermark ──
+  ctx.fillStyle = 'rgba(255,255,255,0.22)';
+  ctx.font = '500 20px DM Sans, sans-serif';
+  ctx.fillText('triplecrowntrекplanner.github.io  ·  Free Forever', W/2, 990);
+
+  // ── Corner accent dots ──
+  [th.accent, th.mid].forEach((col, i) => {
+    ctx.fillStyle = col + '55';
+    ctx.beginPath();
+    ctx.arc(i===0 ? 40 : W-40, i===0 ? 40 : H-40, 70, 0, Math.PI*2);
+    ctx.fill();
+  });
+}
+
+// Draw elevation silhouette for a single trek
+function drawElevSilhouette(ctx, trail, trek, th, x, y, w, h) {
+  const elev = trail.elevation || [];
+  const pts  = elev.filter(e => e[0] >= trek.cumMileStart && e[0] <= trek.cumMileEnd);
+  if (pts.length < 2) return;
+
+  const minE = Math.min(...pts.map(p=>p[1]));
+  const maxE = Math.max(...pts.map(p=>p[1]));
+  const range = maxE - minE || 1;
+
+  const xPos = (m) => x + ((m - trek.cumMileStart) / (trek.cumMileEnd - trek.cumMileStart)) * w;
+  const yPos = (e) => y + h - ((e - minE) / range) * h;
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, y, 0, y+h);
+  grad.addColorStop(0,   th.accent + 'cc');
+  grad.addColorStop(0.5, th.accent + '55');
+  grad.addColorStop(1,   th.accent + '00');
+
+  ctx.beginPath();
+  ctx.moveTo(xPos(pts[0][0]), yPos(pts[0][1]));
+  pts.forEach(p => ctx.lineTo(xPos(p[0]), yPos(p[1])));
+  ctx.lineTo(xPos(pts[pts.length-1][0]), y+h);
+  ctx.lineTo(xPos(pts[0][0]), y+h);
+  ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.moveTo(xPos(pts[0][0]), yPos(pts[0][1]));
+  pts.forEach(p => ctx.lineTo(xPos(p[0]), yPos(p[1])));
+  ctx.strokeStyle = th.accent; ctx.lineWidth = 4; ctx.stroke();
+}
+
+// Draw full trail elevation silhouette
+function drawFullElevSilhouette(ctx, trail, th, x, y, w, h) {
+  const elev = trail.elevation || [];
+  if (elev.length < 2) return;
+  const minE = Math.min(...elev.map(p=>p[1]));
+  const maxE = Math.max(...elev.map(p=>p[1]));
+  const range = maxE - minE || 1;
+  const m0 = elev[0][0], mN = elev[elev.length-1][0];
+
+  const xPos = (m) => x + ((m - m0) / (mN - m0)) * w;
+  const yPos = (e) => y + h - ((e - minE) / range) * h;
+
+  const grad = ctx.createLinearGradient(0, y, 0, y+h);
+  grad.addColorStop(0,   th.accent + 'aa');
+  grad.addColorStop(1,   th.accent + '00');
+
+  ctx.beginPath();
+  ctx.moveTo(xPos(elev[0][0]), yPos(elev[0][1]));
+  elev.forEach(p => ctx.lineTo(xPos(p[0]), yPos(p[1])));
+  ctx.lineTo(xPos(elev[elev.length-1][0]), y+h);
+  ctx.lineTo(xPos(elev[0][0]), y+h);
+  ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(xPos(elev[0][0]), yPos(elev[0][1]));
+  elev.forEach(p => ctx.lineTo(xPos(p[0]), yPos(p[1])));
+  ctx.strokeStyle = th.accent; ctx.lineWidth = 3; ctx.stroke();
+}
+
+// Wrap text utility
+function wrapText(ctx, text, x, y, maxW, lineH) {
+  const words = text.split(' ');
+  let line = '';
+  let cy = y;
+  words.forEach(word => {
+    const test = line + (line ? ' ' : '') + word;
+    if (ctx.measureText(test).width > maxW && line) {
+      ctx.fillText(line, x, cy);
+      line = word; cy += lineH;
+    } else { line = test; }
+  });
+  ctx.fillText(line, x, cy);
+}
+
+// ══════════════════════════════════════════
+// PHASE 3 — Community Feed
+// ══════════════════════════════════════════
+
+let _feedFilter = 'all';
+let _feedData   = [];
+
+function switchShareTab(tab) {
+  const isShare = tab === 'share';
+  document.getElementById('sPane-share').style.display = isShare ? 'block' : 'none';
+  document.getElementById('sPane-feed').style.display  = isShare ? 'none'  : 'block';
+  const ts = document.getElementById('sTabShare');
+  const tf = document.getElementById('sTabFeed');
+  ts.style.color = isShare ? 'var(--pine)' : 'var(--subtle)';
+  ts.style.borderBottomColor = isShare ? 'var(--pine)' : 'transparent';
+  tf.style.color = isShare ? 'var(--subtle)' : 'var(--pine)';
+  tf.style.borderBottomColor = isShare ? 'transparent' : 'var(--pine)';
+  document.getElementById('shareHdrTitle').textContent = isShare ? '🏅 Share Your Hike' : '🌍 Community Hikes';
+  if (!isShare) loadFeed();
+}
+
+function feedFilter(val, btn) {
+  _feedFilter = val;
+  document.querySelectorAll('#sPane-feed .board-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFeed();
+}
+
+async function loadFeed() {
+  const list = document.getElementById('feedList');
+  list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--subtle);font-size:.82rem">Loading…</div>';
+  const sb = getSupaClient();
+  if (!sb) {
+    list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--subtle);font-size:.82rem">📡 Needs internet to load community hikes</div>';
+    return;
+  }
+  try {
+    const { data, error } = await sb
+      .from('public_hikes')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    _feedData = data || [];
+    renderFeed();
+  } catch(e) {
+    list.innerHTML = `<div style="text-align:center;padding:30px;color:var(--subtle);font-size:.82rem">⚠️ ${e.message}</div>`;
+  }
+}
+
+function renderFeed() {
+  const list = document.getElementById('feedList');
+  let posts = _feedData;
+  if (_feedFilter !== 'all') posts = posts.filter(p => p.trail === _feedFilter);
+
+  if (!posts.length) {
+    list.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--subtle)">
+      <div style="font-size:2.5rem;margin-bottom:10px">🥾</div>
+      <div style="font-size:.85rem;font-weight:700;color:var(--forest);margin-bottom:6px">Be the first!</div>
+      <div style="font-size:.78rem;line-height:1.5">Complete a trek, generate a share card,<br>and tap <strong>🌍 Post Feed</strong> to appear here.</div>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = posts.map(p => {
+    const trailBadge = `<span class="feed-card-trail feed-trail-${p.trail||'AT'}">${
+      p.trail==='PCT'?'🏔 PCT':p.trail==='CDT'?'⛰ CDT':'🌿 AT'
+    }</span>`;
+    const ago = timeAgo(p.created_at);
+    const thumb = p.card_png
+      ? `<img class="feed-card-thumb" src="${esc(p.card_png)}" alt="${esc(p.hiker_name||'')}">`
+      : `<div class="feed-card-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.8rem">🥾</div>`;
+    const safeSrc = p.card_png ? p.card_png.replace(/'/g,"\\'") : '';
+    return `<div class="feed-card" onclick="openFeedLightbox('${safeSrc}')">
+      ${thumb}
+      <div class="feed-card-info">
+        <div class="feed-card-name">${esc(p.hiker_name||'Anonymous Hiker')}</div>
+        <div class="feed-card-trek">${esc(p.trek_name||'')}</div>
+        <div class="feed-card-meta">
+          ${trailBadge}
+          <span>${p.trek_miles ? p.trek_miles + ' mi' : ''}</span>
+          <span>${ago}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const diff = (Date.now() - new Date(ts)) / 1000;
+  if (diff < 60)    return 'just now';
+  if (diff < 3600)  return Math.floor(diff/60)   + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600)  + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+
+function openFeedLightbox(src) {
+  if (!src) return;
+  const lb  = document.getElementById('feedLightbox');
+  const img = document.getElementById('feedLightboxImg');
+  if (!lb || !img) return;
+  img.src = src;
+  lb.classList.add('open');
+}
+function closeFeedLightbox() {
+  const lb = document.getElementById('feedLightbox');
+  if (lb) lb.classList.remove('open');
+}
+
+async function postToFeed() {
+  renderShareCard();
+  const canvas    = document.getElementById('shareCanvas');
+  const treks     = getTreks();
+  const selId     = parseInt(document.getElementById('shareTrekSelect').value);
+  const trek      = treks.find(t => t.id === selId);
+  const hikerName = localStorage.getItem('at_last_trail_name') || '';
+  const trailId   = window.ACTIVE_TRAIL_ID || 'AT';
+
+  if (!trek) { showToast('Select a trek first!'); return; }
+
+  // Downscale to 400×400 JPEG ~30KB for Supabase storage
+  const off = document.createElement('canvas');
+  off.width = off.height = 400;
+  off.getContext('2d').drawImage(canvas, 0, 0, 400, 400);
+  const card_png = off.toDataURL('image/jpeg', 0.82);
+
+  const sb = getSupaClient();
+  if (!sb) { showToast('📡 Needs internet to post to community feed.'); return; }
+
+  const btn = document.querySelector('[onclick="postToFeed()"]');
+  if (btn) { btn.textContent = '📡 Posting…'; btn.disabled = true; }
+
+  try {
+    await sb.from('public_hikes').insert([{
+      hiker_name: hikerName || 'Anonymous Hiker',
+      trail:      trailId,
+      trek_name:  trek.name,
+      trek_id:    trek.id,
+      trek_miles: trek.miles,
+      trek_state: trek.state,
+      card_png:   card_png,
+    }]);
+    showToast('🌍 You\'re on the community wall! The trail thanks you. 🥾');
+    switchShareTab('feed');
+    loadFeed();
+  } catch(e) {
+    showToast('Error posting: ' + e.message);
+  } finally {
+    if (btn) { btn.textContent = '🌍 Post Feed'; btn.disabled = false; }
+  }
+}
+
+function downloadShareCard() {
+  renderShareCard(); // ensure fresh
+  const canvas = document.getElementById('shareCanvas');
+  const treks  = getTreks();
+  const selId  = parseInt(document.getElementById('shareTrekSelect').value);
+  const trek   = treks.find(t => t.id === selId);
+  const name   = trek ? trek.name.replace(/[^a-z0-9]/gi,'_').slice(0,30) : 'hike';
+  const link   = document.createElement('a');
+  link.download = `triple_crown_${name}.png`;
+  link.href     = canvas.toDataURL('image/png');
+  link.click();
+  showToast('📸 Share card saved! Post it to IG, FB, or TikTok 🥾');
+}
+
+async function nativeShareCard() {
+  renderShareCard();
+  const canvas = document.getElementById('shareCanvas');
+  const trailId = window.ACTIVE_TRAIL_ID || 'AT';
+  const treks   = getTreks();
+  const selId   = parseInt(document.getElementById('shareTrekSelect').value);
+  const trek    = treks.find(t => t.id === selId);
+  const trekName = trek?.name || 'my hike';
+
+  try {
+    canvas.toBlob(async (blob) => {
+      const file = new File([blob], 'triple_crown_hike.png', { type: 'image/png' });
+      const shareData = {
+        title: `${trekName} — Triple Crown Trek Planner`,
+        text:  `Just completed ${trekName} on the ${trailId === 'AT' ? 'Appalachian Trail' : trailId === 'PCT' ? 'Pacific Crest Trail' : 'Continental Divide Trail'}! 🥾 Planned with Triple Crown Trek Planner — free at triplecrowntrекplanner.github.io`,
+        files: [file],
+      };
+      if (navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else if (navigator.share) {
+        await navigator.share({ title: shareData.title, text: shareData.text });
+      } else {
+        downloadShareCard();
+      }
+    }, 'image/png');
+  } catch(e) {
+    if (e.name !== 'AbortError') downloadShareCard();
+  }
+}
+function resetPhotos() {
+  _pfPhotos = [null, null, null];
+  renderPhotoSlots();
 }
 
 async function submitPost() {
@@ -4235,14 +4908,14 @@ async function submitPost() {
       contact: contact,
       contact_type: ctype,
       state_region: stateRegion,
-      photo_url: _pfPhotoBase64 || null
+      photo_url: _pfPhotos.filter(Boolean).length ? JSON.stringify(_pfPhotos.filter(Boolean)) : null
     }]);
     if (error) throw error;
 
     btn.textContent = '✓ Posted!';
     showToast('🥾 You are on the board, ' + name + '!');
-    _pfPhotoBase64 = null;
-    document.getElementById('pfPhotoCircle').innerHTML = '📷';
+    resetPhotos();
+    localStorage.setItem('at_last_trail_name', name);
 
     // Switch to board to see it
     setTimeout(() => {
@@ -4483,6 +5156,7 @@ async function sendPackShare() {
         from_trek: fromTrek?.name || '—',
         to_trek:   toTrek?.name   || '—',
         direction: direction || 'NOBO',
+      is_yoyo: detectYOYO() || false,
         pack_data: aboutPayload,
         pack_total: totalStr,
         about: note || null,
@@ -4619,16 +5293,19 @@ document.addEventListener('DOMContentLoaded',()=>{
 
     <!-- TAB: POST REQUEST -->
     <div id="sp-tab-post" style="display:none;padding:14px 18px;overflow-y:auto;max-height:calc(90vh - 140px)">
-      <!-- Photo upload -->
-      <div class="pf-photo-row">
-        <div class="pf-photo-circle" id="pfPhotoCircle" onclick="document.getElementById('pfPhotoInput').click()">
-          📷
+      <!-- 3 Photo uploads -->
+      <div class="pf-photo-hint" style="margin-bottom:6px"><strong>Photos (up to 3, optional)</strong>First photo shown as your avatar on the board.</div>
+      <div class="pf-photo-row" id="pfPhotoRow">
+        <div class="pf-photo-circle" id="pfPhoto0" onclick="triggerPhotoUpload(0)" title="Add photo 1">📷
+          <button class="pf-remove" onclick="removePhoto(event,0)">✕</button>
         </div>
-        <div class="pf-photo-hint">
-          <strong>Profile Photo (optional)</strong>
-          Tap to upload — shown on your card.<br>
-          Hilga wants to see that handsome face 😄
+        <div class="pf-photo-circle" id="pfPhoto1" onclick="triggerPhotoUpload(1)" title="Add photo 2" style="opacity:.45">📷
+          <button class="pf-remove" onclick="removePhoto(event,1)">✕</button>
         </div>
+        <div class="pf-photo-circle" id="pfPhoto2" onclick="triggerPhotoUpload(2)" title="Add photo 3" style="opacity:.45">📷
+          <button class="pf-remove" onclick="removePhoto(event,2)">✕</button>
+        </div>
+        <div class="pf-photo-hint" style="padding-top:6px">Hilga wants to see that handsome face 😄<br><span style="font-size:.65rem;color:var(--subtle)">Max 800KB each</span></div>
         <input type="file" id="pfPhotoInput" accept="image/*" style="display:none" onchange="handlePhotoUpload(event)">
       </div>
       <div class="post-grid">
@@ -4990,6 +5667,74 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   </div>
 
+</div>
+
+<!-- Feed lightbox -->
+<div class="feed-lightbox" id="feedLightbox" onclick="closeFeedLightbox()">
+  <button class="feed-lightbox-close" onclick="closeFeedLightbox()">✕</button>
+  <img id="feedLightboxImg" src="" alt="Hike card">
+</div>
+
+<!-- ══════════════════════════════════════════
+     SHARE CARD MODAL
+══════════════════════════════════════════ -->
+<div class="share-overlay" id="shareOverlay" onclick="if(event.target===this)closeShareCard()">
+  <div class="share-box" style="width:min(95vw,480px)">
+    <div class="share-hdr">
+      <h3 id="shareHdrTitle">🏅 Share Your Hike</h3>
+      <button class="share-close" onclick="closeShareCard()">✕</button>
+    </div>
+
+    <!-- Tab strip -->
+    <div style="display:flex;border-bottom:1px solid var(--border);background:var(--stone)">
+      <button id="sTabShare" onclick="switchShareTab('share')" style="flex:1;padding:9px 4px;font-size:.75rem;font-weight:700;border:none;background:transparent;cursor:pointer;color:var(--pine);border-bottom:2px solid var(--pine)">📸 Share Card</button>
+      <button id="sTabFeed"  onclick="switchShareTab('feed')"  style="flex:1;padding:9px 4px;font-size:.75rem;font-weight:700;border:none;background:transparent;cursor:pointer;color:var(--subtle);border-bottom:2px solid transparent">🌍 Community Feed</button>
+    </div>
+
+    <!-- ── SHARE CARD TAB ── -->
+    <div id="sPane-share">
+      <div class="share-trek-select">
+        <label>Select a trek to share</label>
+        <select id="shareTrekSelect" onchange="renderShareCard()">
+          <option value="">— Choose a trek —</option>
+        </select>
+      </div>
+      <div class="share-preview">
+        <canvas id="shareCanvas" width="1080" height="1080" style="width:280px;height:280px"></canvas>
+      </div>
+      <div class="share-actions">
+        <button class="share-dl-btn" onclick="downloadShareCard()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Save Image
+        </button>
+        <button class="share-native-btn" onclick="nativeShareCard()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Share…
+        </button>
+        <button class="share-dl-btn" onclick="postToFeed()" style="background:var(--sky);max-width:130px" title="Share to the community feed">
+          🌍 Post Feed
+        </button>
+      </div>
+      <div class="share-tip">📱 Share to Instagram, Facebook, TikTok &amp; more<br>
+        <strong>Post Feed</strong> adds it to the public community wall 🌍</div>
+    </div>
+
+    <!-- ── COMMUNITY FEED TAB ── -->
+    <div id="sPane-feed" style="display:none">
+      <!-- Trail filter chips -->
+      <div style="display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--stone);flex-wrap:wrap">
+        <button class="board-filter active" onclick="feedFilter('all',this)">All</button>
+        <button class="board-filter" onclick="feedFilter('AT',this)">🌿 AT</button>
+        <button class="board-filter" onclick="feedFilter('PCT',this)">🏔 PCT</button>
+        <button class="board-filter" onclick="feedFilter('CDT',this)">⛰ CDT</button>
+      </div>
+      <!-- Feed list -->
+      <div id="feedList" style="max-height:480px;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:10px">
+        <div style="text-align:center;padding:30px;color:var(--subtle);font-size:.82rem">Loading community hikes…</div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 </body>
