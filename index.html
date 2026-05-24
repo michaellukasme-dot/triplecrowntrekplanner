@@ -162,24 +162,39 @@ input[type="checkbox"]{width:14px;height:14px;accent-color:var(--pine);cursor:po
 .elev-wrap{position:relative;padding:12px 16px 8px;height:170px}
 
 /* ── Full-screen card overlay ── */
-.card-expand-btn{margin-left:auto;padding:4px 8px;border:none;background:transparent;cursor:pointer;font-size:1rem;color:var(--subtle);border-radius:5px;line-height:1;transition:background .15s}
-.card-expand-btn:hover{background:var(--mist)}
-.card-fs-overlay{display:none;position:fixed;inset:0;z-index:800;background:var(--white);flex-direction:column}
+.card-expand-btn{margin-left:auto;padding:5px 7px;border:none;background:transparent;cursor:pointer;color:var(--subtle);border-radius:5px;line-height:1;transition:background .15s;display:flex;align-items:center}
+.card-expand-btn:hover{background:var(--mist);color:var(--pine)}
+.card-fs-overlay{display:none;position:fixed;inset:0;z-index:800;background:#0d1f0d;flex-direction:column}
 .card-fs-overlay.open{display:flex}
-.card-fs-header{background:var(--forest);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0}
-.card-fs-title{font-family:'Playfair Display',serif;font-size:1rem;color:var(--white);font-weight:700;flex:1}
-.card-fs-close{padding:5px 12px;border:1.5px solid rgba(255,255,255,.4);border-radius:8px;background:transparent;color:var(--white);font-size:.8rem;font-weight:700;cursor:pointer;letter-spacing:.04em}
+.card-fs-header{background:var(--forest);padding:8px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.1)}
+.card-fs-title{font-family:'Playfair Display',serif;font-size:.95rem;color:var(--white);font-weight:700;flex:1}
+.card-fs-close{padding:5px 10px;border:1.5px solid rgba(255,255,255,.35);border-radius:8px;background:transparent;color:var(--white);font-size:.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px}
 .card-fs-close:hover{background:rgba(255,255,255,.15)}
-.card-fs-tabs{display:flex;background:var(--stone);border-bottom:1px solid var(--border);flex-shrink:0}
-.card-fs-tab{flex:1;padding:10px 4px;font-size:.75rem;font-weight:600;border:none;background:transparent;cursor:pointer;color:var(--subtle);border-bottom:2px solid transparent;transition:all .15s}
-.card-fs-tab.active{color:var(--pine);border-bottom-color:var(--pine);background:var(--white)}
+.card-fs-tabs{display:flex;background:rgba(0,0,0,.35);border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0}
+.card-fs-tab{flex:1;padding:9px 4px;font-size:.72rem;font-weight:700;border:none;background:transparent;cursor:pointer;color:rgba(255,255,255,.4);border-bottom:2px solid transparent;letter-spacing:.04em;transition:all .15s}
+.card-fs-tab.active{color:var(--white);border-bottom-color:var(--leaf)}
 .card-fs-body{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
-.card-fs-elev-wrap{position:relative;flex:1;padding:12px 16px 8px}
-.card-fs-elev-wrap canvas{width:100%;height:100%;cursor:crosshair;display:block}
+.card-fs-elev-wrap{position:relative;flex:1;padding:8px 14px 4px;background:#0d1f0d;display:flex;flex-direction:column}
 .card-fs-map-wrap{flex:1;display:flex;flex-direction:column}
-.card-fs-map-controls{display:flex;align-items:center;gap:6px;padding:5px 12px;border-bottom:1px solid var(--border);background:var(--stone);flex-shrink:0}
 #fs-leaflet-map{flex:1}
-.card-fs-gps-bar{display:flex;align-items:center;gap:6px;padding:4px 16px 0;border-top:1px solid var(--border);flex-shrink:0}
+.card-fs-map-controls{display:flex;align-items:center;gap:6px;padding:5px 12px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.3);flex-shrink:0}
+.fs-gps-bar{display:flex;align-items:center;gap:8px;padding:0 0 6px;flex-shrink:0}
+.fs-gps-status{font-size:.65rem;color:rgba(174,198,174,.75);flex:1;font-family:'DM Sans',sans-serif;line-height:1.3}
+.fs-action-bar{display:flex;gap:6px;padding:6px 14px;background:rgba(0,0,0,.4);border-top:1px solid rgba(255,255,255,.06);flex-shrink:0;align-items:center;flex-wrap:wrap}
+.fs-action-btn{padding:7px 12px;border-radius:10px;font-size:.71rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s;letter-spacing:.02em;white-space:nowrap}
+.fs-btn-gps{background:rgba(74,144,217,.15);color:#7ec8f8;border:1.5px solid rgba(74,144,217,.35)}
+.fs-btn-gps:hover,.fs-btn-gps.active{background:rgba(74,144,217,.4);border-color:#4a90d9}
+.fs-btn-coords{background:rgba(200,168,75,.12);color:#e8c86a;border:1.5px solid rgba(200,168,75,.3)}
+.fs-btn-coords:hover{background:rgba(200,168,75,.25)}
+.fs-btn-route{background:rgba(255,255,255,.07);color:rgba(255,255,255,.55);border:1.5px solid rgba(255,255,255,.12)}
+.fs-btn-route:hover,.fs-btn-route.active{background:rgba(107,163,104,.2);color:#aec6ae;border-color:rgba(107,163,104,.4)}
+.fs-coords-panel{display:none;padding:7px 14px;background:rgba(200,168,75,.08);border-top:1px solid rgba(200,168,75,.18);flex-shrink:0;align-items:center;gap:10px;flex-wrap:wrap}
+.fs-coords-panel.open{display:flex}
+.fs-coords-text{font-size:.8rem;font-weight:700;color:#e8c86a;font-family:monospace;flex:1;letter-spacing:.03em}
+.fs-coords-copy{padding:4px 10px;border-radius:6px;border:1px solid rgba(200,168,75,.4);background:transparent;color:#e8c86a;font-size:.7rem;cursor:pointer;font-weight:700}
+.fs-coords-copy:hover{background:rgba(200,168,75,.2)}
+.fs-range-strip{display:flex;align-items:center;gap:6px;padding:0 0 4px;flex-shrink:0}
+.fs-range-label{font-size:.6rem;color:rgba(174,198,174,.5);font-family:'DM Sans',sans-serif}
 canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .elev-hover-label{position:absolute;background:var(--forest);color:white;padding:4px 9px;border-radius:5px;font-size:.72rem;font-weight:600;pointer-events:none;white-space:nowrap;transform:translateX(-50%);top:12px;display:none;z-index:10}
 .elev-bottom-label{position:absolute;bottom:8px;font-size:.68rem;color:var(--pine);font-weight:600;pointer-events:none;transform:translateX(-50%);display:none;white-space:nowrap}
@@ -814,7 +829,9 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
         <button class="card-tab" onclick="switchTab('wx',this)">🌤 Weather</button>
         <button class="card-tab" onclick="switchTab('cal',this)">📅 Hike Calendar</button>
       </div>
-      <button class="card-expand-btn" onclick="openCardFullscreen()" title="Full screen">⛶</button>
+      <button class="card-expand-btn" onclick="openCardFullscreen()" title="Full screen">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+      </button>
     </div>
     <div id="tab-elev">
       <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;padding:4px 16px 0;border-top:1px solid var(--border)">
@@ -1228,17 +1245,18 @@ function recalc() {
   // Build waypoints: trek starts + ends
   let waypoints = [];
   segTreks.forEach((trek, i) => {
+    // Always push the trek START as a non-detail boundary (used for bottom label snapping)
     if(i===0) {
       waypoints.push({ name: trek.name.split(' to ')[0] || trek.name, mile: trek.cumMileStart, trekId: trek.id, isTrekStart: true });
     }
-    // Detail hikes for this trek
+    // Detail hikes for this trek (marked isDetail so they show/hide with checkbox)
     const details = (window.ACTIVE_TRAIL||AT).details ? ((window.ACTIVE_TRAIL||AT).details[String(trek.id)] || []) : [];
     details.forEach(d => {
       waypoints.push({ name: d.name, mile: d.cumMile, trekId: trek.id, ascentFtPerMi: d.ascentFtPerMi, descentFtPerMi: d.descentFtPerMi, isDetail: true });
     });
-    if(!details.length) {
-      waypoints.push({ name: trek.name.split(' to ').slice(1).join(' to ') || trek.name, mile: trek.cumMileEnd, trekId: trek.id, isTrekEnd: true, ascentFtPerMi: trek.ascentFtPerMi, descentFtPerMi: trek.descentFtPerMi });
-    }
+    // Always push trek END as non-detail boundary (destination name for bottom label)
+    const endName = trek.name.split(' to ').slice(1).join(' to ') || trek.name;
+    waypoints.push({ name: endName, mile: trek.cumMileEnd, trekId: trek.id, isTrekEnd: true, ascentFtPerMi: trek.ascentFtPerMi, descentFtPerMi: trek.descentFtPerMi });
   });
 
   // Deduplicate by mile
@@ -1687,30 +1705,25 @@ function drawLeafletMap(){
 // FULL-SCREEN CARD OVERLAY
 // ═══════════════════════════════════════════
 let fsLeafletMap = null;
-let fsActiveTab  = 'elev';   // which tab is showing in fullscreen
-let fsElevRows   = [];       // last drawn rows — needed to redraw in fs
+let fsActiveTab   = 'elev';
+let fsElevRows    = [];
+let fsShowFullRoute = false;  // false = 20mi window, true = full route
 
 function openCardFullscreen() {
   const overlay = document.getElementById('cardFsOverlay');
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
-
-  // Sync to whichever tab is currently active in the normal card
   const activeNormal = document.querySelector('.card-tab.active');
   const curTab = activeNormal ? activeNormal.textContent.trim() : '';
-  if (curTab.includes('Map')) {
-    switchFsTab('map');
-  } else {
-    switchFsTab('elev');
-  }
+  switchFsTab(curTab.includes('Map') ? 'map' : 'elev');
 }
 
 function closeCardFullscreen() {
   const overlay = document.getElementById('cardFsOverlay');
   overlay.classList.remove('open');
   document.body.style.overflow = '';
-  // Invalidate fs map so it re-renders if reopened
-  if (fsLeafletMap) { fsLeafletMap.invalidateSize(); }
+  document.getElementById('fsCoordsPanel').classList.remove('open');
+  if (fsLeafletMap) fsLeafletMap.invalidateSize();
 }
 
 function switchFsTab(tab) {
@@ -1718,107 +1731,268 @@ function switchFsTab(tab) {
   document.getElementById('fs-tab-elev').style.display = tab === 'elev' ? 'flex' : 'none';
   document.getElementById('fs-tab-map').style.display  = tab === 'map'  ? 'flex' : 'none';
   document.getElementById('fs-tab-elev').style.flexDirection = 'column';
-
   document.getElementById('fsTabElev').classList.toggle('active', tab === 'elev');
   document.getElementById('fsTabMap').classList.toggle('active',  tab === 'map');
+  const titles = { elev: '📈 Trail Elevation · On-Trail View', map: '🗺 Trail Map' };
+  document.getElementById('cardFsTitle').textContent = titles[tab] || '📈 Trail View';
+  if (tab === 'elev') requestAnimationFrame(() => drawFsElevation());
+  else if (tab === 'map') requestAnimationFrame(() => initFsMap());
+}
 
-  const titles = { elev: '📈 Elevation Profile', map: '🗺 Trail Map' };
-  document.getElementById('cardFsTitle').textContent = titles[tab] || '⛶ Full Screen';
+// ── Full Route toggle ──
+function toggleFsRouteView() {
+  fsShowFullRoute = !fsShowFullRoute;
+  const btn = document.getElementById('fsRouteBtn');
+  btn.classList.toggle('active', fsShowFullRoute);
+  btn.textContent = fsShowFullRoute ? '🔍 Near Me' : '🗺 Full Route';
+  drawFsElevation();
+}
 
-  if (tab === 'elev') {
-    requestAnimationFrame(() => drawFsElevation());
-  } else if (tab === 'map') {
-    requestAnimationFrame(() => initFsMap());
+// ── Coordinates panel ──
+function toggleFsCoords() {
+  const panel = document.getElementById('fsCoordsPanel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) updateFsCoordsDisplay();
+}
+
+function updateFsCoordsDisplay() {
+  const el = document.getElementById('fsCoordsText');
+  if (!lastGpsPos) {
+    el.textContent = 'No GPS fix yet — tap Find Me first';
+    return;
+  }
+  const lat  = lastGpsPos.lat.toFixed(6);
+  const lon  = lastGpsPos.lon.toFixed(6);
+  const mile = lastGpsPos.mile ? `  ·  Trail Mile ${lastGpsPos.mile}` : '';
+  const acc  = lastGpsPos.accuracy ? `  ±${Math.round(lastGpsPos.accuracy)}m` : '';
+  el.textContent = `${lat}, ${lon}${mile}${acc}`;
+}
+
+function copyCoords() {
+  if (!lastGpsPos) { showToast('No GPS fix yet.'); return; }
+  const text = `${lastGpsPos.lat.toFixed(6)}, ${lastGpsPos.lon.toFixed(6)}`;
+  navigator.clipboard.writeText(text).then(() => {
+    document.getElementById('fsCoordsCopyBtn').textContent = '✓ Copied';
+    setTimeout(() => document.getElementById('fsCoordsCopyBtn').textContent = '📋 Copy', 2000);
+  }).catch(() => {
+    showToast(text);
+  });
+}
+
+function shareCoordsViaSMS() {
+  if (!lastGpsPos) { showToast('No GPS fix yet — tap Find Me first.'); return; }
+  const lat  = lastGpsPos.lat.toFixed(6);
+  const lon  = lastGpsPos.lon.toFixed(6);
+  const mile = lastGpsPos.mile ? ` Trail Mile ${lastGpsPos.mile}.` : '';
+  const msg  = `Emergency coordinates: ${lat}, ${lon}.${mile} https://maps.google.com/?q=${lat},${lon}`;
+  window.open(`sms:?&body=${encodeURIComponent(msg)}`);
+}
+
+// ── Find Me (GPS) in fullscreen ──
+function fsFindMe() {
+  const btn = document.getElementById('fsFindMeBtn');
+  if (gpsActive) {
+    // Toggle off
+    toggleGPS();
+    btn.classList.remove('active');
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg> Find Me`;
+    document.getElementById('fs-gps-status-bar').textContent = 'GPS off';
+  } else {
+    toggleGPS();
+    btn.classList.add('active');
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7ec8f8" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg> Tracking…`;
+    document.getElementById('fs-gps-status-bar').textContent = 'Acquiring GPS…';
   }
 }
 
+// ── Main draw function ──
 function drawFsElevation() {
   const canvas = document.getElementById('fsElevCanvas');
-  const wrap   = canvas.parentElement;
+  if (!canvas) return;
+  const wrap = canvas.parentElement;
   if (!wrap || wrap.clientWidth === 0) return;
 
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width  = wrap.clientWidth  * dpr;
-  canvas.height = wrap.clientHeight * dpr;
-  canvas.style.width  = wrap.clientWidth  + 'px';
-  canvas.style.height = wrap.clientHeight + 'px';
-
-  // Mirror the main canvas's _elevMeta so we draw identically
+  // ── CRASH FIX: guard against no main meta ──
   const mainCanvas = document.getElementById('elevCanvas');
-  if (!mainCanvas._elevMeta) return;
-
-  // Redraw using same data — copy meta and redirect IDs
+  if (!mainCanvas || !mainCanvas._elevMeta) return;
   const meta = mainCanvas._elevMeta;
+  if (!meta.pts || !meta.pts.length) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
-  const W = wrap.clientWidth, H = wrap.clientHeight;
-  const PAD = {top:20, right:60, bottom:28, left:8};
+
+  const PAD = { top: 18, right: 55, bottom: 30, left: 8 };
   const cW = W - PAD.left - PAD.right;
   const cH = H - PAD.top  - PAD.bottom;
 
-  const {pts, minE, maxE, eRange, startMile, endMile, rows} = meta;
+  const { pts: allPts, minE: globalMin, maxE: globalMax, eRange: globalRange,
+          startMile: routeStart, endMile: routeEnd, rows } = meta;
 
-  // Gradient fill
-  const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
-  grad.addColorStop(0,   'rgba(107,163,104,0.55)');
-  grad.addColorStop(0.6, 'rgba(107,163,104,0.18)');
-  grad.addColorStop(1,   'rgba(107,163,104,0.04)');
+  // ── Determine view window ──
+  let viewStart, viewEnd;
+  const WINDOW = 10; // miles each side = 20mi total
 
-  const xPos = m => PAD.left + ((m - startMile) / (endMile - startMile)) * cW;
+  if (!fsShowFullRoute && lastGpsPos && lastGpsPos.mile !== undefined) {
+    viewStart = Math.max(routeStart, lastGpsPos.mile - WINDOW);
+    viewEnd   = Math.min(routeEnd,   lastGpsPos.mile + WINDOW);
+    // ensure minimum 4mi window
+    if (viewEnd - viewStart < 4) {
+      viewStart = Math.max(routeStart, lastGpsPos.mile - 2);
+      viewEnd   = Math.min(routeEnd,   lastGpsPos.mile + 2);
+    }
+  } else {
+    viewStart = routeStart;
+    viewEnd   = routeEnd;
+  }
+
+  const pts = allPts.filter(p => p[0] >= Math.floor(viewStart) && p[0] <= Math.ceil(viewEnd));
+  if (!pts.length) return;
+
+  const minE = Math.min(...pts.map(p => p[1]));
+  const maxE = Math.max(...pts.map(p => p[1]));
+  const eRange = maxE - minE || 1;
+
+  const xPos = m => PAD.left + ((m - viewStart) / (viewEnd - viewStart)) * cW;
   const yPos = e => PAD.top  + cH - ((e - minE) / eRange) * cH;
 
+  // ── Background ──
+  ctx.fillStyle = '#0d1f0d';
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Gradient fill ──
+  const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
+  grad.addColorStop(0,   'rgba(107,163,104,0.5)');
+  grad.addColorStop(0.6, 'rgba(107,163,104,0.15)');
+  grad.addColorStop(1,   'rgba(107,163,104,0.03)');
   ctx.beginPath();
-  pts.forEach((p,i) => { i===0 ? ctx.moveTo(xPos(p[0]),yPos(p[1])) : ctx.lineTo(xPos(p[0]),yPos(p[1])); });
+  pts.forEach((p,i) => i===0 ? ctx.moveTo(xPos(p[0]),yPos(p[1])) : ctx.lineTo(xPos(p[0]),yPos(p[1])));
   ctx.lineTo(xPos(pts[pts.length-1][0]), PAD.top+cH);
   ctx.lineTo(xPos(pts[0][0]), PAD.top+cH);
   ctx.closePath();
   ctx.fillStyle = grad; ctx.fill();
 
-  // Line
+  // ── Elevation line ──
   ctx.beginPath();
-  pts.forEach((p,i) => { i===0 ? ctx.moveTo(xPos(p[0]),yPos(p[1])) : ctx.lineTo(xPos(p[0]),yPos(p[1])); });
-  ctx.strokeStyle = '#4a7c59'; ctx.lineWidth = 1.8; ctx.stroke();
+  pts.forEach((p,i) => i===0 ? ctx.moveTo(xPos(p[0]),yPos(p[1])) : ctx.lineTo(xPos(p[0]),yPos(p[1])));
+  ctx.strokeStyle = '#5a9e6a'; ctx.lineWidth = 1.8; ctx.stroke();
 
-  // Tick marks (water=blue, shelter=green, resupply=amber)
-  const tickMiles = new Set(rows.filter(r=>!r.isDetail).map(r=>r.mile));
-  rows.filter(r=>!r.isDetail).forEach(r => {
-    const x = xPos(r.mile);
-    const wp = (window.ACTIVE_WAYPOINTS||AT_WAYPOINTS).find(w=>Math.abs(w[0]-r.mile)<1);
-    const rs = (window.ACTIVE_RESUPPLY||AT_RESUPPLY).find(s=>Math.abs(s[0]-r.mile)<2);
-    ctx.beginPath();
-    ctx.moveTo(x, PAD.top+cH-2);
-    ctx.lineTo(x, PAD.top+cH+5);
-    ctx.strokeStyle = rs ? '#c8a84b' : (wp&&wp[5]) ? '#5b8fa8' : '#6ba368';
-    ctx.lineWidth = 1.5; ctx.stroke();
+  // ── Waypoint ticks + labels ──
+  const wpInView = (window.ACTIVE_WAYPOINTS||AT_WAYPOINTS).filter(w =>
+    w[0] >= viewStart && w[0] <= viewEnd && w[3] && w[4]);
+
+  wpInView.forEach(w => {
+    const x = xPos(w[0]);
+    const ptY = pts.find(p=>p[0]===Math.round(w[0]));
+    const hasWater = w[5]===1, hasShelter = w[6]===1;
+
+    // Vertical tick from terrain line down
+    if (ptY) {
+      const y = yPos(ptY[1]);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x, PAD.top + cH);
+      ctx.strokeStyle = hasWater ? 'rgba(91,143,168,0.5)' : 'rgba(107,163,104,0.35)';
+      ctx.lineWidth = 1; ctx.setLineDash([2,3]); ctx.stroke(); ctx.setLineDash([]);
+
+      // Icon dot on terrain line
+      ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2);
+      ctx.fillStyle = hasWater ? '#5b8fa8' : '#6ba368';
+      ctx.fill();
+    }
+
+    // Label below bottom
+    const icons = (hasWater?'💧':'') + (hasShelter?'🏕':'') + (w[7]?'🚽':'');
+    const label = (icons ? icons+' ' : '') + (w[1]||'').split(' ').slice(0,3).join(' ');
+    ctx.save();
+    ctx.translate(x, PAD.top + cH + 14);
+    ctx.rotate(-Math.PI/4);
+    ctx.fillStyle = hasWater ? '#7ec0d8' : 'rgba(174,198,174,0.7)';
+    ctx.font = `bold ${Math.min(10, Math.max(8, Math.floor(cW/50)))}px DM Sans, sans-serif`;
+    ctx.fillText(label.slice(0, 18), 0, 0);
+    ctx.restore();
   });
 
-  // Y-axis labels
+  // ── Resupply ticks ──
+  const rsInView = (window.ACTIVE_RESUPPLY||AT_RESUPPLY).filter(r =>
+    r[0] >= viewStart && r[0] <= viewEnd);
+  rsInView.forEach(r => {
+    const x = xPos(r[0]);
+    ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top+8);
+    ctx.strokeStyle = 'rgba(200,168,75,0.8)'; ctx.lineWidth = 2; ctx.stroke();
+    // Label
+    ctx.save();
+    ctx.translate(x, PAD.top + 10);
+    ctx.rotate(-Math.PI/4);
+    ctx.fillStyle = '#c8a84b';
+    ctx.font = `bold 9px DM Sans, sans-serif`;
+    ctx.fillText(('🏪 '+(r[1]||'')).slice(0,16), 0, 0);
+    ctx.restore();
+  });
+
+  // ── Trek boundary lines ──
+  rows.filter(r => !r.isDetail).forEach(r => {
+    if (r.mile < viewStart || r.mile > viewEnd) return;
+    const x = xPos(r.mile);
+    ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top+cH);
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+  });
+
+  // ── GPS position line ──
+  if (lastGpsPos && lastGpsPos.mile >= viewStart && lastGpsPos.mile <= viewEnd) {
+    const gx = xPos(lastGpsPos.mile);
+    const ptG = pts.find(p=>p[0]===Math.round(lastGpsPos.mile)) || pts[0];
+    const gy = ptG ? yPos(ptG[1]) : PAD.top + cH/2;
+
+    // Glow line
+    ctx.beginPath(); ctx.moveTo(gx, PAD.top); ctx.lineTo(gx, PAD.top+cH);
+    ctx.strokeStyle = 'rgba(74,144,217,0.4)'; ctx.lineWidth = 2; ctx.stroke();
+
+    // Bullseye
+    ctx.beginPath(); ctx.arc(gx, gy, 10, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(74,144,217,0.15)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(gx, gy, 6, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(74,144,217,0.5)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(gx, gy, 3, 0, Math.PI*2);
+    ctx.fillStyle = '#4a90d9'; ctx.fill();
+
+    // "YOU" label
+    ctx.fillStyle = '#7ec8f8';
+    ctx.font = 'bold 9px DM Sans, sans-serif';
+    ctx.fillText('▲ YOU', gx - 14, PAD.top + 14);
+
+    // Update status bar
+    const acc = lastGpsPos.accuracy ? ` ±${Math.round(lastGpsPos.accuracy)}m` : '';
+    document.getElementById('fs-gps-status-bar').textContent =
+      `📍 Mile ${lastGpsPos.mile}  ·  ${lastGpsPos.lat?.toFixed(5)}, ${lastGpsPos.lon?.toFixed(5)}${acc}`;
+    document.getElementById('fsMileIndicator').textContent = `Mile ${lastGpsPos.mile}`;
+    updateFsCoordsDisplay();
+  }
+
+  // ── Y-axis labels ──
   document.getElementById('fsElevYmax').textContent = maxE.toLocaleString() + ' ft';
   document.getElementById('fsElevYmin').textContent = minE.toLocaleString() + ' ft';
 
-  // GPS blue line if active
-  if (lastGpsPos && lastGpsPos.mile >= startMile && lastGpsPos.mile <= endMile) {
-    const gx = xPos(lastGpsPos.mile);
-    ctx.beginPath(); ctx.moveTo(gx, PAD.top); ctx.lineTo(gx, PAD.top+cH);
-    ctx.strokeStyle = '#4a90d9'; ctx.lineWidth = 2; ctx.setLineDash([6,3]); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.beginPath(); ctx.arc(gx, yPos(lastGpsPos.elev||minE), 5, 0, Math.PI*2);
-    ctx.fillStyle = '#4a90d9'; ctx.fill();
+  // ── Range label ──
+  const rangeEl = document.getElementById('fsRangeLabel');
+  if (rangeEl) {
+    rangeEl.textContent = fsShowFullRoute || !lastGpsPos
+      ? `Mile ${Math.round(viewStart)}–${Math.round(viewEnd)}`
+      : `±${WINDOW}mi of you  ·  Mile ${Math.round(viewStart)}–${Math.round(viewEnd)}`;
   }
 
-  // Store meta on fs canvas too, for touch handler
-  canvas._elevMeta = { ...meta, W, H, cW, cH, PAD };
+  // Store meta for hover/touch
+  canvas._elevMeta = { pts, minE, maxE, eRange, cW, cH, PAD, startMile: viewStart, endMile: viewEnd, rows, xPos, yPos, W, H, dpr };
 
-  // Touch/tap handler for fs canvas
-  canvas.ontouchstart = (e) => {
-    e.preventDefault();
-    handleFsElevTouch(e.touches[0]);
-  };
-  canvas.ontouchmove = (e) => {
-    e.preventDefault();
-    handleFsElevTouch(e.touches[0]);
-  };
-  canvas.onmousemove = handleFsElevHover;
+  canvas.ontouchstart = e => { e.preventDefault(); handleFsElevTouch(e.touches[0]); };
+  canvas.ontouchmove  = e => { e.preventDefault(); handleFsElevTouch(e.touches[0]); };
+  canvas.onmousemove  = handleFsElevHover;
   canvas.onmouseleave = () => {
     document.getElementById('fsElevHoverLabel').style.display = 'none';
     document.getElementById('fsElevBottomLabel').style.display = 'none';
@@ -4307,44 +4481,85 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 <!-- ── Full-screen card overlay ─────────────────────────────── -->
 <div class="card-fs-overlay" id="cardFsOverlay">
+
+  <!-- Header -->
   <div class="card-fs-header">
-    <span class="card-fs-title" id="cardFsTitle">📈 Elevation Profile</span>
-    <button class="card-fs-close" onclick="closeCardFullscreen()">✕ Close</button>
+    <span class="card-fs-title" id="cardFsTitle">📈 Trail View</span>
+    <button class="card-fs-close" onclick="closeCardFullscreen()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 9 15 15"/><polyline points="15 9 9 15"/></svg>
+      Close
+    </button>
   </div>
+
+  <!-- Tab strip -->
   <div class="card-fs-tabs">
     <button class="card-fs-tab active" id="fsTabElev" onclick="switchFsTab('elev')">📈 Elevation</button>
     <button class="card-fs-tab" id="fsTabMap"  onclick="switchFsTab('map')">🗺 Map</button>
   </div>
+
+  <!-- Body -->
   <div class="card-fs-body">
 
-    <!-- Elevation panel -->
+    <!-- ── ELEVATION PANEL ── -->
     <div id="fs-tab-elev" class="card-fs-elev-wrap">
-      <div class="card-fs-gps-bar">
-        <div id="fs-gps-status-bar" style="font-size:.68rem;color:var(--subtle);flex:1"></div>
-        <button onclick="toggleGPS()" style="padding:4px 12px;border-radius:12px;border:1.5px solid var(--border);background:var(--white);font-size:.72rem;font-weight:700;cursor:pointer;color:var(--subtle);display:flex;align-items:center;gap:5px">
-          <span id="fs-gps-btn-icon">📍</span><span id="fs-gps-btn-txt">Find Me</span>
-        </button>
+      <!-- GPS status + range label -->
+      <div class="fs-gps-bar">
+        <div class="fs-gps-status" id="fs-gps-status-bar">GPS off — tap Find Me for live trail position</div>
+        <span class="fs-range-label" id="fsRangeLabel"></span>
       </div>
-      <div style="position:relative;flex:1;height:calc(100% - 38px)">
+
+      <!-- Canvas -->
+      <div style="position:relative;flex:1;min-height:0">
         <canvas id="fsElevCanvas" style="width:100%;height:100%;cursor:crosshair;display:block;touch-action:none"></canvas>
-        <div class="elev-hover-label" id="fsElevHoverLabel"></div>
-        <div class="elev-bottom-label" id="fsElevBottomLabel"></div>
-        <div class="elev-ymax" id="fsElevYmax"></div>
-        <div class="elev-ymin" id="fsElevYmin"></div>
+        <div class="elev-hover-label" id="fsElevHoverLabel" style="background:rgba(30,58,30,0.95)"></div>
+        <div class="elev-bottom-label" id="fsElevBottomLabel" style="color:#aec6ae;bottom:6px"></div>
+        <div style="position:absolute;top:6px;right:6px;display:flex;gap:6px">
+          <span class="elev-ymax" id="fsElevYmax" style="font-size:.6rem;color:rgba(174,198,174,.7);font-family:monospace"></span>
+        </div>
+        <div style="position:absolute;bottom:22px;right:6px">
+          <span class="elev-ymin" id="fsElevYmin" style="font-size:.6rem;color:rgba(174,198,174,.5);font-family:monospace"></span>
+        </div>
       </div>
     </div>
 
-    <!-- Map panel -->
+    <!-- ── MAP PANEL ── -->
     <div id="fs-tab-map" class="card-fs-map-wrap" style="display:none">
       <div class="card-fs-map-controls">
-        <div id="fs-map-gps-status" style="font-size:.68rem;color:var(--subtle);flex:1"></div>
-        <button onclick="mapCenterOnMe()" style="padding:3px 10px;border-radius:10px;border:1.5px solid var(--border);background:var(--white);font-size:.7rem;font-weight:700;cursor:pointer;color:var(--pine)">📍 Center on Me</button>
-        <button onclick="mapFitTrail()" style="padding:3px 10px;border-radius:10px;border:1.5px solid var(--border);background:var(--white);font-size:.7rem;font-weight:700;cursor:pointer;color:var(--subtle)">🗺 Fit Trail</button>
+        <div id="fs-map-gps-status" style="font-size:.65rem;color:rgba(174,198,174,.75);flex:1"></div>
+        <button onclick="mapCenterOnMe()" style="padding:3px 10px;border-radius:10px;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);font-size:.7rem;font-weight:700;cursor:pointer;color:rgba(255,255,255,.8)">📍 Center on Me</button>
+        <button onclick="mapFitTrail()" style="padding:3px 10px;border-radius:10px;border:1.5px solid rgba(255,255,255,.12);background:transparent;font-size:.7rem;font-weight:700;cursor:pointer;color:rgba(255,255,255,.5)">🗺 Fit Trail</button>
       </div>
       <div id="fs-leaflet-map" style="flex:1"></div>
     </div>
 
   </div>
+
+  <!-- ── COORDINATES PANEL (slides in) ── -->
+  <div class="fs-coords-panel" id="fsCoordsPanel">
+    <div>
+      <div style="font-size:.58rem;color:rgba(200,168,75,.7);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px">📡 Your Coordinates</div>
+      <div class="fs-coords-text" id="fsCoordsText">Acquiring GPS…</div>
+    </div>
+    <button class="fs-coords-copy" onclick="copyCoords()" id="fsCoordsCopyBtn">📋 Copy</button>
+    <button class="fs-coords-copy" onclick="shareCoordsViaSMS()" style="border-color:rgba(74,144,217,.4);color:#7ec8f8">📱 Share</button>
+  </div>
+
+  <!-- ── ACTION BAR ── -->
+  <div class="fs-action-bar">
+    <button class="fs-action-btn fs-btn-gps" id="fsFindMeBtn" onclick="fsFindMe()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+      Find Me
+    </button>
+    <button class="fs-action-btn fs-btn-coords" id="fsCoordsBtn" onclick="toggleFsCoords()">
+      📡 Coordinates
+    </button>
+    <button class="fs-action-btn fs-btn-route" id="fsRouteBtn" onclick="toggleFsRouteView()">
+      🗺 Full Route
+    </button>
+    <div style="flex:1"></div>
+    <span style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:monospace" id="fsMileIndicator"></span>
+  </div>
+
 </div>
 
 </body>
