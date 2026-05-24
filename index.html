@@ -4569,7 +4569,7 @@ function renderShareCard() {
   // ── Bottom watermark ──
   ctx.fillStyle = 'rgba(255,255,255,0.22)';
   ctx.font = '500 20px DM Sans, sans-serif';
-  ctx.fillText('triplecrowntrекplanner.github.io  ·  Free Forever', W/2, 990);
+  ctx.fillText('triplecrowntrekplanner.com  ·  Free Forever', W/2, 990);
 
   // ── Corner accent dots ──
   [th.accent, th.mid].forEach((col, i) => {
@@ -4839,7 +4839,7 @@ async function nativeShareCard() {
       const file = new File([blob], 'triple_crown_hike.png', { type: 'image/png' });
       const shareData = {
         title: `${trekName} — Triple Crown Trek Planner`,
-        text:  `Just completed ${trekName} on the ${trailId === 'AT' ? 'Appalachian Trail' : trailId === 'PCT' ? 'Pacific Crest Trail' : 'Continental Divide Trail'}! 🥾 Planned with Triple Crown Trek Planner — free at triplecrowntrекplanner.github.io`,
+        text:  `Just completed ${trekName} on the ${trailId === 'AT' ? 'Appalachian Trail' : trailId === 'PCT' ? 'Pacific Crest Trail' : 'Continental Divide Trail'}! 🥾 Planned with Triple Crown Trek Planner — free at triplecrowntrekplanner.com`,
         files: [file],
       };
       if (navigator.canShare && navigator.canShare(shareData)) {
@@ -5715,8 +5715,7 @@ document.addEventListener('DOMContentLoaded',()=>{
           🌍 Post Feed
         </button>
       </div>
-      <div class="share-tip">📱 Share to Instagram, Facebook, TikTok &amp; more<br>
-        <strong>Post Feed</strong> adds it to the public community wall 🌍</div>
+      <div class="share-tip">📱 Share to Instagram, Facebook, TikTok &amp; more<br><strong>triplecrowntrekplanner.com</strong>  ·  Free Forever 🌿</div>
     </div>
 
     <!-- ── COMMUNITY FEED TAB ── -->
