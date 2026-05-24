@@ -195,6 +195,33 @@ input[type="checkbox"]{width:14px;height:14px;accent-color:var(--pine);cursor:po
 .fs-coords-copy:hover{background:rgba(200,168,75,.2)}
 .fs-range-strip{display:flex;align-items:center;gap:6px;padding:0 0 4px;flex-shrink:0}
 .fs-range-label{font-size:.6rem;color:rgba(174,198,174,.5);font-family:'DM Sans',sans-serif}
+/* Bottom dock — always visible */
+.fs-bottom-dock{display:flex;flex-direction:column;flex-shrink:0;background:#0a160a;border-top:1px solid rgba(255,255,255,.07)}
+.fs-coords-row{display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid rgba(255,255,255,.05)}
+.fs-coords-live{font-size:.72rem;font-weight:700;color:#e8c86a;font-family:monospace;flex:1;letter-spacing:.02em;line-height:1.3}
+.fs-coords-live small{font-size:.6rem;font-weight:400;color:rgba(200,168,75,.6);display:block;letter-spacing:.05em;text-transform:uppercase;margin-bottom:1px}
+.fs-copy-btn{padding:5px 10px;border-radius:7px;border:1px solid rgba(200,168,75,.35);background:rgba(200,168,75,.1);color:#e8c86a;font-size:.68rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.fs-copy-btn:active{background:rgba(200,168,75,.3)}
+.fs-share-btn{padding:5px 10px;border-radius:7px;border:1px solid rgba(74,144,217,.35);background:rgba(74,144,217,.1);color:#7ec8f8;font-size:.68rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.fs-share-btn:active{background:rgba(74,144,217,.3)}
+/* Filter icon buttons row */
+.fs-filter-row{display:flex;align-items:center;gap:4px;padding:5px 12px;border-bottom:1px solid rgba(255,255,255,.05)}
+.fs-filter-btn{flex:1;padding:5px 2px;border-radius:7px;border:1.5px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.35);font-size:.82rem;cursor:pointer;transition:all .12s;text-align:center;line-height:1}
+.fs-filter-btn.on{background:rgba(255,255,255,.12);color:rgba(255,255,255,.9);border-color:rgba(255,255,255,.3)}
+.fs-filter-btn[data-type="water"].on{background:rgba(91,143,168,.25);color:#7ec8f8;border-color:rgba(91,143,168,.5)}
+.fs-filter-btn[data-type="shelter"].on{background:rgba(107,163,104,.2);color:#aec6ae;border-color:rgba(107,163,104,.45)}
+.fs-filter-btn[data-type="resupply"].on{background:rgba(200,168,75,.2);color:#e8c86a;border-color:rgba(200,168,75,.45)}
+.fs-filter-btn[data-type="road"].on{background:rgba(181,69,27,.2);color:#e8956a;border-color:rgba(181,69,27,.4)}
+.fs-filter-btn[data-type="all"].on{background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.4)}
+/* Action button row */
+.fs-btn-row{display:flex;align-items:center;gap:6px;padding:6px 12px}
+.fs-pill-btn{padding:8px 14px;border-radius:20px;font-size:.72rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s;border:1.5px solid transparent;white-space:nowrap}
+.fs-pill-tracking{background:rgba(74,144,217,.2);color:#7ec8f8;border-color:rgba(74,144,217,.4)}
+.fs-pill-tracking.active{background:#4a90d9;color:#fff;border-color:#4a90d9}
+.fs-pill-findtrail{background:rgba(107,163,104,.15);color:#aec6ae;border-color:rgba(107,163,104,.35)}
+.fs-pill-findtrail:active{background:rgba(107,163,104,.35)}
+.fs-pill-route{background:rgba(255,255,255,.07);color:rgba(255,255,255,.55);border-color:rgba(255,255,255,.12)}
+.fs-pill-route.active{background:rgba(107,163,104,.2);color:#aec6ae;border-color:rgba(107,163,104,.4)}
 canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .elev-hover-label{position:absolute;background:var(--forest);color:white;padding:4px 9px;border-radius:5px;font-size:.72rem;font-weight:600;pointer-events:none;white-space:nowrap;transform:translateX(-50%);top:12px;display:none;z-index:10}
 .elev-bottom-label{position:absolute;bottom:8px;font-size:.68rem;color:var(--pine);font-weight:600;pointer-events:none;transform:translateX(-50%);display:none;white-space:nowrap}
@@ -429,6 +456,30 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .pack-tot-lbl{font-size:.6rem;color:#aec6ae;text-transform:uppercase;letter-spacing:.08em;margin-bottom:1px}
 .pack-tot-val{font-size:.88rem;font-weight:700;color:var(--white)}
 .pack-tot-val.big{font-size:1rem;color:#7ecb7e}
+/* Pack share sheet */
+.pack-share-overlay{display:none;position:absolute;inset:0;background:rgba(10,24,12,0.72);z-index:50;align-items:flex-end;border-radius:14px}
+.pack-share-overlay.open{display:flex}
+.pack-share-sheet{background:var(--white);border-radius:14px 14px 0 0;width:100%;padding:18px 18px 20px;display:flex;flex-direction:column;gap:12px}
+.pack-share-title{font-family:'Playfair Display',serif;font-size:.95rem;font-weight:700;color:var(--forest);display:flex;align-items:center;gap:8px}
+.pack-share-sub{font-size:.72rem;color:var(--subtle);margin-top:-6px;line-height:1.4}
+.pack-share-checks{display:flex;flex-direction:column;gap:8px}
+.pack-share-check{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:var(--mist);cursor:pointer;font-size:.8rem;font-weight:600;color:var(--forest)}
+.pack-share-check input{width:15px;height:15px;accent-color:var(--pine);cursor:pointer}
+.pack-share-check .wt{margin-left:auto;font-size:.72rem;color:var(--sage);font-weight:400}
+.pack-share-note{width:100%;border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:.78rem;font-family:inherit;resize:none;color:var(--text)}
+.pack-share-note:focus{outline:none;border-color:var(--pine)}
+.pack-share-actions{display:flex;gap:8px}
+.pack-share-send{flex:1;padding:9px;background:var(--pine);color:white;border:none;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s}
+.pack-share-send:hover{background:var(--forest)}
+.pack-share-cancel{padding:9px 14px;background:transparent;color:var(--subtle);border:1px solid var(--border);border-radius:8px;font-size:.8rem;cursor:pointer;font-family:inherit}
+/* Board pack reveal */
+.pc-pack-reveal{display:none;background:var(--mist);border-radius:8px;padding:10px 12px;font-size:.73rem;line-height:1.7;color:var(--text)}
+.pc-pack-reveal.open{display:block}
+.pc-pack-section{font-weight:700;color:var(--forest);font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;margin-top:6px;margin-bottom:2px}
+.pc-pack-section:first-child{margin-top:0}
+.pc-pack-item{color:var(--text)}
+.pc-pack-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:12px;border:1.5px solid var(--border);background:var(--white);color:var(--subtle);font-size:.68rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;margin-top:2px}
+.pc-pack-btn:hover{border-color:var(--pine);color:var(--pine)}
 
 
 /* ══ SOCIAL BOARD ══ */
@@ -450,9 +501,9 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .partner-card:hover{background:#f8fbf8}
 .partner-card:last-child{border-bottom:none}
 .pc-top{display:flex;align-items:center;gap:10px}
-.pc-avatar{width:36px;height:36px;border-radius:50%;background:var(--forest);
-  color:#aec6ae;font-size:.82rem;font-weight:700;display:flex;align-items:center;
-  justify-content:center;flex-shrink:0;object-fit:cover}
+.pc-avatar{width:48px;height:48px;border-radius:50%;background:var(--forest);
+  color:#fff;font-size:1rem;font-weight:700;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;object-fit:cover;letter-spacing:.02em}
 /* Photo upload in post form */
 .pf-photo-row{display:flex;align-items:center;gap:14px;margin-bottom:4px}
 .pf-photo-circle{width:64px;height:64px;border-radius:50%;background:var(--mist);
@@ -1707,7 +1758,44 @@ function drawLeafletMap(){
 let fsLeafletMap = null;
 let fsActiveTab   = 'elev';
 let fsElevRows    = [];
-let fsShowFullRoute = false;  // false = 20mi window, true = full route
+let fsShowFullRoute = false;
+// Waypoint category filters — all on by default
+let fsFilters = { water: true, shelter: true, resupply: true, road: true };
+
+function toggleFsFilter(btn) {
+  const type = btn.dataset.type;
+  fsFilters[type] = !fsFilters[type];
+  btn.classList.toggle('on', fsFilters[type]);
+  drawFsElevation();
+}
+function toggleAllFilters(btn) {
+  const anyOn = Object.values(fsFilters).some(v=>v);
+  const newVal = !anyOn;
+  Object.keys(fsFilters).forEach(k => fsFilters[k] = newVal);
+  document.querySelectorAll('.fs-filter-btn[data-type]').forEach(b => {
+    if (b.dataset.type !== 'all') b.classList.toggle('on', newVal);
+  });
+  btn.classList.toggle('on', newVal);
+  drawFsElevation();
+}
+
+// ── Find Trail: open Google Maps satellite zoomed in on your position ──
+function fsFindTrailOnMap() {
+  if (!lastGpsPos) {
+    // No GPS — open map tab zoomed to current route segment
+    showToast('Tap Tracking first to get your GPS position');
+    switchFsTab('map');
+    return;
+  }
+  const lat = lastGpsPos.lat.toFixed(6);
+  const lon = lastGpsPos.lon.toFixed(6);
+  // Google Maps satellite, zoomed to z=18, centered on you
+  // This is the "lost blaze" view — maximum zoom, satellite, exactly where you are
+  const url = `https://www.google.com/maps/@${lat},${lon},18z/data=!3m1!1e3`;
+  window.open(url, '_blank');
+}
+
+// ── Tracking GPS in fullscreen ──
 
 function openCardFullscreen() {
   const overlay = document.getElementById('cardFsOverlay');
@@ -1722,7 +1810,6 @@ function closeCardFullscreen() {
   const overlay = document.getElementById('cardFsOverlay');
   overlay.classList.remove('open');
   document.body.style.overflow = '';
-  document.getElementById('fsCoordsPanel').classList.remove('open');
   if (fsLeafletMap) fsLeafletMap.invalidateSize();
 }
 
@@ -1748,59 +1835,47 @@ function toggleFsRouteView() {
   drawFsElevation();
 }
 
-// ── Coordinates panel ──
-function toggleFsCoords() {
-  const panel = document.getElementById('fsCoordsPanel');
-  panel.classList.toggle('open');
-  if (panel.classList.contains('open')) updateFsCoordsDisplay();
-}
-
 function updateFsCoordsDisplay() {
   const el = document.getElementById('fsCoordsText');
+  if (!el) return;
   if (!lastGpsPos) {
-    el.textContent = 'No GPS fix yet — tap Find Me first';
+    el.textContent = 'No GPS fix — tap Tracking';
     return;
   }
   const lat  = lastGpsPos.lat.toFixed(6);
   const lon  = lastGpsPos.lon.toFixed(6);
-  const mile = lastGpsPos.mile ? `  ·  Trail Mile ${lastGpsPos.mile}` : '';
+  const mile = lastGpsPos.mile ? `  ·  Mile ${lastGpsPos.mile}` : '';
   const acc  = lastGpsPos.accuracy ? `  ±${Math.round(lastGpsPos.accuracy)}m` : '';
   el.textContent = `${lat}, ${lon}${mile}${acc}`;
 }
 
 function copyCoords() {
-  if (!lastGpsPos) { showToast('No GPS fix yet.'); return; }
+  if (!lastGpsPos) { showToast('No GPS fix yet — tap Tracking first.'); return; }
   const text = `${lastGpsPos.lat.toFixed(6)}, ${lastGpsPos.lon.toFixed(6)}`;
+  const btn = document.getElementById('fsCoordsCopyBtn');
   navigator.clipboard.writeText(text).then(() => {
-    document.getElementById('fsCoordsCopyBtn').textContent = '✓ Copied';
-    setTimeout(() => document.getElementById('fsCoordsCopyBtn').textContent = '📋 Copy', 2000);
-  }).catch(() => {
-    showToast(text);
-  });
+    if(btn){btn.textContent='✓ Copied';setTimeout(()=>btn.textContent='📋 Copy',2000);}
+  }).catch(() => { showToast(text); });
 }
 
 function shareCoordsViaSMS() {
-  if (!lastGpsPos) { showToast('No GPS fix yet — tap Find Me first.'); return; }
-  const lat  = lastGpsPos.lat.toFixed(6);
-  const lon  = lastGpsPos.lon.toFixed(6);
+  if (!lastGpsPos) { showToast('No GPS fix yet — tap Tracking first.'); return; }
+  const lat = lastGpsPos.lat.toFixed(6), lon = lastGpsPos.lon.toFixed(6);
   const mile = lastGpsPos.mile ? ` Trail Mile ${lastGpsPos.mile}.` : '';
-  const msg  = `Emergency coordinates: ${lat}, ${lon}.${mile} https://maps.google.com/?q=${lat},${lon}`;
+  const msg  = `My coordinates: ${lat}, ${lon}.${mile} https://maps.google.com/?q=${lat},${lon}`;
   window.open(`sms:?&body=${encodeURIComponent(msg)}`);
 }
 
-// ── Find Me (GPS) in fullscreen ──
+// ── Tracking GPS in fullscreen ──
 function fsFindMe() {
   const btn = document.getElementById('fsFindMeBtn');
   if (gpsActive) {
-    // Toggle off
     toggleGPS();
     btn.classList.remove('active');
-    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg> Find Me`;
-    document.getElementById('fs-gps-status-bar').textContent = 'GPS off';
+    document.getElementById('fs-gps-status-bar').textContent = 'GPS off — tap Tracking for live position';
   } else {
     toggleGPS();
     btn.classList.add('active');
-    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7ec8f8" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg> Tracking…`;
     document.getElementById('fs-gps-status-bar').textContent = 'Acquiring GPS…';
   }
 }
@@ -1883,66 +1958,82 @@ function drawFsElevation() {
   pts.forEach((p,i) => i===0 ? ctx.moveTo(xPos(p[0]),yPos(p[1])) : ctx.lineTo(xPos(p[0]),yPos(p[1])));
   ctx.strokeStyle = '#5a9e6a'; ctx.lineWidth = 1.8; ctx.stroke();
 
-  // ── Waypoint ticks + labels ──
+  // ── Waypoint icons rendered at TOP of chart ──
   const wpInView = (window.ACTIVE_WAYPOINTS||AT_WAYPOINTS).filter(w =>
     w[0] >= viewStart && w[0] <= viewEnd && w[3] && w[4]);
 
   wpInView.forEach(w => {
+    const hasWater = w[5]===1, hasShelter = w[6]===1, hasToilet = w[7]===1;
+    // Filter check
+    if (hasWater   && !fsFilters.water)   return;
+    if (hasShelter && !fsFilters.shelter) return;
+    if (!hasWater && !hasShelter && !fsFilters.shelter) return;
+
     const x = xPos(w[0]);
     const ptY = pts.find(p=>p[0]===Math.round(w[0]));
-    const hasWater = w[5]===1, hasShelter = w[6]===1;
+    const terrainY = ptY ? yPos(ptY[1]) : PAD.top + cH * 0.5;
 
-    // Vertical tick from terrain line down
-    if (ptY) {
-      const y = yPos(ptY[1]);
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x, PAD.top + cH);
-      ctx.strokeStyle = hasWater ? 'rgba(91,143,168,0.5)' : 'rgba(107,163,104,0.35)';
-      ctx.lineWidth = 1; ctx.setLineDash([2,3]); ctx.stroke(); ctx.setLineDash([]);
+    // Dashed vertical line from top to terrain
+    ctx.beginPath();
+    ctx.moveTo(x, PAD.top + 2);
+    ctx.lineTo(x, terrainY);
+    ctx.strokeStyle = hasWater ? 'rgba(91,143,168,0.45)' : 'rgba(107,163,104,0.3)';
+    ctx.lineWidth = 1; ctx.setLineDash([2,3]); ctx.stroke(); ctx.setLineDash([]);
 
-      // Icon dot on terrain line
-      ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2);
-      ctx.fillStyle = hasWater ? '#5b8fa8' : '#6ba368';
-      ctx.fill();
-    }
+    // Dot on terrain line
+    ctx.beginPath(); ctx.arc(x, terrainY, 4, 0, Math.PI*2);
+    ctx.fillStyle = hasWater ? '#5b8fa8' : '#6ba368'; ctx.fill();
 
-    // Label below bottom
-    const icons = (hasWater?'💧':'') + (hasShelter?'🏕':'') + (w[7]?'🚽':'');
-    const label = (icons ? icons+' ' : '') + (w[1]||'').split(' ').slice(0,3).join(' ');
+    // Icon + name at TOP (rotated -35°)
+    const icon = (hasWater?'💧':'') + (hasShelter?'🏕':'') + (hasToilet?'🚽':'');
+    const label = (icon + ' ' + (w[1]||'').split(/[ -]/).slice(0,2).join(' ')).trim().slice(0,20);
+    const fontSize = Math.max(9, Math.min(11, Math.floor(cW/55)));
     ctx.save();
-    ctx.translate(x, PAD.top + cH + 14);
-    ctx.rotate(-Math.PI/4);
-    ctx.fillStyle = hasWater ? '#7ec0d8' : 'rgba(174,198,174,0.7)';
-    ctx.font = `bold ${Math.min(10, Math.max(8, Math.floor(cW/50)))}px DM Sans, sans-serif`;
-    ctx.fillText(label.slice(0, 18), 0, 0);
+    ctx.translate(x, PAD.top + 6);
+    ctx.rotate(-0.6);
+    ctx.fillStyle = hasWater ? '#7ec8f8' : 'rgba(174,198,174,0.85)';
+    ctx.font = `bold ${fontSize}px DM Sans, sans-serif`;
+    ctx.fillText(label, 0, 0);
     ctx.restore();
   });
 
-  // ── Resupply ticks ──
-  const rsInView = (window.ACTIVE_RESUPPLY||AT_RESUPPLY).filter(r =>
-    r[0] >= viewStart && r[0] <= viewEnd);
-  rsInView.forEach(r => {
-    const x = xPos(r[0]);
-    ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top+8);
-    ctx.strokeStyle = 'rgba(200,168,75,0.8)'; ctx.lineWidth = 2; ctx.stroke();
-    // Label
-    ctx.save();
-    ctx.translate(x, PAD.top + 10);
-    ctx.rotate(-Math.PI/4);
-    ctx.fillStyle = '#c8a84b';
-    ctx.font = `bold 9px DM Sans, sans-serif`;
-    ctx.fillText(('🏪 '+(r[1]||'')).slice(0,16), 0, 0);
-    ctx.restore();
-  });
+  // ── Resupply icons at TOP ──
+  if (fsFilters.resupply) {
+    const rsInView = (window.ACTIVE_RESUPPLY||AT_RESUPPLY).filter(r =>
+      r[0] >= viewStart && r[0] <= viewEnd);
+    rsInView.forEach(r => {
+      const x = xPos(r[0]);
+      // Amber tick at very top
+      ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top+6);
+      ctx.strokeStyle='rgba(200,168,75,0.8)'; ctx.lineWidth=2; ctx.stroke();
+      // Label
+      const label = ('🍎 '+(r[1]||'')).slice(0,18);
+      ctx.save();
+      ctx.translate(x, PAD.top + 8);
+      ctx.rotate(-0.6);
+      ctx.fillStyle='#c8a84b';
+      ctx.font='bold 9px DM Sans,sans-serif';
+      ctx.fillText(label, 0, 0);
+      ctx.restore();
+    });
+  }
 
-  // ── Trek boundary lines ──
-  rows.filter(r => !r.isDetail).forEach(r => {
-    if (r.mile < viewStart || r.mile > viewEnd) return;
-    const x = xPos(r.mile);
-    ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top+cH);
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
-  });
+  // ── Road crossing marks ──
+  if (fsFilters.road) {
+    (window.ACTIVE_WAYPOINTS||AT_WAYPOINTS).filter(w =>
+      w[0]>=viewStart && w[0]<=viewEnd && (w[10]||'').toLowerCase().includes('road')
+    ).forEach(w => {
+      const x = xPos(w[0]);
+      ctx.beginPath(); ctx.moveTo(x,PAD.top+cH-8); ctx.lineTo(x,PAD.top+cH);
+      ctx.strokeStyle='rgba(181,69,27,0.7)'; ctx.lineWidth=2; ctx.stroke();
+      ctx.save();
+      ctx.translate(x, PAD.top+cH-10);
+      ctx.rotate(-0.6);
+      ctx.fillStyle='#e8956a'; ctx.font='bold 9px DM Sans,sans-serif';
+      ctx.fillText('🚗 '+(w[1]||'').slice(0,12), 0, 0);
+      ctx.restore();
+    });
+  }
 
   // ── GPS position line ──
   if (lastGpsPos && lastGpsPos.mile >= viewStart && lastGpsPos.mile <= viewEnd) {
@@ -2092,52 +2183,81 @@ function initFsMap() {
   if (!fsLeafletMap) {
     fsLeafletMap = L.map(mapEl, {zoomControl:true});
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-      attribution:'© OpenStreetMap', maxZoom:18
+      attribution:'© OpenStreetMap', maxZoom:19
     }).addTo(fsLeafletMap);
   } else {
-    // Clear old layers except tiles
     fsLeafletMap.eachLayer(l=>{ if(!l._url) fsLeafletMap.removeLayer(l); });
   }
 
-  // Mirror the main Leaflet map's current view
   const mainMeta = document.getElementById('elevCanvas')._elevMeta;
-  if (!mainMeta) { fsLeafletMap.setView([39.5,-76.5],6); return; }
+  if (!mainMeta) { fsLeafletMap.setView([39.5,-76.5],7); return; }
   const {startMile, endMile} = mainMeta;
 
-  const wpSeg = (window.ACTIVE_WAYPOINTS||AT_WAYPOINTS).filter(w=>w[0]>=startMile&&w[0]<=endMile&&w[3]&&w[4]);
-  if (!wpSeg.length) { fsLeafletMap.setView([39.5,-76.5],6); return; }
-
-  const latlngs = wpSeg.map(w=>[w[3],w[4]]);
-  L.polyline(latlngs,{color:'#2d5a27',weight:3,opacity:.8}).addTo(fsLeafletMap);
-
-  // Start / end markers
-  L.circleMarker(latlngs[0],{radius:7,color:'#2d5a27',fillColor:'#6ba368',fillOpacity:1,weight:2})
-    .bindTooltip('Start mi '+startMile).addTo(fsLeafletMap);
-  L.circleMarker(latlngs[latlngs.length-1],{radius:7,color:'#b5451b',fillColor:'#b5451b',fillOpacity:1,weight:2})
-    .bindTooltip('End mi '+endMile).addTo(fsLeafletMap);
-
-  // Shelter markers
-  wpSeg.forEach(w=>{
-    const icons=(w[5]?'💦':'')+(w[6]?'🏕':'')+(w[7]?'🚽':'');
-    const col=w[5]?'#5b8fa8':'#4a7c59';
-    L.circleMarker([w[3],w[4]],{radius:5,color:col,fillColor:col,fillOpacity:.8,weight:1})
-      .bindTooltip(`${icons} ${w[1]}<br>Mile ${w[0]}`).addTo(fsLeafletMap);
-  });
-
-  // Resupply markers
-  (window.ACTIVE_RESUPPLY||AT_RESUPPLY).filter(r=>r[0]>=startMile&&r[0]<=endMile&&r[2]&&r[3]).forEach(r=>{
-    L.circleMarker([r[2],r[3]],{radius:5,color:'#c8a84b',fillColor:'#fff8e7',fillOpacity:.9,weight:2})
-      .bindTooltip('🏪 '+r[1]).addTo(fsLeafletMap);
-  });
-
-  // GPS dot if active
-  if (lastGpsPos) {
-    L.circleMarker([lastGpsPos.lat,lastGpsPos.lon],{radius:8,color:'#4a90d9',fillColor:'#4a90d9',fillOpacity:.85,weight:2})
-      .bindTooltip('📍 You · Mile '+lastGpsPos.mile).addTo(fsLeafletMap);
+  // ── If GPS active: show ±3mi window at zoom 15 (Far Out-killer view) ──
+  const WINDOW_MI = 3;
+  let localStart = startMile, localEnd = endMile;
+  if (lastGpsPos && lastGpsPos.mile !== undefined && !fsShowFullRoute) {
+    localStart = Math.max(startMile, lastGpsPos.mile - WINDOW_MI);
+    localEnd   = Math.min(endMile,   lastGpsPos.mile + WINDOW_MI);
   }
 
-  fsLeafletMap.fitBounds(latlngs,{padding:[20,20]});
-  setTimeout(()=>fsLeafletMap.invalidateSize(),150);
+  const coords = (window.ACTIVE_COORDS || AT_TRAIL_COORDS);
+  const wpSeg  = (window.ACTIVE_WAYPOINTS||AT_WAYPOINTS).filter(w =>
+    w[0]>=localStart && w[0]<=localEnd && w[3] && w[4]);
+
+  // Trail polyline from coords (finer resolution than waypoints)
+  const coordsInRange = coords.filter(c => c[0]>=localStart && c[0]<=localEnd);
+  const latlngs = coordsInRange.length
+    ? coordsInRange.map(c=>[c[1],c[2]])
+    : wpSeg.map(w=>[w[3],w[4]]);
+
+  if (!latlngs.length) { fsLeafletMap.setView([39.5,-76.5],7); return; }
+
+  L.polyline(latlngs, {color:'#5a9e6a', weight:4, opacity:.85}).addTo(fsLeafletMap);
+
+  // ── Your position: large pulsing blue dot ──
+  if (lastGpsPos && lastGpsPos.lat && lastGpsPos.lon) {
+    L.circleMarker([lastGpsPos.lat, lastGpsPos.lon], {
+      radius:14, color:'#4a90d9', fillColor:'#4a90d9', fillOpacity:.25, weight:2
+    }).addTo(fsLeafletMap);
+    L.circleMarker([lastGpsPos.lat, lastGpsPos.lon], {
+      radius:7, color:'#4a90d9', fillColor:'#4a90d9', fillOpacity:.9, weight:2
+    }).bindTooltip(`📍 You · Mile ${lastGpsPos.mile||'?'}`, {permanent:true, direction:'top', offset:[0,-10]})
+      .addTo(fsLeafletMap);
+    document.getElementById('fs-map-gps-status').textContent =
+      `${lastGpsPos.lat?.toFixed(5)}, ${lastGpsPos.lon?.toFixed(5)}  ·  Mile ${lastGpsPos.mile||'?'}`;
+  }
+
+  // ── Waypoint markers with category icons ──
+  wpSeg.forEach(w => {
+    const hasWater = w[5]===1, hasShelter = w[6]===1;
+    if (hasWater && !fsFilters.water) return;
+    if (hasShelter && !fsFilters.shelter) return;
+    const icon = (hasWater?'💧':'') + (hasShelter?'🏕':'') + (w[7]?'🚽':'');
+    const col  = hasWater ? '#5b8fa8' : '#4a7c59';
+    const r    = hasWater ? 7 : 5;
+    L.circleMarker([w[3],w[4]], {radius:r, color:col, fillColor:col, fillOpacity:.85, weight:1.5})
+      .bindTooltip(`${icon} ${w[1]}<br><small>Mile ${w[0]}</small>`, {direction:'top'})
+      .addTo(fsLeafletMap);
+  });
+
+  // ── Resupply markers ──
+  if (fsFilters.resupply) {
+    (window.ACTIVE_RESUPPLY||AT_RESUPPLY).filter(r=>
+      r[0]>=localStart&&r[0]<=localEnd&&r[2]&&r[3]
+    ).forEach(r=>{
+      L.circleMarker([r[2],r[3]], {radius:6,color:'#c8a84b',fillColor:'#ffe9a0',fillOpacity:.9,weight:2})
+        .bindTooltip('🍎 '+r[1], {direction:'top'}).addTo(fsLeafletMap);
+    });
+  }
+
+  // ── Fit to local or full view ──
+  if (lastGpsPos && !fsShowFullRoute) {
+    fsLeafletMap.setView([lastGpsPos.lat, lastGpsPos.lon], 15);
+  } else {
+    fsLeafletMap.fitBounds(latlngs, {padding:[24,24]});
+  }
+  setTimeout(()=>fsLeafletMap.invalidateSize(), 150);
 }
 
 // Keep fs GPS status bar in sync with main — handled inside setGpsStatus/setMapGpsStatus above
@@ -3828,9 +3948,13 @@ function renderBoard() {
   }
   list.innerHTML = posts.map(p => {
     const initials = (p.trail_name || 'AT').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    // Distinct color per hiker based on trail name hash
+    const avatarColors = ['#1e3a1e','#2d5a27','#4a7c59','#1e4d72','#6b3c1a','#3b6d11','#5b3a29','#854f0b','#1a2e42','#8a5028'];
+    const colorIdx = (p.trail_name||'').split('').reduce((a,c)=>a+c.charCodeAt(0),0) % avatarColors.length;
+    const avatarBg = avatarColors[colorIdx];
     const avatarHtml = p.photo_url
       ? `<img class="pc-avatar" src="${esc(p.photo_url)}" alt="${esc(p.trail_name)}">`
-      : `<div class="pc-avatar">${initials}</div>`;
+      : `<div class="pc-avatar" style="background:${avatarBg}">${initials}</div>`;
     const age = timeAgo(p.created_at);
     const dirBadge = p.direction === 'NOBO'
       ? '<span class="pc-badge pc-nobo">↑ NOBO</span>'
@@ -3840,6 +3964,38 @@ function renderBoard() {
       : '<span class="pc-badge pc-trad">' + (p.gear_style||'') + '</span>';
     const dates = p.start_date ? p.start_date + (p.end_date ? ' → ' + p.end_date : '') : '';
     const contactIcon = {WhatsApp:'📱',Email:'✉️',Instagram:'📸',Phone:'📞'}[p.contact_type]||'📬';
+    // Parse pack data if shared
+    let packHtml = '';
+    if (p.pack_data && p.pack_data.startsWith('__pack__')) {
+      try {
+        const snap = JSON.parse(p.pack_data.slice(8));
+        const cardId = `pack-${Math.random().toString(36).slice(2,7)}`;
+        let sections = '';
+        const fmtItem = (i) => {
+          const lbs = ((i.g * (i.q||1)) / 453.592).toFixed(2);
+          return `<div class="pc-pack-item">· ${i.n}${(i.q||1)>1?' ×'+i.q:''} <span style="color:var(--sage)">${lbs} lb</span></div>`;
+        };
+        if (snap.base?.length) {
+          sections += `<div class="pc-pack-section">🎒 Base Pack</div>`;
+          sections += snap.base.map(fmtItem).join('');
+        }
+        if (snap.food?.length) {
+          sections += `<div class="pc-pack-section">🍎 Food Bag</div>`;
+          sections += snap.food.map(fmtItem).join('');
+          if (snap.food_bag) sections += fmtItem(snap.food_bag);
+        }
+        if (snap.consumables?.length) {
+          sections += `<div class="pc-pack-section">💧 Consumables</div>`;
+          sections += snap.consumables.map(fmtItem).join('');
+        }
+        if (snap.note) sections += `<div style="margin-top:6px;font-style:italic;color:var(--subtle)">"${esc(snap.note)}"</div>`;
+        packHtml = `
+          <button class="pc-pack-btn" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'🎒 Hide Pack':'🎒 View Pack'">
+            🎒 View Pack${p.pack_total ? ' · '+esc(p.pack_total)+' total' : ''}
+          </button>
+          <div class="pc-pack-reveal" id="${cardId}">${sections}</div>`;
+      } catch(e) { /* malformed pack_data — skip */ }
+    }
     return `<div class="partner-card">
       <div class="pc-top">
         ${avatarHtml}
@@ -3860,7 +4016,8 @@ function renderBoard() {
         <span class="pc-badge pc-trad">${esc(p.pace||'')}</span>
         <span class="pc-badge pc-trad">${esc(p.experience||'')}</span>
       </div>
-      ${p.about ? '<div class="pc-about">"' + esc(p.about) + '"</div>' : ''}
+      ${p.about && !p.about.startsWith('__pack__') ? '<div class="pc-about">"' + esc(p.about) + '"</div>' : ''}
+      ${packHtml}
       <button class="pc-contact" data-ctype="${esc(p.contact_type)}" data-cinfo="${esc(p.contact)}" data-cname="${esc(p.trail_name)}" onclick="contactHikerEl(this)">
         ${contactIcon} Contact ${esc(p.trail_name)} via ${esc(p.contact_type)}
       </button>
@@ -4127,6 +4284,93 @@ function packSeason(s){
   savePack();renderPackItems();updatePackTotals();
 }
 function savePack(){try{localStorage.setItem('at_pack',JSON.stringify(packData));}catch{}}
+
+// ── Pack Share ──
+function openPackShare() {
+  const t = calcPackTotals();
+  document.getElementById('psh-base-wt').textContent = packFmt(t.base);
+  document.getElementById('psh-food-wt').textContent = packFmt(t.food + t.foodbag);
+  document.getElementById('psh-cons-wt').textContent = packFmt(t.cons);
+  document.getElementById('packShareOverlay').classList.add('open');
+}
+function closePackShare() {
+  document.getElementById('packShareOverlay').classList.remove('open');
+}
+
+async function sendPackShare() {
+  const trailName = document.getElementById('pf-name')?.value.trim() ||
+                    localStorage.getItem('at_last_trail_name') || '';
+  if (!trailName) {
+    showToast('Open the Partner Board → Post a Request and enter your trail name first.');
+    return;
+  }
+  const shareBase = document.getElementById('psh-base').checked;
+  const shareFood = document.getElementById('psh-food').checked;
+  const shareCons = document.getElementById('psh-cons').checked;
+  const note      = document.getElementById('psh-note').value.trim();
+
+  // Build the pack snapshot
+  const snapshot = {};
+  if (shareBase) {
+    snapshot.base = packData.base.filter(i=>i.on).map(i=>({n:i.name,g:i.grams,q:i.qty||1}));
+    if (packData.trekking_poles?.on) snapshot.base.push({n:'Trekking Poles',g:packData.trekking_poles.grams,q:1});
+  }
+  if (shareFood) {
+    snapshot.food = packData.food.filter(i=>i.on).map(i=>({n:i.name,g:i.grams,q:i.qty||1}));
+    if (packData.food_bag?.on) snapshot.food_bag = {n:packData.food_bag.name,g:packData.food_bag.grams};
+  }
+  if (shareCons) {
+    snapshot.consumables = packData.consumables.filter(i=>i.on).map(i=>({n:i.name,g:i.grams,q:i.qty||1}));
+  }
+  if (note) snapshot.note = note;
+
+  // Embed in the about field with a __pack__ sentinel so the board can detect it
+  const t = calcPackTotals();
+  const totalStr = packFmt(t.total);
+  const aboutPayload = `__pack__${JSON.stringify(snapshot)}`;
+
+  const sb = getSupaClient();
+  if (!sb) { showToast('No internet — pack share requires a connection.'); return; }
+
+  // Find the user's existing post and update it, or create a stub post
+  const btn = document.querySelector('.pack-share-send');
+  btn.textContent = '📡 Sharing…'; btn.disabled = true;
+
+  try {
+    // Upsert: update existing post's pack_data or append to about
+    const { data: existing } = await sb.from('slack_pack_posts')
+      .select('id,about').eq('trail_name', trailName).limit(1);
+
+    if (existing && existing.length) {
+      await sb.from('slack_pack_posts')
+        .update({ pack_data: aboutPayload, pack_total: totalStr })
+        .eq('id', existing[0].id);
+    } else {
+      // No existing post — create a minimal one so the pack is visible
+      const fromTrek = getFromTrekObj();
+      const toTrek   = getToTrekObj();
+      await sb.from('slack_pack_posts').insert([{
+        trail_name: trailName,
+        from_trek: fromTrek?.name || '—',
+        to_trek:   toTrek?.name   || '—',
+        direction: direction || 'NOBO',
+        pack_data: aboutPayload,
+        pack_total: totalStr,
+        about: note || null,
+        contact: '—', contact_type: 'Email',
+        state_region: fromTrek?.state || ''
+      }]);
+    }
+    closePackShare();
+    closeModal('modal-pack');
+    showToast(`🎒 Pack shared to the board as ${trailName}!`);
+    localStorage.setItem('at_last_trail_name', trailName);
+  } catch(e) {
+    showToast('Error sharing pack: ' + e.message);
+  } finally {
+    btn.textContent = '🎒 Post Pack to Board'; btn.disabled = false;
+  }
+}
 // Init pack weight on load
 document.addEventListener('DOMContentLoaded',()=>{
   setTimeout(updatePackTotals,200);
@@ -4152,6 +4396,10 @@ document.addEventListener('DOMContentLoaded',()=>{
     </div>
     <!-- Trek Log tab -->
     <div id="tt-log">
+      <div style="padding:6px 16px 0;font-size:.68rem;color:var(--subtle);display:flex;align-items:center;gap:5px">
+        <span>📍</span>
+        <span>Hikes are automatically logged when GPS tracking covers 90% of a trek · Tap any row to mark manually</span>
+      </div>
       <div class="modal-body" id="tracker-body"></div>
       <div class="modal-footer">
         <div class="tr-stats">
@@ -4442,11 +4690,14 @@ document.addEventListener('DOMContentLoaded',()=>{
      PACK WEIGHT MODAL
 ══════════════════════════════════════════ -->
 <div class="modal-overlay" id="modal-pack">
-  <div class="modal-box" style="width:min(95vw,480px);max-height:92vh">
+  <div class="modal-box" style="width:min(95vw,480px);max-height:92vh;position:relative">
     <div class="modal-hdr">
       <span style="font-size:1.2rem">🎒</span>
       <h2>Pack Weight Planner</h2>
       <span class="modal-hdr-sub" id="pack-hdr-weight">— lbs</span>
+      <button class="modal-close" onclick="openPackShare()" title="Share pack to board" style="background:rgba(255,255,255,.15);margin-right:4px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      </button>
       <button class="modal-close" onclick="closeModal('modal-pack')">✕</button>
     </div>
     <div class="pack-season-bar">
@@ -4476,6 +4727,37 @@ document.addEventListener('DOMContentLoaded',()=>{
       <div class="pack-tot-cell"><div class="pack-tot-lbl">Consumables</div><div class="pack-tot-val" id="pt-cons">—</div></div>
       <div class="pack-tot-cell"><div class="pack-tot-lbl">Total</div><div class="pack-tot-val big" id="pt-total">—</div></div>
     </div>
+
+    <!-- ── Pack Share Sheet ── -->
+    <div class="pack-share-overlay" id="packShareOverlay">
+      <div class="pack-share-sheet">
+        <div class="pack-share-title">🎒 Share to Slack Pack Board</div>
+        <div class="pack-share-sub">Choose what to share — visible only to hikers on the Partner Board who tap your card.</div>
+        <div class="pack-share-checks">
+          <label class="pack-share-check">
+            <input type="checkbox" id="psh-base" checked>
+            Base Pack
+            <span class="wt" id="psh-base-wt"></span>
+          </label>
+          <label class="pack-share-check">
+            <input type="checkbox" id="psh-food" checked>
+            Food Bag
+            <span class="wt" id="psh-food-wt"></span>
+          </label>
+          <label class="pack-share-check">
+            <input type="checkbox" id="psh-cons">
+            Consumables
+            <span class="wt" id="psh-cons-wt"></span>
+          </label>
+        </div>
+        <textarea class="pack-share-note" id="psh-note" rows="2" placeholder="Add a note — e.g. 'Hammock setup, spring config, no stove'"></textarea>
+        <div class="pack-share-actions">
+          <button class="pack-share-cancel" onclick="closePackShare()">Cancel</button>
+          <button class="pack-share-send" onclick="sendPackShare()">🎒 Post Pack to Board</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -4484,9 +4766,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   <!-- Header -->
   <div class="card-fs-header">
-    <span class="card-fs-title" id="cardFsTitle">📈 Trail View</span>
+    <span class="card-fs-title" id="cardFsTitle">📈 Trail · On-Trail View</span>
     <button class="card-fs-close" onclick="closeCardFullscreen()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 9 15 15"/><polyline points="15 9 9 15"/></svg>
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       Close
     </button>
   </div>
@@ -4497,67 +4779,76 @@ document.addEventListener('DOMContentLoaded',()=>{
     <button class="card-fs-tab" id="fsTabMap"  onclick="switchFsTab('map')">🗺 Map</button>
   </div>
 
-  <!-- Body -->
+  <!-- Body: chart or map fills this -->
   <div class="card-fs-body">
 
     <!-- ── ELEVATION PANEL ── -->
     <div id="fs-tab-elev" class="card-fs-elev-wrap">
-      <!-- GPS status + range label -->
+      <!-- GPS status + range -->
       <div class="fs-gps-bar">
-        <div class="fs-gps-status" id="fs-gps-status-bar">GPS off — tap Find Me for live trail position</div>
+        <div class="fs-gps-status" id="fs-gps-status-bar">GPS off — tap Tracking for live position</div>
         <span class="fs-range-label" id="fsRangeLabel"></span>
       </div>
-
       <!-- Canvas -->
       <div style="position:relative;flex:1;min-height:0">
         <canvas id="fsElevCanvas" style="width:100%;height:100%;cursor:crosshair;display:block;touch-action:none"></canvas>
-        <div class="elev-hover-label" id="fsElevHoverLabel" style="background:rgba(30,58,30,0.95)"></div>
-        <div class="elev-bottom-label" id="fsElevBottomLabel" style="color:#aec6ae;bottom:6px"></div>
-        <div style="position:absolute;top:6px;right:6px;display:flex;gap:6px">
-          <span class="elev-ymax" id="fsElevYmax" style="font-size:.6rem;color:rgba(174,198,174,.7);font-family:monospace"></span>
-        </div>
-        <div style="position:absolute;bottom:22px;right:6px">
-          <span class="elev-ymin" id="fsElevYmin" style="font-size:.6rem;color:rgba(174,198,174,.5);font-family:monospace"></span>
-        </div>
+        <div class="elev-hover-label" id="fsElevHoverLabel" style="background:rgba(20,40,20,0.96);top:8px"></div>
+        <div class="elev-bottom-label" id="fsElevBottomLabel" style="color:rgba(174,198,174,.7);bottom:4px;font-size:.62rem"></div>
+        <span id="fsElevYmax" style="position:absolute;top:4px;right:6px;font-size:.6rem;color:rgba(174,198,174,.6);font-family:monospace"></span>
+        <span id="fsElevYmin" style="position:absolute;bottom:18px;right:6px;font-size:.6rem;color:rgba(174,198,174,.4);font-family:monospace"></span>
       </div>
     </div>
 
     <!-- ── MAP PANEL ── -->
     <div id="fs-tab-map" class="card-fs-map-wrap" style="display:none">
       <div class="card-fs-map-controls">
-        <div id="fs-map-gps-status" style="font-size:.65rem;color:rgba(174,198,174,.75);flex:1"></div>
-        <button onclick="mapCenterOnMe()" style="padding:3px 10px;border-radius:10px;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);font-size:.7rem;font-weight:700;cursor:pointer;color:rgba(255,255,255,.8)">📍 Center on Me</button>
-        <button onclick="mapFitTrail()" style="padding:3px 10px;border-radius:10px;border:1.5px solid rgba(255,255,255,.12);background:transparent;font-size:.7rem;font-weight:700;cursor:pointer;color:rgba(255,255,255,.5)">🗺 Fit Trail</button>
+        <div id="fs-map-gps-status" style="font-size:.63rem;color:rgba(174,198,174,.75);flex:1"></div>
+        <button onclick="fsFindTrailOnMap()" style="padding:4px 10px;border-radius:10px;border:1.5px solid rgba(107,163,104,.4);background:rgba(107,163,104,.15);font-size:.68rem;font-weight:700;cursor:pointer;color:#aec6ae">🧭 Find Trail</button>
+        <button onclick="mapCenterOnMe()" style="padding:4px 10px;border-radius:10px;border:1.5px solid rgba(74,144,217,.35);background:rgba(74,144,217,.12);font-size:.68rem;font-weight:700;cursor:pointer;color:#7ec8f8">📍 Me</button>
+        <button onclick="mapFitTrail()" style="padding:4px 10px;border-radius:10px;border:1.5px solid rgba(255,255,255,.12);background:transparent;font-size:.68rem;font-weight:700;cursor:pointer;color:rgba(255,255,255,.45)">🗺 Full</button>
       </div>
       <div id="fs-leaflet-map" style="flex:1"></div>
     </div>
 
   </div>
 
-  <!-- ── COORDINATES PANEL (slides in) ── -->
-  <div class="fs-coords-panel" id="fsCoordsPanel">
-    <div>
-      <div style="font-size:.58rem;color:rgba(200,168,75,.7);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px">📡 Your Coordinates</div>
-      <div class="fs-coords-text" id="fsCoordsText">Acquiring GPS…</div>
-    </div>
-    <button class="fs-coords-copy" onclick="copyCoords()" id="fsCoordsCopyBtn">📋 Copy</button>
-    <button class="fs-coords-copy" onclick="shareCoordsViaSMS()" style="border-color:rgba(74,144,217,.4);color:#7ec8f8">📱 Share</button>
-  </div>
+  <!-- ══ BOTTOM DOCK ══ -->
+  <div class="fs-bottom-dock">
 
-  <!-- ── ACTION BAR ── -->
-  <div class="fs-action-bar">
-    <button class="fs-action-btn fs-btn-gps" id="fsFindMeBtn" onclick="fsFindMe()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
-      Find Me
-    </button>
-    <button class="fs-action-btn fs-btn-coords" id="fsCoordsBtn" onclick="toggleFsCoords()">
-      📡 Coordinates
-    </button>
-    <button class="fs-action-btn fs-btn-route" id="fsRouteBtn" onclick="toggleFsRouteView()">
-      🗺 Full Route
-    </button>
-    <div style="flex:1"></div>
-    <span style="font-size:.6rem;color:rgba(255,255,255,.2);font-family:monospace" id="fsMileIndicator"></span>
+    <!-- Row 1: Live coordinates always shown -->
+    <div class="fs-coords-row">
+      <div class="fs-coords-live" id="fsCoordsLive">
+        <small>📡 Your Coordinates</small>
+        <span id="fsCoordsText">No GPS fix — tap Tracking</span>
+      </div>
+      <button class="fs-copy-btn" onclick="copyCoords()" id="fsCoordsCopyBtn">📋 Copy</button>
+      <button class="fs-share-btn" onclick="shareCoordsViaSMS()">📱 Share</button>
+    </div>
+
+    <!-- Row 2: Waypoint category filter icons -->
+    <div class="fs-filter-row" id="fsFilterRow">
+      <span style="font-size:.58rem;color:rgba(255,255,255,.25);white-space:nowrap;margin-right:2px">SHOW</span>
+      <button class="fs-filter-btn on" data-type="water"   onclick="toggleFsFilter(this)" title="Water sources">💧</button>
+      <button class="fs-filter-btn on" data-type="shelter" onclick="toggleFsFilter(this)" title="Shelters &amp; camps">🏕</button>
+      <button class="fs-filter-btn on" data-type="resupply" onclick="toggleFsFilter(this)" title="Resupply / food">🍎</button>
+      <button class="fs-filter-btn on" data-type="road"    onclick="toggleFsFilter(this)" title="Road crossings">🚗</button>
+      <button class="fs-filter-btn on" data-type="all"     onclick="toggleAllFilters(this)" title="Toggle all">☰</button>
+      <div style="flex:1"></div>
+      <span style="font-size:.58rem;color:rgba(255,255,255,.2);font-family:monospace" id="fsMileIndicator"></span>
+    </div>
+
+    <!-- Row 3: Action pills -->
+    <div class="fs-btn-row">
+      <button class="fs-pill-btn fs-pill-tracking" id="fsFindMeBtn" onclick="fsFindMe()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+        Tracking
+      </button>
+      <button class="fs-pill-btn fs-pill-route" id="fsRouteBtn" onclick="toggleFsRouteView()">
+        🗺 Full Route
+      </button>
+      <div style="flex:1"></div>
+    </div>
+
   </div>
 
 </div>
