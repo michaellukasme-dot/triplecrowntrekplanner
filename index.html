@@ -27,12 +27,69 @@
   --border:   #d4ddd4;
   --card-shadow: 0 2px 12px rgba(30,58,30,0.10);
   --sidebar-w: 300px;
+
+  /* Trail theme tokens — AT defaults (green) */
+  --trail-primary:   #1e3a1e;
+  --trail-medium:    #2d5a27;
+  --trail-accent:    #6ba368;
+  --trail-mist:      #e8f0e8;
+  --trail-stone:     #f4f6f4;
+  --trail-border:    #d4ddd4;
+  --trail-subtle:    #6b7b6b;
+  --trail-shadow:    rgba(30,58,30,0.10);
+  --trail-focus:     rgba(45,90,39,0.15);
 }
+
+/* PCT theme — Sierra blue-slate */
+body.trail-pct {
+  --trail-primary:   #1a2e42;
+  --trail-medium:    #1e4a6e;
+  --trail-accent:    #4a8db5;
+  --trail-mist:      #e4eef5;
+  --trail-stone:     #f0f4f8;
+  --trail-border:    #c4d4e0;
+  --trail-subtle:    #5a7080;
+  --trail-shadow:    rgba(26,46,66,0.10);
+  --trail-focus:     rgba(30,74,110,0.15);
+  /* Override core tokens for full-app recolor */
+  --forest:   #1a2e42;
+  --pine:     #1e4a6e;
+  --sage:     #2e6a90;
+  --leaf:     #4a8db5;
+  --mist:     #e4eef5;
+  --stone:    #f0f4f8;
+  --border:   #c4d4e0;
+  --subtle:   #5a7080;
+  --card-shadow: rgba(26,46,66,0.10);
+}
+
+/* CDT theme — High desert / Continental */
+body.trail-cdt {
+  --trail-primary:   #3a2010;
+  --trail-medium:    #6b3a1a;
+  --trail-accent:    #b5753a;
+  --trail-mist:      #f5ede4;
+  --trail-stone:     #f8f4f0;
+  --trail-border:    #e0cfc0;
+  --trail-subtle:    #7a6050;
+  --trail-shadow:    rgba(58,32,16,0.10);
+  --trail-focus:     rgba(107,58,26,0.15);
+  --forest:   #3a2010;
+  --pine:     #6b3a1a;
+  --sage:     #8a5028;
+  --leaf:     #b5753a;
+  --mist:     #f5ede4;
+  --stone:    #f8f4f0;
+  --border:   #e0cfc0;
+  --subtle:   #7a6050;
+  --card-shadow: rgba(58,32,16,0.10);
+}
+
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:var(--stone);color:var(--text);min-height:100vh;overflow-x:hidden}
 
 /* ── HEADER ── */
-.header{background:var(--forest);padding:10px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.header{background:var(--forest);padding:10px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3);transition:background .4s ease}
 .header-logo{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--white);letter-spacing:-0.02em}
 .header-logo span{font-style:italic;color:var(--leaf)}
 .header-sub{font-size:.72rem;color:#aec6ae;letter-spacing:.12em;text-transform:uppercase;margin-top:1px}
@@ -50,7 +107,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--stone);color:var(--text);
 .trail-option{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;transition:background .12s;border-bottom:1px solid rgba(255,255,255,.07)}
 .trail-option:last-child{border-bottom:none}
 .trail-option:hover{background:rgba(255,255,255,.1)}
-.trail-option.active{background:rgba(107,163,104,.25)}
+.trail-option.active{background:rgba(107,163,104,.25);transition:background .3s}
+.trail-option.trail-pct-active{background:rgba(74,141,181,.25)}
+.trail-option.trail-cdt-active{background:rgba(181,117,58,.25)}
 .trail-option.coming-soon{opacity:.45;cursor:not-allowed}
 .trail-option-icon{font-size:1.1rem;flex-shrink:0}
 .trail-option-info{flex:1}
@@ -63,7 +122,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--stone);color:var(--text);
 
 /* ── SIDEBAR ── */
 .sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--white);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column;box-shadow:2px 0 8px rgba(30,58,30,.06)}
-.sb-head{padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--forest)}
+.sb-head{padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--forest);transition:background .4s ease}
 .sb-title{font-family:'Playfair Display',serif;font-size:1rem;color:var(--white);font-weight:700;letter-spacing:-.01em}
 .sb-icon{font-size:1rem}
 
@@ -87,7 +146,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--stone);color:var(--text);
 .ft-col label{font-size:.62rem;font-weight:600;color:var(--subtle);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:3px}
 select,input[type="number"],input[type="date"],input[type="time"]{width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:5px;font-size:.8rem;font-family:inherit;background:var(--white);color:var(--text);appearance:none;-webkit-appearance:none}
 select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7b6b'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;padding-right:20px}
-select:focus,input:focus{outline:none;border-color:var(--pine);box-shadow:0 0 0 2px rgba(45,90,39,.15)}
+select:focus,input:focus{outline:none;border-color:var(--pine);box-shadow:0 0 0 2px var(--trail-focus)}
 
 /* Out and Back */
 .oab-row{display:flex;align-items:center;gap:7px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
@@ -204,6 +263,22 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
   .main{padding:10px}
   .hl-card{grid-template-columns:60px 1fr}
   .hl-img{width:60px;height:60px}
+
+  /* Header mobile: two rows */
+  .header{
+    padding:8px 14px;
+    flex-wrap:wrap;
+    gap:6px;
+    align-items:center;
+  }
+  .header > div:first-child { flex:1; min-width:0; }
+  .header-logo { font-size:1.15rem; white-space:nowrap; }
+  .header-sub { font-size:.6rem; }
+  .trail-selector-wrap { flex-shrink:0; }
+  /* Hide verbose text on mobile, keep coffee link */
+  .header-meta > span:last-child { display:none; }
+  .header-meta { gap:8px; margin-left:0; }
+  .support-link { font-size:.72rem; padding:3px 8px; }
 }
 
 /* ══════════════════════════════════════════
@@ -328,7 +403,7 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 }
 .fab:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.32)}
 .fab:active{transform:none}
-.fab-tracker{background:linear-gradient(135deg,var(--forest),#0d1f0d);color:#aec6ae}
+.fab-tracker{background:linear-gradient(135deg,var(--forest),var(--pine));color:#aec6ae;transition:background .4s}
 .fab-sp{background:linear-gradient(135deg,var(--sky),#3a6a82);color:white}
 
 
@@ -1114,10 +1189,18 @@ function selectTrail(trail, e) {
   // Switch the active data pointers
   switchTrailData(trail);
   recalc();
-  showToast(`🏔 Switched to ${trail === 'PCT' ? 'Pacific Crest Trail' : trail === 'AT' ? 'Appalachian Trail' : 'Continental Divide Trail'}`);
+
+  const trailFullNames = {AT:'Appalachian Trail 🌿', PCT:'Pacific Crest Trail 🏔', CDT:'Continental Divide Trail ⛰'};
+  showToast(`Switched to ${trailFullNames[trail] || trail}`);
 }
 
 function switchTrailData(trail) {
+  // Apply trail theme to body
+  document.body.classList.remove('trail-at','trail-pct','trail-cdt');
+  if (trail === 'PCT') document.body.classList.add('trail-pct');
+  else if (trail === 'CDT') document.body.classList.add('trail-cdt');
+  // AT: no class = default green theme
+
   if (trail === 'AT') {
     window.ACTIVE_TRAIL      = AT;
     window.ACTIVE_WAYPOINTS  = (window.ACTIVE_WAYPOINTS||AT_WAYPOINTS);
