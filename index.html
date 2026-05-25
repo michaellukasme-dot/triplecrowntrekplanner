@@ -612,13 +612,24 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .donation-overlay{display:none;position:fixed;inset:0;z-index:600;
   background:rgba(10,24,12,0.88);align-items:center;justify-content:center}
 .donation-overlay.open{display:flex}
-.donation-box{background:var(--forest);border-radius:16px;padding:28px 26px;
+.donation-box{background:var(--forest);border-radius:16px;padding:26px 24px;
   width:min(92vw,420px);color:white;text-align:center;
   box-shadow:0 24px 80px rgba(0,0,0,.6)}
-.don-icon{font-size:2.8rem;margin-bottom:10px}
-.don-title{font-family:'Playfair Display',serif;font-size:1.15rem;font-style:italic;
-  color:white;margin-bottom:10px;line-height:1.3}
-.don-body{font-size:.78rem;color:#b8d4b8;line-height:1.7;margin-bottom:18px;text-align:left}
+.don-icon{font-size:2.6rem;margin-bottom:8px}
+.don-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-style:italic;
+  color:white;margin-bottom:8px;line-height:1.3}
+.don-body{font-size:.77rem;color:#b8d4b8;line-height:1.7;margin-bottom:14px;text-align:left}
+.don-no-ads{font-size:.7rem;font-weight:700;color:var(--gold);letter-spacing:.04em;
+  text-align:center;margin-bottom:14px;padding:6px 10px;background:rgba(200,168,75,.12);
+  border-radius:6px;border:1px solid rgba(200,168,75,.25)}
+/* Conservancy choice pills */
+.don-conservancy-row{display:flex;gap:6px;margin-bottom:14px}
+.don-cons-pill{flex:1;padding:7px 4px;border-radius:8px;border:1.5px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.06);color:rgba(255,255,255,.65);font-size:.72rem;
+  font-weight:700;cursor:pointer;text-align:center;transition:all .15s;font-family:inherit;
+  line-height:1.3}
+.don-cons-pill.selected{border-color:var(--gold);background:rgba(200,168,75,.22);color:var(--gold)}
+/* Tip row */
 .don-tip-row{display:flex;gap:6px;margin-bottom:12px}
 .don-tip{flex:1;padding:8px 4px;border-radius:6px;border:1.5px solid rgba(255,255,255,.2);
   background:rgba(255,255,255,.07);color:rgba(255,255,255,.7);font-size:.8rem;
@@ -631,6 +642,9 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .don-later{background:transparent;border:none;color:rgba(255,255,255,.35);
   font-size:.72rem;cursor:pointer;width:100%;padding:4px;font-family:inherit}
 .don-later:hover{color:rgba(255,255,255,.6)}
+.don-never{background:transparent;border:none;color:rgba(255,255,255,.2);
+  font-size:.65rem;cursor:pointer;width:100%;padding:2px;font-family:inherit;margin-top:2px}
+.don-never:hover{color:rgba(255,255,255,.4)}
 
 
 /* ── SUPPORT LINK ── */
@@ -767,7 +781,7 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       Share
     </button>
-    <a href="https://buymeacoffee.com/staggerlee" target="_blank" class="support-link">☕ Support Stagger Lee</a>
+    <a id="headerSupportLink" href="https://buymeacoffee.com/staggerlee" target="_blank" class="support-link" onclick="logDonationIntent('header')">☕ <span id="headerSupportText">Support the ATC</span></a>
     <span>All data embedded · No internet required</span>
   </div>
 </div>
@@ -1341,6 +1355,7 @@ function switchTrailData(trail) {
   // Reset state/trek selectors using the real functions
   buildStateDropdowns();
   renderHighlights();
+  updateSupportLink();
 }
 
 function recalc() {
@@ -2416,9 +2431,7 @@ function downloadPDF() {
   // Donation trigger 2 — after 3rd PDF download
   const pdfs = parseInt(localStorage.getItem('at_pdf_count')||'0') + 1;
   localStorage.setItem('at_pdf_count', pdfs);
-  if (pdfs === 3 && !localStorage.getItem('at_donation_2_seen')) {
-    setTimeout(() => showDonationMoment(2), 3000);
-  }
+
   const el = document.getElementById('itinCard');
   html2pdf().set({
     margin:0.5, filename:'AT_Trek_Itinerary.pdf',
@@ -2466,16 +2479,10 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
 
-  // Donation trigger 3 — 7-day returning user, shown once as final ask
-  const firstVisit = localStorage.getItem('at_first_visit');
-  if (!firstVisit) {
-    localStorage.setItem('at_first_visit', Date.now());
-  } else if (!localStorage.getItem('at_donation_3_seen')) {
-    const daysSince = (Date.now() - parseInt(firstVisit)) / 86400000;
-    if (daysSince >= 7) {
-      setTimeout(() => showDonationMoment(3), 4000);
-    }
-  }
+  // ── Donation system — 12-month, trail-aware, conservancy-choice ──
+  donInitFirstUse();
+  updateSupportLink();
+
   document.querySelectorAll('.modal-overlay').forEach(el=>{
     el.addEventListener('click',e=>{ if(e.target===el) closeModal(el.id); });
   });
@@ -2497,6 +2504,9 @@ function cycleTrekStatus(trekId){
   const s=getTrekStatus();
   s[trekId]=((s[trekId]||0)+1)%3;
   saveTrekStatus(s);
+  detectYOYO();
+  // Trigger donation prompt on first trek completion
+  if (s[trekId]===2) showDonationMoment('trek_complete');
   renderTracker();
 }
 
@@ -2707,6 +2717,9 @@ function startGPS() {
   gpsActive = true;
   setGpsBtnState('acquiring');
   setGpsStatus('📡 Acquiring GPS signal...', 'acquiring');
+  // First GPS use — show donation prompt after 8 seconds on trail
+  const _shownGps = JSON.parse(localStorage.getItem(DON_KEY_SHOWN)||'[]');
+  if (!_shownGps.includes('gps_first')) setTimeout(()=>showDonationMoment('gps_first'),8000);
 
   // Use watchPosition for live updates
   gpsWatchId = navigator.geolocation.watchPosition(
@@ -3197,64 +3210,150 @@ function buildForecastCoords(startLat, startLon, startMile, days) {
 // ══════════════════════════════════════════════════════════════
 //  DONATION — MULTI-TRIGGER SYSTEM
 // ══════════════════════════════════════════════════════════════
-const DON_MESSAGES = {
-  1: {
-    icon: `🥾`,
-    title: `Keep on truckin...`,
-    body: `Your post is live on the Partner Board. Someone out there might be your next trail family.<br><br>This tool was built by <strong style="color:var(--gold)">Stagger Lee</strong> — a single dad, school teacher, and trail vet who saw Jerry 63 times live. Spent summers on the AT and winters building this. No VC money. No subscription. No ads. Just a hiker who wanted something better.<br><br>If it helped your planning even a little, consider buying him a coffee. Entirely optional. The app stays free. Always.`
-  },
-  2: {
-    icon: `📄`,
-    title: `Three itineraries deep...`,
-    body: `You have downloaded three trek plans. Stagger Lee is glad this tool is useful.<br><br>He built it alone — a single dad and school teacher who hiked the AT and thought "I can build something better than what exists." Turns out, he could.<br><br>If it has saved you time, consider buying him a coffee. One time. No pressure. The app stays free regardless.`
-  },
-  3: {
-    icon: `🌲`,
-    title: `This is the last time I'll ask.`,
-    body: `You have been using this app for over a week. That means it is actually useful to you — and that means everything to the person who built it.<br><br><strong style="color:var(--gold)">Stagger Lee</strong> is a single dad and school teacher. He built this on trail breaks and late school nights. It will always be free.<br><br>This is the one and only final ask. If you can spare a coffee, it goes directly to trail fuel. If not — no worries at all. Just keep hiking. 🥾`
-  }
+// ══════════════════════════════════════════
+// DONATION SYSTEM — Trail-aware, conservancy-choice, 12-month logic
+// ══════════════════════════════════════════
+
+const DON_KEY_FIRST   = 'tctp_first_use';
+const DON_KEY_YEAR    = 'tctp_don_year';
+const DON_KEY_DONATED = 'tctp_donated';
+const DON_KEY_NEVER   = 'tctp_never_again';
+const DON_KEY_SHOWN   = 'tctp_prompts_shown';
+const DON_KEY_CONS    = 'tctp_last_conservancy';
+
+const CONSERVANCY = {
+  AT:  { name:'Appalachian Trail Conservancy',    short:'ATC',  emoji:'🌿' },
+  PCT: { name:'Pacific Crest Trail Association',  short:'PCTA', emoji:'🏔' },
+  CDT: { name:'Continental Divide Trail Coalition',short:'CDTC', emoji:'⛰' },
 };
 
+function getDonCons() {
+  return CONSERVANCY[window.ACTIVE_TRAIL_ID||'AT'] || CONSERVANCY.AT;
+}
+
+function updateSupportLink() {
+  const cons = getDonCons();
+  const el = document.getElementById('headerSupportText');
+  if (el) el.textContent = 'Support the ' + cons.short;
+}
+
+function donCheckPeriod() {
+  const first = parseInt(localStorage.getItem(DON_KEY_FIRST)||'0');
+  if (!first) {
+    localStorage.setItem(DON_KEY_FIRST, Date.now());
+    localStorage.setItem(DON_KEY_YEAR, '1');
+    localStorage.setItem(DON_KEY_SHOWN, '[]');
+    return;
+  }
+  const months = (Date.now()-first)/(1000*60*60*24*30);
+  const yr = parseInt(localStorage.getItem(DON_KEY_YEAR)||'1');
+  if (months >= 12 && yr < 2) {
+    localStorage.setItem(DON_KEY_YEAR, '2');
+    localStorage.setItem(DON_KEY_DONATED, '');
+    localStorage.setItem(DON_KEY_SHOWN, '[]');
+    localStorage.setItem(DON_KEY_FIRST, Date.now());
+  }
+}
+
+function donCanShow(trigger) {
+  const never = parseInt(localStorage.getItem(DON_KEY_NEVER)||'0');
+  if (never >= 2) return false;
+  if (localStorage.getItem(DON_KEY_DONATED)) return false;
+  const shown = JSON.parse(localStorage.getItem(DON_KEY_SHOWN)||'[]');
+  if (shown.includes(trigger)) return false;
+  if (shown.length >= 4) return false;
+  return true;
+}
+
+function donMarkShown(trigger) {
+  const shown = JSON.parse(localStorage.getItem(DON_KEY_SHOWN)||'[]');
+  if (!shown.includes(trigger)) shown.push(trigger);
+  localStorage.setItem(DON_KEY_SHOWN, JSON.stringify(shown));
+}
+
+let _donActiveConsChoice = null;
+let donTipAmt = 5;
+
 function showDonationMoment(trigger) {
-  const seenKey = 'at_donation_' + trigger + '_seen';
-  // Check all previous triggers seen too — don't show if any higher-priority one pending
-  if (localStorage.getItem(seenKey)) return;
-  if (trigger > 1 && !localStorage.getItem('at_donation_1_seen')) return; // wait for 1 first
+  donCheckPeriod();
+  if (!donCanShow(trigger)) return;
+  donMarkShown(trigger);
+  const cons = getDonCons();
+  _donActiveConsChoice = cons.short;
 
-  const msg = DON_MESSAGES[trigger];
-  if (!msg) return;
+  const msgs = {
+    welcome:      { icon:'🥾', title:'Walk With Others · Free Forever',
+      body:'No ads. No subscription. No tracking. Ever.<br><br>If this app helps you walk more miles, consider supporting the people who maintain the trail beneath your feet.' },
+    trek_complete:{ icon:'✅', title:'Trek logged.',
+      body:'Every completed mile matters — on the trail and off it.<br><br>If this tool helped you plan it, consider supporting the conservancy that keeps these trails open.' },
+    gps_first:    { icon:'📍', title:"GPS active. You\'re on trail.",
+      body:"This screen was built for exactly this moment — when you need information and can\'t afford clicks.<br><br>The trail is free because people fund it. So is this app." },
+    return:       { icon:'🌲', title:"You came back.",
+      body:"This is the last time we\'ll ask this year. If the app has earned a contribution, here\'s how to send it directly to the trail." },
+  };
+  const msg = msgs[trigger]||msgs.welcome;
 
-  const overlay = document.getElementById('donation-overlay');
-  overlay.querySelector('.don-icon').textContent = msg.icon;
-  document.getElementById('don-title-text').textContent = msg.title.replace("\'","'");
-  overlay.querySelector('.don-body').innerHTML = msg.body;
+  document.getElementById('don-icon-el').textContent  = msg.icon;
+  document.getElementById('don-title-el').textContent = msg.title;
+  document.getElementById('don-body-el').innerHTML    = msg.body;
+  document.getElementById('don-coffee-btn').textContent = '☕ Support the ' + cons.name;
 
-  // Reset tip selection
+  document.querySelectorAll('.don-cons-pill').forEach(p =>
+    p.classList.toggle('selected', p.dataset.cons === cons.short));
   donTipAmt = 5;
-  overlay.querySelectorAll('.don-tip').forEach(b => {
-    b.classList.toggle('selected', b.textContent.includes('$5'));
-  });
-  document.getElementById('don-coffee-btn').textContent = '☕ Buy Stagger Lee a $5 Coffee';
-
-  // Store which trigger this is so dismiss saves the right key
-  overlay.dataset.trigger = trigger;
-  overlay.classList.add('open');
+  document.querySelectorAll('.don-tip').forEach(b =>
+    b.classList.toggle('selected', b.dataset.amt === '5'));
+  document.getElementById('donation-overlay').dataset.trigger = trigger;
+  document.getElementById('donation-overlay').classList.add('open');
 }
 
-// Override donDismiss and donGo to save per-trigger key
+function donSelectCons(pill) {
+  _donActiveConsChoice = pill.dataset.cons;
+  document.querySelectorAll('.don-cons-pill').forEach(p => p.classList.remove('selected'));
+  pill.classList.add('selected');
+  const c = Object.values(CONSERVANCY).find(c=>c.short===_donActiveConsChoice)||getDonCons();
+  document.getElementById('don-coffee-btn').textContent = '☕ Support the ' + c.name;
+}
+
+async function logDonationIntent(source) {
+  const cons = _donActiveConsChoice||getDonCons().short;
+  localStorage.setItem(DON_KEY_CONS, cons);
+  try {
+    const sb = getSupaClient();
+    if (sb) await sb.from('donation_intents').insert([{
+      conservancy: cons, trail: window.ACTIVE_TRAIL_ID||'AT',
+      amount_usd: donTipAmt||5, source: source||'prompt',
+      occurred_at: new Date().toISOString()
+    }]);
+  } catch(e) {}
+}
+
+async function donGo() {
+  await logDonationIntent('prompt');
+  localStorage.setItem(DON_KEY_DONATED,'1');
+  document.getElementById('donation-overlay').classList.remove('open');
+  const note = 'Supporting '+((_donActiveConsChoice)||getDonCons().short)+' via Triple Crown Trek Planner';
+  window.open('https://buymeacoffee.com/staggerlee?message='+encodeURIComponent(note)+'&amount='+((donTipAmt||5)*100),'_blank');
+}
+
 function donDismiss() {
-  const overlay = document.getElementById('donation-overlay');
-  const t = overlay.dataset.trigger || '1';
-  localStorage.setItem('at_donation_' + t + '_seen', '1');
-  overlay.classList.remove('open');
+  document.getElementById('donation-overlay').classList.remove('open');
 }
 
-function donGo() {
-  const overlay = document.getElementById('donation-overlay');
-  const t = overlay.dataset.trigger || '1';
-  localStorage.setItem('at_donation_' + t + '_seen', '1');
-  overlay.classList.remove('open');
-  window.open('https://buymeacoffee.com/staggerlee?amount=' + (donTipAmt*100), '_blank');
+function donNeverAgain() {
+  const count = parseInt(localStorage.getItem(DON_KEY_NEVER)||'0')+1;
+  localStorage.setItem(DON_KEY_NEVER, String(count));
+  document.getElementById('donation-overlay').classList.remove('open');
+  if (count >= 2) showToast("Got it — we\'ll never ask again. Enjoy the trail. 🥾");
+}
+
+function donInitFirstUse() {
+  donCheckPeriod();
+  const shown = JSON.parse(localStorage.getItem(DON_KEY_SHOWN)||'[]');
+  if (!shown.includes('welcome')) setTimeout(()=>showDonationMoment('welcome'), 90000);
+  const first = parseInt(localStorage.getItem(DON_KEY_FIRST)||Date.now());
+  const days  = (Date.now()-first)/(1000*60*60*24);
+  if (days >= 30 && !shown.includes('return')) setTimeout(()=>showDonationMoment('return'),5000);
 }
 
 function donSelectTip(btn, amt) {
@@ -4009,7 +4108,6 @@ const SUPA_KEY = 'sb_publishable_Rpa8OezhpxOdqvHT1jh3WA_w_Tj8ah5';
 let supaClient = null;
 let allPosts = [];
 let activeFilter = 'all';
-let donTipAmt = 5;
 
 function getSupaClient() {
   if (!supaClient && window.supabase) {
@@ -4924,7 +5022,6 @@ async function submitPost() {
     }, 1200);
 
     // Show donation moment — trigger 1
-    setTimeout(() => showDonationMoment(1), 1800);
 
   } catch(e) {
     showToast('Error posting: ' + e.message);
@@ -5461,21 +5558,25 @@ document.addEventListener('DOMContentLoaded',()=>{
 <!-- DONATION OVERLAY -->
 <div class="donation-overlay" id="donation-overlay">
   <div class="donation-box">
-    <div class="don-icon">🥾</div>
-    <div class="don-title" id="don-title-text">Keep on truckin...</div>
-    <div class="don-body">
-      Your post is live on the Partner Board. Someone out there might be your next trail family.<br><br>
-      This tool was built by <strong style="color:#c8a84b">Stagger Lee</strong> — a single dad, school teacher, and trail vet. Saw Jerry 63 times. Spent summers on the AT and winters building this. No VC money. No subscription. No ads. Just a hiker who wanted something better than what existed.<br><br>
-      If it helped your planning even a little, consider buying him a coffee. Entirely optional. The app stays free. Always.
+    <div class="don-icon" id="don-icon-el">🥾</div>
+    <div class="don-title" id="don-title-el">Walk With Others · Free Forever</div>
+    <div class="don-body" id="don-body-el">No ads. No subscription. No tracking. Ever.</div>
+    <div class="don-no-ads">🚫 NO ADS &nbsp;·&nbsp; FREE FOREVER &nbsp;·&nbsp; YOUR DATA STAYS ON YOUR DEVICE</div>
+    <div style="font-size:.68rem;color:rgba(255,255,255,.5);margin-bottom:7px;text-align:left">Support the trail, not the app — choose your conservancy:</div>
+    <div class="don-conservancy-row">
+      <button class="don-cons-pill selected" data-cons="ATC"  onclick="donSelectCons(this)">🌿<br>ATC</button>
+      <button class="don-cons-pill"          data-cons="PCTA" onclick="donSelectCons(this)">🏔<br>PCTA</button>
+      <button class="don-cons-pill"          data-cons="CDTC" onclick="donSelectCons(this)">⛰<br>CDTC</button>
     </div>
     <div class="don-tip-row">
-      <button class="don-tip" onclick="donSelectTip(this,3)">$3</button>
-      <button class="don-tip selected" onclick="donSelectTip(this,5)">$5</button>
-      <button class="don-tip" onclick="donSelectTip(this,10)">$10</button>
-      <button class="don-tip" onclick="donSelectTip(this,20)">🎸 $20</button>
+      <button class="don-tip" data-amt="3"  onclick="donSelectTip(this,3)">$3</button>
+      <button class="don-tip selected" data-amt="5" onclick="donSelectTip(this,5)">$5</button>
+      <button class="don-tip" data-amt="10" onclick="donSelectTip(this,10)">$10</button>
+      <button class="don-tip" data-amt="20" onclick="donSelectTip(this,20)">🎸 $20</button>
     </div>
-    <button class="don-coffee" id="don-coffee-btn" onclick="donGo()">☕ Buy Stagger Lee a Coffee</button>
-    <button class="don-later" onclick="donDismiss()">The app is enough — thank you 🙏</button>
+    <button class="don-coffee" id="don-coffee-btn" onclick="donGo()">☕ Support the Appalachian Trail Conservancy</button>
+    <button class="don-later" onclick="donDismiss()">Maybe later — keep hiking 🥾</button>
+    <button class="don-never" onclick="donNeverAgain()">Don't ask again</button>
   </div>
 </div>
 
