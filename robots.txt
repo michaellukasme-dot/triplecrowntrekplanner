@@ -1,0 +1,50 @@
+# ══════════════════════════════════════════════
+# Triple Crown Trek Planner — robots.txt
+# https://triplecrowntrekplanner.com/
+# ══════════════════════════════════════════════
+
+# Allow all well-behaved crawlers full access
+User-agent: *
+Allow: /
+
+# Point crawlers to the sitemap
+Sitemap: https://triplecrowntrekplanner.com/sitemap.xml
+
+# ── Google-specific bots ──
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+# ── Block AI training scrapers that don't respect content ──
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: Omgilibot
+Disallow: /
+
+User-agent: FacebookBot
+Allow: /
+
+# ── Crawl delay for heavy scrapers ──
+User-agent: SemrushBot
+Crawl-delay: 10
+
+User-agent: AhrefsBot
+Crawl-delay: 10
+
+User-agent: MJ12bot
+Crawl-delay: 10

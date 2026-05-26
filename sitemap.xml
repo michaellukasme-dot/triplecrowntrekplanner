@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+  <!-- ══ PRIMARY APP PAGE ══ -->
+  <url>
+    <loc>https://triplecrowntrekplanner.com/</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://triplecrowntrekplanner.com/og-image.jpg</image:loc>
+      <image:title>Triple Crown Trek Planner — Free AT, PCT and CDT Hike Planner</image:title>
+      <image:caption>Free offline hike planner for the Appalachian Trail, Pacific Crest Trail, and Continental Divide Trail</image:caption>
+    </image:image>
+  </url>
+
+  <!-- ══ USER GUIDES (PDFs are indexable by Google) ══ -->
+  <url>
+    <loc>https://triplecrowntrekplanner.com/at-guide.pdf</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://triplecrowntrekplanner.com/pct-guide.pdf</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://triplecrowntrekplanner.com/cdt-guide.pdf</loc>
+    <lastmod>2026-05-26</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+</urlset>
