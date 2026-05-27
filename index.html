@@ -958,6 +958,28 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .tm-don-row-btn:hover{background:var(--gold);color:var(--white)}
 .tm-don-row-btn:focus-visible{outline:2px solid var(--focus-ring);outline-offset:1px}
 
+/* ══ TRAIL DATA OVERLAY v1 — alert banner styles (parallel to .bear-alert-banner) ══ */
+.trail-alert-banner{display:none;border-radius:10px;padding:8px 12px;margin:4px 14px;flex-shrink:0;border:1.5px solid transparent}
+.trail-alert-banner.show{display:flex;align-items:flex-start;gap:8px}
+.trail-alert-banner .tab-icon{font-size:1.1rem;line-height:1.2;flex-shrink:0;margin-top:1px}
+.trail-alert-banner .tab-body{flex:1;line-height:1.35;font-size:.75rem;font-weight:600}
+.trail-alert-banner .tab-title{display:block}
+.trail-alert-banner .tab-meta{display:block;font-weight:500;font-size:.68rem;opacity:.85;margin-top:2px}
+.trail-alert-banner .tab-detail{display:none;font-weight:400;font-size:.72rem;margin-top:6px;line-height:1.45}
+.trail-alert-banner.expanded .tab-detail{display:block}
+.trail-alert-banner .tab-detail a{color:inherit;text-decoration:underline;font-weight:600}
+.trail-alert-banner .tab-info-btn,
+.trail-alert-banner .tab-close{background:transparent;border:none;cursor:pointer;font-size:.95rem;padding:0 2px;line-height:1;color:inherit;opacity:.85}
+.trail-alert-banner .tab-info-btn:hover,
+.trail-alert-banner .tab-close:hover{opacity:1}
+.trail-alert-banner.sev-info{background:rgba(74,124,89,.13);border-color:rgba(74,124,89,.42);color:#3a6649}
+.trail-alert-banner.sev-advisory{background:rgba(181,69,27,.13);border-color:rgba(181,69,27,.42);color:#a13e15}
+.trail-alert-banner.sev-hazard{background:rgba(160,30,30,.16);border-color:rgba(160,30,30,.55);color:#a01e1e}
+.trail-alert-banner.sev-hazard .tab-icon{color:#a01e1e}
+/* When multiple alerts stack, render them one above the other with a small gap. */
+.trail-alert-stack{display:flex;flex-direction:column;gap:4px}
+/* ══ end TRAIL DATA OVERLAY v1 CSS ══ */
+
 </style>
 </head>
 <body>
@@ -1591,6 +1613,17 @@ function switchTrailData(trail) {
   try { _angelDirCache = {}; _angelMyListing = null; window._angelDirByName = {}; } catch(e) {}
   try { loadWaterConditions(); } catch(e) {}
   try { if (typeof tmRefreshDirectory === 'function') tmRefreshDirectory(true); } catch(e) {}
+
+  // Trail Data Overlay v1: re-sync the merged data for the newly active trail
+  // into window.ACTIVE_TRAIL / window.ACTIVE_WAYPOINTS, and repaint the alert
+  // banner stack so we show alerts for THIS trail not the previous one.
+  // The merged data itself isn't recomputed here — _tdMergedTrailData is
+  // populated for all three trails by tdInit/tdPoll, so we just point the
+  // active globals at the right entry and repaint.
+  try {
+    if (typeof tdSyncActiveTrailIfMatches === 'function') tdSyncActiveTrailIfMatches(trail);
+    if (typeof tdRenderAlertBanner === 'function')        tdRenderAlertBanner();
+  } catch(e){}
 }
 
 function recalc() {
@@ -1749,7 +1782,11 @@ function drawElevation(startMile, endMile, waypoints, rows) {
   const cH = H - PAD.top - PAD.bottom;
 
   // Get elevation slice
-  const pts = (window.ACTIVE_TRAIL||AT).elevation.filter(e => e[0] >= Math.floor(startMile) && e[0] <= Math.ceil(endMile));
+  // [TDv1 EDIT] Read site #1 of 3 named in PROMPT 2: use the merged-overlay
+  // accessor so any conservancy-published elevation_segment patch applies here.
+  // Falls back to the seed if the overlay hasn't initialized yet.
+  const _activeTrail = (typeof tdGetTrail === 'function') ? (tdGetTrail(window.ACTIVE_TRAIL_ID || 'AT') || window.ACTIVE_TRAIL || AT) : (window.ACTIVE_TRAIL || AT);
+  const pts = _activeTrail.elevation.filter(e => e[0] >= Math.floor(startMile) && e[0] <= Math.ceil(endMile));
   if(!pts.length) return;
   const minE = Math.min(...pts.map(p=>p[1]));
   const maxE = Math.max(...pts.map(p=>p[1]));
@@ -2050,10 +2087,11 @@ function drawLeafletMap(){
   }
   // Build trail polyline from elevation lat/lon data
   const seg=(window.ACTIVE_TRAIL||AT).elevation.filter(e=>e[0]>=startMile&&e[0]<=endMile);
-  // We need lat/lon — use (window.ACTIVE_WAYPOINTS||AT_WAYPOINTS) lat/lon anchors + interpolation
-  // Actually pull from our elev CSV coords embedded in (window.ACTIVE_WAYPOINTS||AT_WAYPOINTS) area
-  // Use waypoints as anchor path plus start/end
-  const wpSeg=(window.ACTIVE_WAYPOINTS||AT_WAYPOINTS).filter(w=>w[0]>=startMile&&w[0]<=endMile);
+  // We need lat/lon — use waypoint lat/lon anchors + interpolation
+  // [TDv1 EDIT] Read site #2 of 3 named in PROMPT 2: pull waypoints through
+  // the merged-overlay accessor so conservancy waypoint patches apply here.
+  const _activeWps_2 = (typeof tdGetWaypoints === 'function') ? (tdGetWaypoints(window.ACTIVE_TRAIL_ID || 'AT') || window.ACTIVE_WAYPOINTS || AT_WAYPOINTS) : (window.ACTIVE_WAYPOINTS || AT_WAYPOINTS);
+  const wpSeg=_activeWps_2.filter(w=>w[0]>=startMile&&w[0]<=endMile);
   if(!wpSeg.length){leafletMapObj.setView([39.5,-76.5],6);return;}
   const latlngs=wpSeg.map(w=>[w[3],w[4]]);
   L.polyline(latlngs,{color:'#2d5a27',weight:3,opacity:.8}).addTo(leafletMapObj);
@@ -2293,7 +2331,11 @@ function drawFsElevation() {
   // Store hit targets for hover
   const wpHits = [];
 
-  const allWp = (window.ACTIVE_WAYPOINTS||AT_WAYPOINTS).filter(w =>
+  // [TDv1 EDIT] Read site #3 of 3 named in PROMPT 2: pull waypoints through
+  // the merged-overlay accessor so conservancy shelter/water/road patches
+  // appear in the elevation profile's filter chips.
+  const _activeWps_3 = (typeof tdGetWaypoints === 'function') ? (tdGetWaypoints(window.ACTIVE_TRAIL_ID || 'AT') || window.ACTIVE_WAYPOINTS || AT_WAYPOINTS) : (window.ACTIVE_WAYPOINTS || AT_WAYPOINTS);
+  const allWp = _activeWps_3.filter(w =>
     w[0] >= viewStart && w[0] <= viewEnd && w[3] && w[4]);
   const allRs = (window.ACTIVE_RESUPPLY||AT_RESUPPLY).filter(r =>
     r[0] >= viewStart && r[0] <= viewEnd);
@@ -2885,6 +2927,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   window.ACTIVE_COORDS     = (window.ACTIVE_COORDS||AT_TRAIL_COORDS);
   window.ACTIVE_TRAIL_ID   = 'AT';
   window.ACTIVE_TOTAL_MILES = 2185;
+
+  // Trail Data Overlay v1 — boot the overlay/alert system. Synchronous part
+  // applies any cached patches and paints alerts; async part polls Supabase.
+  // Must run AFTER window.ACTIVE_* are populated above (the overlay reads
+  // window.ACTIVE_TRAIL_ID to know which trail to sync into the active globals).
+  try { if (typeof tdInit === 'function') tdInit(); } catch(e){ console.warn('tdInit failed', e); }
 
   // PCT + CDT data are live — remove coming-soon badges
   ['Pacific Crest', 'Continental Divide'].forEach(name => {
@@ -6394,6 +6442,546 @@ async function tmTryFlushQueue(){
 }
 window.addEventListener('online', tmTryFlushQueue);
 
+/* ══════════════════════════════════════════════════════════════════════════
+   TRAIL DATA OVERLAY v1 — DO NOT TOUCH BASELINE SEED CONSTS
+   ══════════════════════════════════════════════════════════════════════════
+   Implements the hiker-side merge of conservancy-published trail-data
+   patches and alerts over the embedded seed constants (AT_WAYPOINTS,
+   PCT_WAYPOINTS, CDT_WAYPOINTS, AT, PCT, CDT). The seeds remain immutable;
+   the merged result is stored in _tdMergedTrailData and also exposed via
+   window.ACTIVE_TRAIL / window.ACTIVE_WAYPOINTS so existing read sites
+   pick it up with no code change.
+
+   Public API (functions prefixed `td`):
+     tdInit()              — call once on app start
+     tdPoll()              — manifest+patch+alert fetch cycle
+     tdApplyOverlay(trail) — pure merge: seed + patches → merged object
+     tdGetWaypoints(trail) — accessor returning the merged waypoints array
+     tdGetTrail(trail)     — accessor returning the merged trail object
+     tdFetchAlerts()       — always-fresh alert fetch
+     tdRenderAlertBanner() — render current alerts for active trail
+
+   Globals (window-prefixed _td*):
+     _tdManifest           — { AT:rev, PCT:rev, CDT:rev } latest known
+     _tdPatchCache         — { AT:[...], PCT:[...], CDT:[...] } patches
+     _tdAlertCache         — { AT:[...], PCT:[...], CDT:[...] } alerts
+     _tdMergedTrailData    — { AT:{waypoints,elevation,treks,...}, PCT:..., CDT:... }
+     _tdConservancies      — { AT:{code,display_name_short,attribution_mode},...}
+
+   Constants:
+     TD_POLL_MS            — 30 minutes
+     TD_CACHE_TTL_MS       — 24 hours
+
+   localStorage keys (parallel to tctp_* convention used by Trail Magic v1):
+     tctp_td_manifest
+     tctp_td_patches_<TRAIL>
+     tctp_td_alerts_<TRAIL>
+     tctp_td_conservancies
+   ══════════════════════════════════════════════════════════════════════════ */
+
+const TD_POLL_MS      = 30 * 60 * 1000;   // 30 minutes
+const TD_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+let _tdManifest        = null;  // { AT: 1, PCT: 1, CDT: 1 }
+let _tdPatchCache      = { AT: [], PCT: [], CDT: [] };
+let _tdAlertCache      = { AT: [], PCT: [], CDT: [] };
+let _tdMergedTrailData = { AT: null, PCT: null, CDT: null };
+let _tdConservancies   = null;  // populated from conservancies table
+let _tdPollTimer       = null;
+let _tdLastPollAt      = 0;
+let _tdInitDone        = false;
+
+// ── Seed accessor: returns the FROZEN embedded seed for a trail. ─────────
+// Never mutated. Used as the base for tdApplyOverlay.
+function tdSeed(trail){
+  if (trail === 'AT')  return { waypoints: AT_WAYPOINTS,  trail: AT  };
+  if (trail === 'PCT') return { waypoints: PCT_WAYPOINTS, trail: PCT };
+  if (trail === 'CDT') return { waypoints: CDT_WAYPOINTS, trail: CDT };
+  return null;
+}
+
+// ── tdApplyOverlay: pure function — seed + patches → merged ─────────────
+// Deep-clones the relevant parts of the seed (only the slices we touch) and
+// applies patches by entity_type/operation. Returns a new object; original
+// seed constants are not modified.
+//
+// Patch entity_types handled:
+//   waypoint, shelter, water_source, road_crossing — all live in the same
+//       array (AT_WAYPOINTS / PCT_WAYPOINTS / CDT_WAYPOINTS); matched by
+//       entity_key OR by [mile,name] pair as fallback.
+//   trek_segment — lives in trail.treks.nobo[] and trail.treks.sobo[];
+//       matched by entity_key OR by id.
+//   elevation_segment — lives in trail.elevation; matched by start_mile.
+//
+// Operations:
+//   add    — append (with sort by mile for waypoints)
+//   update — replace matching entry with payload
+//   retire — remove matching entry
+function tdApplyOverlay(trail){
+  const seed = tdSeed(trail);
+  if (!seed) return null;
+  const patches = (_tdPatchCache[trail] || []);
+  // Defensive: sort patches by revision so order of application is stable.
+  patches.sort((a,b) => (a.revision||0) - (b.revision||0));
+
+  // Shallow-copy the waypoints array; entries within are arrays themselves
+  // and are NOT mutated either (we only push/splice/replace).
+  let waypoints = seed.waypoints.slice();
+
+  // Build a working trail object by cloning the parts we may touch.
+  // For AT seed there's only `elevation` + `treks` + state/highlights;
+  // for PCT/CDT same shape. We only need to deep-touch treks and elevation
+  // when those entity types appear in patches.
+  let mergedTrail = Object.assign({}, seed.trail);
+  let touchedTreks = false;
+  let touchedElev  = false;
+
+  function matchWaypoint(arr, key, payload){
+    // Try entity_key match (if seed has _entity_key embedded — future-proof).
+    // Fallback: match by [mile, name] pair.
+    if (key) {
+      const byKey = arr.findIndex(w => w._entity_key === key);
+      if (byKey >= 0) return byKey;
+    }
+    if (payload && Array.isArray(payload) && payload.length >= 2) {
+      const mile = payload[0], name = payload[1];
+      return arr.findIndex(w => w[0] === mile && w[1] === name);
+    }
+    if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+      // Future: object-shape waypoints. v1 seeds use arrays.
+      const mile = payload.mile, name = payload.name;
+      return arr.findIndex(w => w[0] === mile && w[1] === name);
+    }
+    return -1;
+  }
+
+  for (const p of patches){
+    const et = p.entity_type;
+    const op = p.operation;
+    const key = p.entity_key;
+    const pay = p.payload;
+    const prior = p.prior_payload;
+
+    // Waypoint-family patches all touch the waypoints array.
+    if (et === 'waypoint' || et === 'shelter' || et === 'water_source' || et === 'road_crossing'){
+      if (op === 'add' && pay){
+        // Insert at proper sort position by mile (waypoints are kept sorted).
+        const newEntry = Array.isArray(pay) ? pay.slice() : pay;
+        if (key) newEntry._entity_key = key;
+        const insertAt = waypoints.findIndex(w => w[0] > newEntry[0]);
+        if (insertAt < 0) waypoints.push(newEntry);
+        else waypoints.splice(insertAt, 0, newEntry);
+      } else if (op === 'update' && pay){
+        const idx = matchWaypoint(waypoints, key, prior || pay);
+        if (idx >= 0){
+          const newEntry = Array.isArray(pay) ? pay.slice() : pay;
+          if (key) newEntry._entity_key = key;
+          waypoints[idx] = newEntry;
+        } else {
+          // Update for a row that isn't in the seed — treat as add.
+          const newEntry = Array.isArray(pay) ? pay.slice() : pay;
+          if (key) newEntry._entity_key = key;
+          waypoints.push(newEntry);
+        }
+      } else if (op === 'retire'){
+        const idx = matchWaypoint(waypoints, key, prior);
+        if (idx >= 0) waypoints.splice(idx, 1);
+      }
+    }
+
+    // Trek-segment patches touch trail.treks.nobo[] and trail.treks.sobo[].
+    else if (et === 'trek_segment'){
+      if (!touchedTreks){
+        mergedTrail.treks = {
+          nobo: (mergedTrail.treks && mergedTrail.treks.nobo) ? mergedTrail.treks.nobo.slice() : [],
+          sobo: (mergedTrail.treks && mergedTrail.treks.sobo) ? mergedTrail.treks.sobo.slice() : []
+        };
+        touchedTreks = true;
+      }
+      // payload is expected to have shape { direction:'nobo'|'sobo', segment:{id, name, miles, cumMileStart, cumMileEnd, ...} }
+      // For v1, also accept a top-level object that includes a `direction` field.
+      const dir = (pay && pay.direction) || (prior && prior.direction);
+      const seg = (pay && pay.segment) || pay;
+      const priorSeg = (prior && prior.segment) || prior;
+      if (dir && (dir === 'nobo' || dir === 'sobo')){
+        const arr = mergedTrail.treks[dir];
+        const matchById = (a, target) => a.id === target.id;
+        if (op === 'add' && seg){
+          arr.push(Object.assign({}, seg));
+          arr.sort((a,b) => (a.cumMileStart||0) - (b.cumMileStart||0));
+        } else if (op === 'update' && seg){
+          const idx = arr.findIndex(a => matchById(a, priorSeg || seg));
+          if (idx >= 0) arr[idx] = Object.assign({}, seg);
+          else arr.push(Object.assign({}, seg));
+        } else if (op === 'retire'){
+          const idx = arr.findIndex(a => matchById(a, priorSeg || seg));
+          if (idx >= 0) arr.splice(idx, 1);
+        }
+      }
+    }
+
+    // Elevation-segment patches touch trail.elevation array.
+    else if (et === 'elevation_segment'){
+      if (!touchedElev){
+        mergedTrail.elevation = (mergedTrail.elevation || []).slice();
+        touchedElev = true;
+      }
+      // payload: array of [mile, elev] pairs to splice in starting at start_mile
+      // or an object { start_mile, points: [[mile,elev],...] }
+      const startMile = (pay && pay.start_mile != null) ? pay.start_mile
+                      : (pay && Array.isArray(pay) && pay[0]) ? pay[0][0]
+                      : null;
+      const points = (pay && pay.points) || (Array.isArray(pay) ? pay : []);
+      if (op === 'add' || op === 'update'){
+        if (Array.isArray(points) && points.length){
+          const endMile = points[points.length-1][0];
+          // Remove existing elevation points in the [startMile, endMile] window
+          // and splice the new points in.
+          mergedTrail.elevation = mergedTrail.elevation.filter(e => e[0] < startMile || e[0] > endMile);
+          mergedTrail.elevation.push(...points);
+          mergedTrail.elevation.sort((a,b) => a[0] - b[0]);
+        }
+      } else if (op === 'retire'){
+        const endMile = (prior && prior.end_mile) || (Array.isArray(prior) && prior.length ? prior[prior.length-1][0] : startMile);
+        if (startMile != null && endMile != null){
+          mergedTrail.elevation = mergedTrail.elevation.filter(e => e[0] < startMile || e[0] > endMile);
+        }
+      }
+    }
+  }
+
+  // Re-sort waypoints by mile after add/update; cheap on a few thousand rows.
+  waypoints.sort((a,b) => a[0] - b[0]);
+
+  return { waypoints, trail: mergedTrail };
+}
+
+// ── Accessors (preferred for new code) ───────────────────────────────────
+function tdGetWaypoints(trail){
+  if (_tdMergedTrailData[trail] && _tdMergedTrailData[trail].waypoints) {
+    return _tdMergedTrailData[trail].waypoints;
+  }
+  // Fallback: untouched seed.
+  const s = tdSeed(trail);
+  return s ? s.waypoints : [];
+}
+function tdGetTrail(trail){
+  if (_tdMergedTrailData[trail] && _tdMergedTrailData[trail].trail) {
+    return _tdMergedTrailData[trail].trail;
+  }
+  const s = tdSeed(trail);
+  return s ? s.trail : null;
+}
+
+// ── Apply merged data to window.ACTIVE_* so existing read sites pick up ──
+// This is the safety net: the 17+ pre-existing read sites that already use
+// (window.ACTIVE_WAYPOINTS||AT_WAYPOINTS) continue to work unchanged.
+function tdSyncActiveTrailIfMatches(trail){
+  if (window.ACTIVE_TRAIL_ID !== trail) return;
+  const merged = _tdMergedTrailData[trail];
+  if (!merged) return;
+  if (merged.waypoints) window.ACTIVE_WAYPOINTS = merged.waypoints;
+  if (merged.trail)     window.ACTIVE_TRAIL     = merged.trail;
+}
+
+// ── localStorage helpers ─────────────────────────────────────────────────
+function tdLoadCachedManifest(){
+  try {
+    const raw = localStorage.getItem('tctp_td_manifest');
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (!obj || !obj.data || !obj.stamp) return null;
+    if (Date.now() - obj.stamp > TD_CACHE_TTL_MS) return obj.data; // stale but usable as fallback
+    return obj.data;
+  } catch(e) { return null; }
+}
+function tdSaveManifest(data){
+  try {
+    localStorage.setItem('tctp_td_manifest', JSON.stringify({stamp: Date.now(), data}));
+  } catch(e){}
+}
+function tdLoadCachedPatches(trail){
+  try {
+    const raw = localStorage.getItem('tctp_td_patches_' + trail);
+    if (!raw) return [];
+    const obj = JSON.parse(raw);
+    return (obj && obj.data) ? obj.data : [];
+  } catch(e){ return []; }
+}
+function tdSavePatches(trail, arr){
+  try {
+    localStorage.setItem('tctp_td_patches_' + trail, JSON.stringify({stamp: Date.now(), data: arr}));
+  } catch(e){}
+}
+function tdLoadCachedAlerts(trail){
+  try {
+    const raw = localStorage.getItem('tctp_td_alerts_' + trail);
+    if (!raw) return [];
+    const obj = JSON.parse(raw);
+    return (obj && obj.data) ? obj.data : [];
+  } catch(e){ return []; }
+}
+function tdSaveAlerts(trail, arr){
+  try {
+    localStorage.setItem('tctp_td_alerts_' + trail, JSON.stringify({stamp: Date.now(), data: arr}));
+  } catch(e){}
+}
+function tdLoadCachedConservancies(){
+  try {
+    const raw = localStorage.getItem('tctp_td_conservancies');
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    return (obj && obj.data) ? obj.data : null;
+  } catch(e){ return null; }
+}
+function tdSaveConservancies(data){
+  try {
+    localStorage.setItem('tctp_td_conservancies', JSON.stringify({stamp: Date.now(), data}));
+  } catch(e){}
+}
+
+// ── Fetch conservancies (attribution_mode etc.). Cached for ttl. ─────────
+async function tdFetchConservancies(){
+  const sb = (typeof getSupaClient === 'function') ? getSupaClient() : null;
+  if (!sb) return _tdConservancies || tdLoadCachedConservancies();
+  try {
+    const { data, error } = await sb.from('conservancies')
+      .select('code, display_name_short, trail, attribution_mode, mou_signed_at');
+    if (error || !data) return _tdConservancies || tdLoadCachedConservancies();
+    const byTrail = {};
+    data.forEach(c => { byTrail[c.trail] = c; });
+    _tdConservancies = byTrail;
+    tdSaveConservancies(byTrail);
+    return byTrail;
+  } catch(e){
+    return _tdConservancies || tdLoadCachedConservancies();
+  }
+}
+
+// ── tdPoll: manifest+patch+alert refresh cycle ───────────────────────────
+async function tdPoll(){
+  _tdLastPollAt = Date.now();
+  const sb = (typeof getSupaClient === 'function') ? getSupaClient() : null;
+  if (!sb) return; // No client — stay on cached data.
+
+  // 1. Fetch manifest for all three trails.
+  let serverManifest = null;
+  try {
+    const { data, error } = await sb.from('trail_data_manifest')
+      .select('trail, baseline_revision, last_published_at');
+    if (!error && data) {
+      serverManifest = {};
+      data.forEach(r => { serverManifest[r.trail] = r.baseline_revision; });
+    }
+  } catch(e){ /* network fail; use cache */ }
+
+  // 2. For each trail whose revision is newer than what we have, pull patches.
+  if (serverManifest){
+    for (const trail of ['AT','PCT','CDT']){
+      const local = (_tdManifest && _tdManifest[trail]) || 0;
+      const remote = serverManifest[trail] || 0;
+      if (remote > local){
+        try {
+          const { data, error } = await sb.from('trail_data_patches')
+            .select('id, trail, revision, entity_type, entity_key, operation, payload, prior_payload')
+            .eq('trail', trail)
+            .lte('revision', remote)
+            .order('revision', {ascending: true});
+          if (!error && data){
+            _tdPatchCache[trail] = data;
+            tdSavePatches(trail, data);
+          }
+        } catch(e){ /* ignore — fall back to cached */ }
+      }
+    }
+    _tdManifest = serverManifest;
+    tdSaveManifest(serverManifest);
+  }
+
+  // 3. Always re-apply overlay for all three (cheap).
+  for (const trail of ['AT','PCT','CDT']){
+    _tdMergedTrailData[trail] = tdApplyOverlay(trail);
+    tdSyncActiveTrailIfMatches(trail);
+  }
+
+  // 4. Fetch alerts (always fresh).
+  await tdFetchAlerts();
+
+  // 5. Re-render the alert banner for the active trail.
+  tdRenderAlertBanner();
+}
+
+// ── tdFetchAlerts: always-fresh alert fetch ──────────────────────────────
+async function tdFetchAlerts(){
+  const sb = (typeof getSupaClient === 'function') ? getSupaClient() : null;
+  if (!sb) return;
+  for (const trail of ['AT','PCT','CDT']){
+    try {
+      // RLS handles the visibility window (published, not retired, in time
+      // bounds); we just request what's visible.
+      const { data, error } = await sb.from('trail_alerts')
+        .select('id, trail, severity, title, body, nearest_mile, lat, lon, effective_from, effective_until, source_url, published_at')
+        .eq('trail', trail)
+        .order('severity', {ascending: false}) // HAZARD > ADVISORY > INFO alphabetically; we sort again below
+        .order('published_at', {ascending: false})
+        .limit(20);
+      if (!error && data){
+        _tdAlertCache[trail] = data;
+        tdSaveAlerts(trail, data);
+      }
+    } catch(e){ /* ignore */ }
+  }
+}
+
+// ── tdRenderAlertBanner: render alerts for the active trail ──────────────
+// Inserts one .trail-alert-banner per visible alert into #trailAlertStack.
+// Sorting: HAZARD first, then ADVISORY, then INFO; within each, newest first.
+function tdRenderAlertBanner(){
+  const stack = document.getElementById('trailAlertStack');
+  if (!stack) return;
+  const trail = window.ACTIVE_TRAIL_ID || 'AT';
+  const alerts = (_tdAlertCache[trail] || []).slice();
+
+  const sevRank = { HAZARD: 0, ADVISORY: 1, INFO: 2 };
+  alerts.sort((a,b) => {
+    const sa = sevRank[a.severity] ?? 9;
+    const sb = sevRank[b.severity] ?? 9;
+    if (sa !== sb) return sa - sb;
+    return (new Date(b.published_at).getTime()) - (new Date(a.published_at).getTime());
+  });
+
+  // Build conservancy attribution string for this trail.
+  const c = _tdConservancies && _tdConservancies[trail];
+  const cName = (c && c.display_name_short) || (trail === 'AT' ? 'ATC' : trail === 'PCT' ? 'PCTA' : 'CDTC');
+  const cMode = (c && c.attribution_mode) || 'via';
+
+  // Render up to 3 most-important; collapse the rest behind a "+N more".
+  const showTop = alerts.slice(0, 3);
+  const extra = alerts.length - showTop.length;
+
+  stack.innerHTML = ''; // wipe + repopulate
+  if (!showTop.length) return;
+
+  showTop.forEach(a => {
+    const div = document.createElement('div');
+    const sev = (a.severity || 'INFO').toLowerCase();
+    div.className = 'trail-alert-banner sev-' + sev + ' show';
+
+    // Attribution: "Posted by ATC via Triple Crown Trek Planner" (via mode)
+    // or "Issued by ATC" (issued mode).
+    const attrib = cMode === 'issued'
+      ? ('Issued by ' + cName)
+      : ('Posted by ' + cName + ' via Triple Crown Trek Planner');
+
+    // Posted time as a relative human string.
+    function relTime(iso){
+      try {
+        const d = new Date(iso);
+        const diff = (Date.now() - d.getTime()) / 1000;
+        if (diff < 60)   return Math.floor(diff) + 's ago';
+        if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+        return Math.floor(diff/86400) + 'd ago';
+      } catch(e){ return ''; }
+    }
+
+    const icon = sev === 'hazard' ? '⚠' : sev === 'advisory' ? '⚑' : 'ℹ';
+    const mileStr = (a.nearest_mile != null) ? ('· mile ' + a.nearest_mile) : '';
+    const srcLink = a.source_url
+      ? '<br><a href="' + tdEscape(a.source_url) + '" target="_blank" rel="noopener noreferrer">Source</a>'
+      : '';
+
+    div.innerHTML =
+      '<span class="tab-icon">' + icon + '</span>' +
+      '<div class="tab-body">' +
+        '<span class="tab-title">' + tdEscape(a.title) + ' ' + mileStr + '</span>' +
+        '<span class="tab-meta">' + attrib + ' · ' + relTime(a.published_at) + '</span>' +
+        '<div class="tab-detail">' + tdEscape(a.body) + srcLink + '</div>' +
+      '</div>' +
+      '<button class="tab-info-btn" aria-label="Show details" type="button">ℹ</button>';
+
+    div.querySelector('.tab-info-btn').addEventListener('click', () => {
+      div.classList.toggle('expanded');
+    });
+    stack.appendChild(div);
+  });
+
+  if (extra > 0){
+    const more = document.createElement('div');
+    more.className = 'trail-alert-banner sev-info show';
+    more.innerHTML = '<span class="tab-icon">+</span><div class="tab-body"><span class="tab-title">' +
+      extra + ' more alert' + (extra === 1 ? '' : 's') +
+      ' for this trail</span></div>';
+    stack.appendChild(more);
+  }
+}
+
+// Small HTML escape — alert title/body come from the conservancy database
+// which we control via RLS, but defense-in-depth: never use innerHTML with
+// raw server text.
+function tdEscape(s){
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ── tdInit: called once on app start ─────────────────────────────────────
+async function tdInit(){
+  if (_tdInitDone) return;
+  _tdInitDone = true;
+
+  // 1. Load cached manifest + patches + alerts so the app boots with last-
+  //    known overlay even before any network call completes.
+  _tdManifest = tdLoadCachedManifest() || { AT: 0, PCT: 0, CDT: 0 };
+  for (const trail of ['AT','PCT','CDT']){
+    _tdPatchCache[trail] = tdLoadCachedPatches(trail);
+    _tdAlertCache[trail] = tdLoadCachedAlerts(trail);
+  }
+  _tdConservancies = tdLoadCachedConservancies();
+
+  // 2. Apply overlay synchronously for all three trails using cached data.
+  for (const trail of ['AT','PCT','CDT']){
+    _tdMergedTrailData[trail] = tdApplyOverlay(trail);
+    tdSyncActiveTrailIfMatches(trail);
+  }
+  // Initial banner paint with whatever cached alerts we have.
+  tdRenderAlertBanner();
+
+  // 3. Kick off async fetch of conservancies (for attribution string).
+  tdFetchConservancies().then(() => tdRenderAlertBanner());
+
+  // 4. Start the poll cycle.
+  if (_tdPollTimer) clearInterval(_tdPollTimer);
+  _tdPollTimer = setInterval(() => { tdPoll().catch(()=>{}); }, TD_POLL_MS);
+  // First poll: small delay so we don't compete with v1's own load.
+  setTimeout(() => { tdPoll().catch(()=>{}); }, 1500);
+
+  // 5. Poll on visibility-change (tab focus). Throttle: at most once per minute.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible'){
+      if (Date.now() - _tdLastPollAt > 60 * 1000){
+        tdPoll().catch(()=>{});
+      } else {
+        // Even without a refetch, repaint the banner (active trail may have changed).
+        tdRenderAlertBanner();
+      }
+    }
+  });
+
+  // 6. Online recovery: poll again on regaining network.
+  window.addEventListener('online', () => { tdPoll().catch(()=>{}); });
+}
+
+// Expose accessors on window for any future external code.
+window.tdGetWaypoints = tdGetWaypoints;
+window.tdGetTrail     = tdGetTrail;
+window.tdRenderAlertBanner = tdRenderAlertBanner;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   END TRAIL DATA OVERLAY v1
+   ══════════════════════════════════════════════════════════════════════════ */
+
 </script>
 
 <!-- ══════════════════════════════════════════
@@ -7068,6 +7656,9 @@ window.addEventListener('online', tmTryFlushQueue);
       <span class="bear-alert-text" id="bearAlertText">Bear reported nearby</span>
       <button class="bear-alert-close" onclick="document.getElementById('bearAlertBanner').classList.remove('show')">✕</button>
     </div>
+
+    <!-- Trail Data Overlay v1: alert stack (parallel to bear-alert-banner, populated by tdRenderAlertBanner) -->
+    <div class="trail-alert-stack" id="trailAlertStack"></div>
 
     <!-- Action row: two big pills + mile indicator -->
     <div class="fs-btn-row" style="padding:7px 12px">
