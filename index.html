@@ -875,6 +875,89 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
   background:var(--mist);border-radius:5px;padding:6px 10px;margin-top:6px;
   border:1px solid var(--leaf);display:none}
 
+/* ══ TRAIL MAGIC v1 ═══════════════════════════════════════════════ */
+.tm-mode-toggle{display:flex;gap:0;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--stone)}
+.tm-mode-pill{flex:1;padding:9px 12px;border:1.5px solid var(--border);background:var(--white);
+  color:var(--subtle);font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.tm-mode-pill:first-child{border-radius:20px 0 0 20px;border-right:none}
+.tm-mode-pill:last-child{border-radius:0 20px 20px 0}
+.tm-mode-pill.active{background:var(--pine);color:var(--white);border-color:var(--pine)}
+.tm-mode-pill:focus-visible{outline:2px solid var(--focus-ring);outline-offset:1px}
+
+#tm-view-find{padding:0 0 14px}
+#tm-view-angel{padding:0}
+
+.tm-award-banner{display:flex;align-items:center;gap:8px;margin:10px 14px 0;padding:10px 12px;
+  background:linear-gradient(135deg,#fff5d6,#f3e2a3);border:1px solid var(--gold);border-radius:10px;
+  font-size:.78rem;color:#5a4310;font-weight:600}
+.tm-award-sparkle{font-size:1.1rem}
+.tm-award-btn{margin-left:auto;padding:5px 12px;border-radius:14px;border:none;
+  background:#8a4a1f;color:#fff;font-weight:700;font-size:.72rem;cursor:pointer;font-family:inherit}
+.tm-award-btn:hover{background:#5a4310}
+
+#tm-dir-list{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.tm-cache-stamp{padding:0 16px;font-size:.66rem;color:var(--subtle);text-align:right;margin-top:4px}
+.tm-conservancy-foot{margin:14px 16px 0;padding:10px 12px;background:var(--mist);
+  border-radius:8px;border-left:3px solid var(--leaf);font-size:.72rem;color:var(--text);line-height:1.5}
+
+.tm-confirm-btn{padding:5px 12px;border-radius:14px;border:1.5px solid var(--leaf);
+  background:var(--white);color:var(--pine);font-size:.7rem;font-weight:700;cursor:pointer;font-family:inherit}
+.tm-confirm-btn:hover:not(:disabled){background:var(--pine);color:var(--white)}
+.tm-confirm-btn:disabled{opacity:.55;cursor:not-allowed}
+.tm-confirm-btn.confirmed{background:var(--mist);color:var(--forest);border-color:var(--leaf)}
+.tm-confirm-count{font-size:.72rem;color:var(--subtle);font-weight:600}
+
+/* Angel badges (universal gold tier per Option C) */
+.angel-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:11px;
+  font-size:.62rem;font-weight:700;letter-spacing:.02em;background:var(--mist);
+  color:var(--forest);border:1px solid var(--leaf)}
+.angel-badge.legacy{
+  background:linear-gradient(135deg,#fff5d6 0%,#f3e2a3 50%,#e8c96a 100%);
+  color:#5a4310;border:1px solid #b8773c;
+  text-shadow:0 1px 0 rgba(255,255,255,.55);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.45), 0 1px 2px rgba(138,67,16,.18);
+  letter-spacing:.05em}
+
+.tm-svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;margin-top:4px}
+.tm-svc-chip{padding:7px 10px;border-radius:14px;border:1.5px solid var(--border);background:var(--white);
+  color:var(--text);font-size:.74rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .12s;text-align:left}
+.tm-svc-chip:hover{border-color:var(--leaf)}
+.tm-svc-chip.active{background:var(--mist);border-color:var(--pine);color:var(--forest)}
+.tm-svc-chip:focus-visible{outline:2px solid var(--focus-ring);outline-offset:1px}
+
+.tm-use-gps-btn{width:100%;padding:7px 10px;border-radius:6px;border:1.5px solid var(--leaf);
+  background:var(--mist);color:var(--pine);font-weight:700;font-size:.78rem;cursor:pointer;font-family:inherit}
+.tm-use-gps-btn:hover{background:var(--leaf);color:var(--white)}
+
+.tm-contact-row{display:flex;gap:10px;flex-wrap:wrap;font-size:.78rem;color:var(--text)}
+.tm-contact-row label{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+
+.tm-lnt-row{display:flex;gap:8px;align-items:flex-start;font-size:.74rem;color:var(--text);
+  background:var(--mist);padding:8px 10px;border-radius:6px;border:1px solid var(--leaf);
+  margin:8px 0;line-height:1.45;cursor:pointer}
+.tm-lnt-row input[type="checkbox"]{margin-top:2px;flex-shrink:0}
+.tm-lnt-row a{color:var(--pine);font-weight:600}
+
+.tm-water-note{margin-top:6px}
+.tm-water-warn{margin-top:6px;padding:7px 9px;background:#fff5d6;border-left:3px solid #b8773c;
+  border-radius:4px;font-size:.7rem;color:#5a4310;line-height:1.45}
+
+.tm-claim-code-display{font-family:monospace;font-size:1.6rem;font-weight:700;color:var(--forest);
+  letter-spacing:.25em;padding:14px 8px;background:var(--mist);border-radius:8px;border:2px dashed var(--leaf)}
+
+.tm-my-listing{margin-top:14px;padding:12px;background:var(--mist);border:1px solid var(--leaf);border-radius:8px}
+
+.tm-don-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--white);
+  border:1px solid var(--leaf);border-radius:8px}
+.tm-don-row-text{flex:1}
+.tm-don-row-title{font-size:.8rem;font-weight:700;color:var(--forest)}
+.tm-don-row-sub{font-size:.66rem;color:var(--subtle);margin-top:2px;line-height:1.45}
+.tm-don-row-btn{padding:8px 14px;border-radius:18px;border:1.5px solid var(--gold);
+  background:var(--white);color:var(--bark);font-weight:700;font-size:.74rem;cursor:pointer;
+  font-family:inherit;white-space:nowrap;transition:all .15s}
+.tm-don-row-btn:hover{background:var(--gold);color:var(--white)}
+.tm-don-row-btn:focus-visible{outline:2px solid var(--focus-ring);outline-offset:1px}
+
 </style>
 </head>
 <body>
@@ -1505,7 +1588,9 @@ function switchTrailData(trail) {
   // Reset trail-specific caches so AT mile data doesn't bleed into PCT/CDT views
   _waterCondCache = {};
   _bearSightings  = [];
+  try { _angelDirCache = {}; _angelMyListing = null; window._angelDirByName = {}; } catch(e) {}
   try { loadWaterConditions(); } catch(e) {}
+  try { if (typeof tmRefreshDirectory === 'function') tmRefreshDirectory(true); } catch(e) {}
 }
 
 function recalc() {
@@ -3628,6 +3713,29 @@ function donMarkShown(trigger) {
 let _donActiveConsChoice = null;
 let donTipAmt = 5;
 
+// User-initiated donation opener — bypasses the auto-prompt cap.
+// Used by the Trail Magic tab's "Support the [conservancy]" tile.
+function openDonationFromUser(){
+  const cons = getDonCons();
+  _donActiveConsChoice = cons.short;
+  const msg = {
+    icon: '🌿',
+    title: 'Support the trail beneath these angels',
+    body: 'Trail Angels are part of why this app exists. So are the volunteers who maintain the treadway, the privies, and the shelters. Your contribution goes directly to the conservancy you choose — not to this app.'
+  };
+  document.getElementById('don-icon-el').textContent  = msg.icon;
+  document.getElementById('don-title-el').textContent = msg.title;
+  document.getElementById('don-body-el').innerHTML    = msg.body;
+  document.getElementById('don-coffee-btn').textContent = '☕ Support the ' + cons.name;
+  document.querySelectorAll('.don-cons-pill').forEach(p =>
+    p.classList.toggle('selected', p.dataset.cons === cons.short));
+  donTipAmt = 5;
+  document.querySelectorAll('.don-tip').forEach(b =>
+    b.classList.toggle('selected', b.dataset.amt === '5'));
+  document.getElementById('donation-overlay').dataset.trigger = 'trail_magic';
+  document.getElementById('donation-overlay').classList.add('open');
+}
+
 function showDonationMoment(trigger) {
   donCheckPeriod();
   if (!donCanShow(trigger)) return;
@@ -4483,8 +4591,10 @@ function spTab(tab, btn) {
   document.getElementById('sp-tab-board').style.display   = tab==='board'   ? 'block' : 'none';
   document.getElementById('sp-tab-post').style.display    = tab==='post'    ? 'block' : 'none';
   document.getElementById('sp-tab-planner').style.display = tab==='planner' ? 'block' : 'none';
+  document.getElementById('sp-tab-magic').style.display   = tab==='magic'   ? 'block' : 'none';
   if (tab === 'post') prefillPostForm();
   if (tab === 'board') fetchPosts();
+  if (tab === 'magic') tmInit();
 }
 
 function prefillPostForm() {
@@ -4692,6 +4802,7 @@ function renderBoard() {
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px">
         ${hikedBtn}
         ${yoyoBadge}
+        ${typeof tmAngelPillFor === 'function' ? tmAngelPillFor(p.trail_name) : ''}
       </div>
       <button class="pc-contact" data-ctype="${esc(p.contact_type)}" data-cinfo="${esc(p.contact)}" data-cname="${esc(p.trail_name)}" onclick="contactHikerEl(this)">
         ${contactIcon} Contact ${esc(p.trail_name)} via ${esc(p.contact_type)}
@@ -5630,6 +5741,659 @@ document.addEventListener('DOMContentLoaded',()=>{
   setTimeout(updatePackTotals,200);
 });
 
+/* ══════════════════════════════════════════════════════════════════════
+   TRAIL MAGIC v1 — directory, badge, confirmations, nominations
+   ══════════════════════════════════════════════════════════════════════ */
+
+// ── State (per-trail, cached) ────────────────────────────────────────
+let _angelDirCache = {};          // { 'AT': [rows], 'PCT': [...], 'CDT': [...] }
+let _angelDirStamp = {};          // { 'AT': iso-string }
+let _angelMyListing = null;       // my listing on current trail, if any
+let _angelConfirmedSet = {};      // localStorage-backed: {angelId: true} (per device)
+let _angelSelectedSvcs = new Set();
+let _angelActiveFilter = 'all';
+let _angelNearMe = false;
+let _angelMode = 'find';
+window._angelDirByName = {};      // trail_name lower → angel row, for renderPosts pill
+const TM_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const TM_PEPPER = 'tctp_v1_magic_pepper_2026'; // privacy-by-obscurity for hash; not a secret
+
+// ── Helpers ──────────────────────────────────────────────────────────
+function tmCurrentTrail(){ return window.ACTIVE_TRAIL_ID || 'AT'; }
+function tmTrailName(){ return localStorage.getItem('at_last_trail_name') || ''; }
+
+// SHA-256 hash of (lower(name) || pepper) — uses SubtleCrypto, returns hex
+async function tmHashName(name){
+  const enc = new TextEncoder().encode((name||'').trim().toLowerCase() + '|' + TM_PEPPER);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function tmRandomCode(){
+  // 6-digit, leading zeros allowed
+  return String(Math.floor(Math.random()*1000000)).padStart(6,'0');
+}
+function tmServiceLabel(svc){
+  return ({rides:'🚗 Rides', water_cache:'💧 Water', feed:'🍔 Feed',
+           bunk:'🛏 Bunk', shower_laundry:'🚿 Shower', resupply_hold:'📦 Resupply',
+           gear_fix:'🔧 Gear'})[svc] || svc;
+}
+function tmConservancyName(){
+  return ({AT:'ATC', PCT:'PCTA', CDT:'CDTC'})[tmCurrentTrail()] || 'ATC';
+}
+function tmHaversineMi(a,b,c,d){
+  // Reuse global if present; otherwise fall back
+  if (typeof haversineMi === 'function') return haversineMi(a,b,c,d);
+  const R=3958.7613, toR=Math.PI/180;
+  const dLat=(c-a)*toR, dLon=(d-b)*toR;
+  const x=Math.sin(dLat/2)**2 + Math.cos(a*toR)*Math.cos(c*toR)*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(x));
+}
+function tmEsc(s){ return typeof esc==='function' ? esc(s) : String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function tmToast(m){ if (typeof showToast === 'function') showToast(m); }
+
+// ── Init (called by spTab('magic')) ──────────────────────────────────
+async function tmInit(){
+  const trail = tmCurrentTrail();
+  document.getElementById('tm-trail-readout') && (document.getElementById('tm-trail-readout').value = trail);
+  const tn = tmTrailName();
+  if (tn) document.getElementById('tm-trail-name') && (document.getElementById('tm-trail-name').value = tn);
+
+  // Confirmed-set from device storage
+  try { _angelConfirmedSet = JSON.parse(localStorage.getItem('tctp_angel_confirmed_'+trail) || '{}'); }
+  catch(e){ _angelConfirmedSet = {}; }
+
+  tmRenderConservancyFooter();
+  tmRenderAwardBanner();
+  tmBuildCrossingDropdown();
+  await tmRefreshDirectory(false);
+  await tmLoadMyListing();
+
+  // Queue retry attempt for any offline writes
+  tmTryFlushQueue();
+}
+
+// ── Mode toggle (Find Magic ⇄ Be an Angel) ───────────────────────────
+function tmSetMode(mode, btn){
+  _angelMode = mode;
+  document.querySelectorAll('.tm-mode-pill').forEach(b=>{
+    b.classList.remove('active'); b.setAttribute('aria-selected','false');
+  });
+  btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+  document.getElementById('tm-view-find').style.display  = mode==='find'  ? 'block' : 'none';
+  document.getElementById('tm-view-angel').style.display = mode==='angel' ? 'block' : 'none';
+}
+
+// ── Directory: load / cache / render ─────────────────────────────────
+async function tmRefreshDirectory(force){
+  const trail = tmCurrentTrail();
+  const cacheKey = 'tctp_angel_dir_'+trail;
+  const stampKey = 'tctp_angel_dir_stamp_'+trail;
+
+  // Try cache first (TTL 24h)
+  if (!force) {
+    const stamp = parseInt(localStorage.getItem(stampKey)||'0',10);
+    const raw   = localStorage.getItem(cacheKey);
+    if (raw && (Date.now() - stamp) < TM_CACHE_TTL_MS) {
+      try { _angelDirCache[trail] = JSON.parse(raw); _angelDirStamp[trail] = new Date(stamp).toISOString(); }
+      catch(e){ _angelDirCache[trail] = []; }
+      tmRenderDirectory();
+    }
+  }
+
+  // Online refresh
+  const sb = (typeof getSupaClient === 'function') ? getSupaClient() : null;
+  if (!sb) {
+    if (!_angelDirCache[trail]) {
+      document.getElementById('tm-dir-list').innerHTML =
+        '<div class="board-empty"><div class="board-empty-icon">📡</div>No internet — and no cached directory yet.</div>';
+    }
+    return;
+  }
+  try {
+    const { data, error } = await sb.from('slack_pack_trail_angels')
+      .select('id,trail,trail_name,display_name,road_crossing_label,nearest_mile,lat,lon,services,note,season_months,contact_type,confirmation_count,created_at')
+      .eq('trail', trail).eq('active', true)
+      .order('confirmation_count', { ascending:false })
+      .limit(500);
+    if (error) throw error;
+    _angelDirCache[trail] = data || [];
+    _angelDirStamp[trail] = new Date().toISOString();
+    localStorage.setItem(cacheKey, JSON.stringify(_angelDirCache[trail]));
+    localStorage.setItem(stampKey, String(Date.now()));
+    // Index by lower(trail_name) for the partner-card pill
+    window._angelDirByName = {};
+    _angelDirCache[trail].forEach(a => { window._angelDirByName[(a.trail_name||'').toLowerCase()] = a; });
+    tmRenderDirectory();
+  } catch(e){
+    console.warn('Angel directory refresh failed:', e);
+    if (!_angelDirCache[trail]) {
+      document.getElementById('tm-dir-list').innerHTML =
+        '<div class="board-empty"><div class="board-empty-icon">⚠</div>Couldn\'t load Trail Angels. Pull to retry.</div>';
+    }
+  }
+}
+
+function tmRenderDirectory(){
+  const trail = tmCurrentTrail();
+  const list = _angelDirCache[trail] || [];
+  const el = document.getElementById('tm-dir-list');
+  if (!el) return;
+
+  // Apply filter
+  let rows = list.slice();
+  if (_angelActiveFilter === 'legacy') rows = rows.filter(r => (r.confirmation_count||0) >= 50);
+  else if (_angelActiveFilter !== 'all') rows = rows.filter(r => (r.services||[]).includes(_angelActiveFilter));
+
+  // Near Me filter (requires GPS)
+  if (_angelNearMe && typeof lastGpsPos !== 'undefined' && lastGpsPos) {
+    rows = rows.filter(r => tmHaversineMi(lastGpsPos.coords.latitude, lastGpsPos.coords.longitude, r.lat, r.lon) <= 50);
+  }
+
+  // Empty state
+  if (!rows.length) {
+    el.innerHTML = `<div class="board-empty">
+      <div class="board-empty-icon">✨</div>
+      No Trail Angels listed here yet. If you live near a road crossing and want to help hikers, tap <strong>Be an Angel</strong>.
+    </div>`;
+    tmRenderCacheStamp();
+    return;
+  }
+
+  el.innerHTML = rows.map(r => tmAngelCardHtml(r)).join('');
+  tmRenderCacheStamp();
+}
+
+function tmRenderCacheStamp(){
+  const trail = tmCurrentTrail();
+  const stamp = _angelDirStamp[trail];
+  const el = document.getElementById('tm-cache-stamp');
+  if (!el) return;
+  if (!stamp) { el.textContent = ''; return; }
+  const ago = (typeof timeAgo === 'function') ? timeAgo(stamp) : '';
+  el.textContent = navigator.onLine ? `Updated ${ago}` : `Offline — last updated ${ago}`;
+}
+
+function tmAngelCardHtml(r){
+  const isLegacy = (r.confirmation_count||0) >= 50;
+  const badge = isLegacy
+    ? '<span class="angel-badge legacy">✨ LEGACY ANGEL</span>'
+    : '<span class="angel-badge">🌿 Trail Angel</span>';
+  const svcChips = (r.services||[]).map(s =>
+    `<span class="pc-badge pc-trad" aria-label="${tmEsc(s)}">${tmEsc(tmServiceLabel(s))}</span>`).join(' ');
+  const note = r.note ? `<div class="pc-about">"${tmEsc(r.note)}"</div>` : '';
+  const trail = tmCurrentTrail();
+  const isWaterCacheCard = (r.services||[]).includes('water_cache');
+  const lntNote = (isWaterCacheCard && trail !== 'AT')
+    ? `<div class="tm-water-warn" role="note">⚠ Water cache — please <strong>hand-deliver when possible</strong> and never leave food unattended (${tmConservancyName()} guidance).</div>`
+    : '';
+
+  // Confirm-button eligibility
+  const alreadyConfirmed = !!_angelConfirmedSet[r.id];
+  const myName = tmTrailName();
+  const isOwnListing = myName && r.trail_name && (r.trail_name.toLowerCase() === myName.toLowerCase());
+  let canConfirm = !alreadyConfirmed && !!myName && !isOwnListing;
+  let distNote = '';
+  if (typeof lastGpsPos !== 'undefined' && lastGpsPos) {
+    const d = tmHaversineMi(lastGpsPos.coords.latitude, lastGpsPos.coords.longitude, r.lat, r.lon);
+    if (d > 25) { canConfirm = false; distNote = ` <span style="color:var(--subtle)">(${d.toFixed(1)} mi away — confirm in person)</span>`; }
+  } else {
+    canConfirm = false; distNote = ' <span style="color:var(--subtle)">(enable GPS to confirm)</span>';
+  }
+  const confirmBtn = alreadyConfirmed
+    ? `<button class="tm-confirm-btn confirmed" disabled aria-label="You already confirmed this angel">✓ Confirmed</button>`
+    : (canConfirm
+        ? `<button class="tm-confirm-btn" onclick="tmOpenConfirm('${r.id}')" aria-label="Confirm magic from ${tmEsc(r.trail_name)}">✓ Confirm</button>`
+        : `<button class="tm-confirm-btn" disabled aria-label="Confirmation locked">✓ Confirm${distNote}</button>`);
+
+  const contactBtn = (r.contact_type === 'in_person_only')
+    ? `<button class="pc-contact" disabled>👋 In person only</button>`
+    : `<button class="pc-contact" onclick="tmRevealContact('${r.id}', this)" aria-label="Reveal contact for ${tmEsc(r.trail_name)}">📱 Contact</button>`;
+
+  return `<div class="pc-card">
+    <div class="pc-top">
+      <div style="flex:1">
+        <div class="pc-name">✨ ${tmEsc(r.trail_name)}${r.display_name ? ' <span style="color:var(--subtle);font-weight:400">· '+tmEsc(r.display_name)+'</span>' : ''}</div>
+        <div class="pc-age">${tmEsc(r.road_crossing_label)} · ${tmCurrentTrail()} Mile ${Number(r.nearest_mile).toFixed(1)}</div>
+      </div>
+      ${badge}
+    </div>
+    <div class="pc-badges">${svcChips}</div>
+    ${note}
+    ${lntNote}
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px">
+      <span class="tm-confirm-count" aria-label="${r.confirmation_count||0} hikers confirmed">✓ ${r.confirmation_count||0} confirmed</span>
+      ${confirmBtn}
+      ${contactBtn}
+    </div>
+  </div>`;
+}
+
+// ── Filters ──────────────────────────────────────────────────────────
+function tmFilter(btn){
+  document.querySelectorAll('#tm-service-filters .board-filter').forEach(b=>{
+    if (b.id !== 'tm-near-me-btn') b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  _angelActiveFilter = btn.dataset.svc;
+  tmRenderDirectory();
+}
+function tmToggleNearMe(btn){
+  if (!_angelNearMe) {
+    if (typeof lastGpsPos === 'undefined' || !lastGpsPos) {
+      tmToast('📍 Enable GPS tracking first.');
+      return;
+    }
+  }
+  _angelNearMe = !_angelNearMe;
+  btn.classList.toggle('active', _angelNearMe);
+  tmRenderDirectory();
+}
+
+// ── Conservancy footer + nominate banner ─────────────────────────────
+function tmRenderConservancyFooter(){
+  const el = document.getElementById('tm-conservancy-foot');
+  if (!el) return;
+  const cons = tmConservancyName();
+  const consFull = ({ATC:'Appalachian Trail Conservancy', PCTA:'Pacific Crest Trail Association', CDTC:'Continental Divide Trail Coalition'})[cons] || cons;
+  el.innerHTML = `
+    <div style="margin-bottom:10px">Trail Magic is best given in person. Please follow <strong>${cons}</strong> guidance: keep groups small, Leave No Trace, never leave food unattended.</div>
+    <div class="tm-don-row">
+      <div class="tm-don-row-text">
+        <div class="tm-don-row-title">Support the ${cons}</div>
+        <div class="tm-don-row-sub">10% of every contribution returns directly to ${consFull}. No ads. No subscription. Ever.</div>
+      </div>
+      <button class="tm-don-row-btn" onclick="openDonationFromUser()" aria-label="Open donation to ${cons}">☕ Support ${cons}</button>
+    </div>`;
+}
+function tmRenderAwardBanner(){
+  const banner = document.getElementById('tm-award-banner');
+  if (!banner) return;
+  const now = new Date();
+  const m = now.getMonth() + 1; // 1..12
+  const open = (m === 10 || m === 11);
+  if (!open) { banner.style.display = 'none'; return; }
+  const year = now.getFullYear();
+  document.getElementById('tm-award-text').textContent =
+    `Nominate a Trail Angel for the ${tmCurrentTrail()} ${year} Trail Angel Award (nominations close Nov 30)`;
+  banner.style.display = '';
+}
+
+// ── Be-an-Angel form ─────────────────────────────────────────────────
+function tmBuildCrossingDropdown(){
+  const sel = document.getElementById('tm-crossing-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Pick a waypoint —</option>';
+  const wps = (window.ACTIVE_WAYPOINTS || []);
+  // Use only road-crossing-ish waypoints (column index 7 = road access flag in this schema)
+  wps.slice().sort((a,b) => a[0]-b[0]).forEach((w,i) => {
+    const mile = w[0], name = w[1], state = w[2];
+    sel.innerHTML += `<option value="${i}" data-mile="${mile}" data-lat="${w[3]}" data-lon="${w[4]}">
+      Mile ${mile.toFixed(1)} · ${tmEsc(name)} (${tmEsc(state||'')})
+    </option>`;
+  });
+  sel.innerHTML += '<option value="__other__">Other — type my own…</option>';
+}
+function tmOnCrossingChange(){
+  const sel = document.getElementById('tm-crossing-select');
+  const custom = document.getElementById('tm-crossing-custom');
+  const mileEl = document.getElementById('tm-nearest-mile');
+  if (sel.value === '__other__') {
+    custom.style.display = 'block';
+    return;
+  }
+  custom.style.display = 'none';
+  const opt = sel.options[sel.selectedIndex];
+  if (opt && opt.dataset.mile) {
+    mileEl.value = opt.dataset.mile;
+  }
+}
+function tmFillFromGps(){
+  if (typeof lastGpsPos === 'undefined' || !lastGpsPos) { tmToast('📍 Enable GPS first.'); return; }
+  // Snap to nearest waypoint mile
+  const lat = lastGpsPos.coords.latitude, lon = lastGpsPos.coords.longitude;
+  const wps = (window.ACTIVE_WAYPOINTS||[]);
+  let best=null, bestD=Infinity;
+  wps.forEach(w => {
+    const d = tmHaversineMi(lat,lon,w[3],w[4]);
+    if (d < bestD) { bestD = d; best = w; }
+  });
+  if (best) {
+    document.getElementById('tm-nearest-mile').value = best[0].toFixed(1);
+    tmToast(`Snapped to mile ${best[0].toFixed(1)} · ${best[1]}`);
+  }
+}
+function tmToggleSvc(btn){
+  const svc = btn.dataset.svc;
+  const trail = tmCurrentTrail();
+  if (svc === 'water_cache' && trail === 'AT') {
+    tmToast('Water Cache is a PCT/CDT arid-section option. ATC asks that nothing be left unattended.');
+    return;
+  }
+  if (_angelSelectedSvcs.has(svc)) {
+    _angelSelectedSvcs.delete(svc);
+    btn.classList.remove('active'); btn.setAttribute('aria-pressed','false');
+  } else {
+    if (_angelSelectedSvcs.size >= 4) { tmToast('Pick at most 4 services.'); return; }
+    _angelSelectedSvcs.add(svc);
+    btn.classList.add('active'); btn.setAttribute('aria-pressed','true');
+  }
+  // Water-cache acknowledgement (PCT/CDT only)
+  const note = document.getElementById('tm-water-note');
+  if (_angelSelectedSvcs.has('water_cache') && trail !== 'AT') {
+    note.style.display = 'block';
+    note.innerHTML = `<label class="tm-lnt-row"><input type="checkbox" id="tm-water-ack">
+      <span>This is an arid-section cache I personally tend and clean up. I understand <strong>${tmConservancyName()}</strong>'s water-cache guidance.</span></label>`;
+  } else {
+    note.style.display = 'none';
+    note.innerHTML = '';
+  }
+}
+
+async function tmSubmitAngel(){
+  const btn = document.getElementById('tm-submit-btn');
+  const note = document.getElementById('tm-submit-note');
+  note.textContent = '';
+
+  const trail = tmCurrentTrail();
+  const trail_name = (document.getElementById('tm-trail-name').value || '').trim();
+  const display_name = (document.getElementById('tm-display-name').value || '').trim() || null;
+  const sel = document.getElementById('tm-crossing-select');
+  const custom = document.getElementById('tm-crossing-custom').value.trim();
+  const road_crossing_label = (sel.value === '__other__')
+    ? custom
+    : (sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent.trim() : '');
+  const nearest_mile = parseFloat(document.getElementById('tm-nearest-mile').value);
+  const opt = sel.options[sel.selectedIndex];
+  let lat = null, lon = null;
+  if (sel.value !== '__other__' && opt) { lat = parseFloat(opt.dataset.lat); lon = parseFloat(opt.dataset.lon); }
+  if ((lat===null || isNaN(lat)) && typeof lastGpsPos !== 'undefined' && lastGpsPos) {
+    lat = lastGpsPos.coords.latitude; lon = lastGpsPos.coords.longitude;
+  }
+
+  const services = Array.from(_angelSelectedSvcs);
+  const ctype = (document.querySelector('input[name="tm-ctype"]:checked')||{}).value || 'sms';
+  const contact = ctype === 'in_person_only' ? null : (document.getElementById('tm-contact').value||'').trim() || null;
+  const noteText = (document.getElementById('tm-note').value||'').trim() || null;
+  const lnt_ack = document.getElementById('tm-lnt-ack').checked;
+  const wAck = document.getElementById('tm-water-ack');
+  const water_cache_arid_ack = !!(wAck && wAck.checked);
+
+  // Validation
+  if (!trail_name) { note.textContent = 'Trail name is required.'; return; }
+  if (!road_crossing_label) { note.textContent = 'Pick a road crossing.'; return; }
+  if (isNaN(nearest_mile)) { note.textContent = 'Nearest mile is required.'; return; }
+  if (lat === null || isNaN(lat)) { note.textContent = 'Need coordinates — pick a waypoint or enable GPS.'; return; }
+  if (services.length < 1) { note.textContent = 'Pick at least one service.'; return; }
+  if (services.length > 4) { note.textContent = 'Pick at most four services.'; return; }
+  if (services.includes('water_cache') && trail !== 'AT' && !water_cache_arid_ack) {
+    note.textContent = 'Please acknowledge the water-cache guidance.'; return;
+  }
+  if (services.includes('water_cache') && trail === 'AT') {
+    note.textContent = 'Water Cache is PCT/CDT only on this app.'; return;
+  }
+  if (!lnt_ack) { note.textContent = 'Please acknowledge the Leave No Trace commitment.'; return; }
+
+  btn.disabled = true; btn.textContent = '…';
+
+  const claimCode = tmRandomCode();
+  let claimHash;
+  try { claimHash = await tmHashName(claimCode + '|' + trail_name); }
+  catch(e) { claimHash = claimCode; }
+  // Also hash the angel's own trail_name so the server can prevent self-confirms
+  let trail_name_hash;
+  try { trail_name_hash = await tmHashName(trail_name); }
+  catch(e) { trail_name_hash = ''; }
+  localStorage.setItem('tctp_angel_claim_'+trail+'_'+trail_name.toLowerCase(), claimCode);
+
+  const row = {
+    trail, trail_name, display_name,
+    road_crossing_label: road_crossing_label.slice(0,60),
+    nearest_mile, lat, lon, services, note: noteText,
+    contact_type: ctype, contact,
+    water_cache_arid_ack, lnt_ack: true,
+    claim_code_hash: claimHash,
+    trail_name_hash
+  };
+
+  const sb = (typeof getSupaClient === 'function') ? getSupaClient() : null;
+  if (!sb || !navigator.onLine) {
+    tmQueueWrite('insert_angel', row);
+    btn.disabled=false; btn.textContent = '✨ List me as a Trail Angel';
+    tmToast('Saved offline — will publish when you have signal.');
+    tmShowClaimCode(claimCode);
+    return;
+  }
+  try {
+    const { data, error } = await sb.from('slack_pack_trail_angels').insert([row]).select().single();
+    if (error) throw error;
+    tmToast('✨ You are listed as a Trail Angel.');
+    tmShowClaimCode(claimCode);
+    _angelMyListing = data;
+    await tmRefreshDirectory(true);
+    tmRenderMyListing();
+  } catch(e){
+    const msg = (e && e.message) || '';
+    if (msg.includes('duplicate') || msg.includes('one_per_name')) {
+      note.textContent = `You're already listed on the ${trail}. Hide your existing listing first.`;
+    } else {
+      note.textContent = 'Could not save: ' + msg;
+    }
+  } finally {
+    btn.disabled=false; btn.textContent = '✨ List me as a Trail Angel';
+  }
+}
+
+function tmShowClaimCode(code){
+  document.getElementById('tm-claim-code').textContent = code.split('').join(' ');
+  if (typeof openModal === 'function') openModal('modal-tm-claim');
+}
+
+// ── My listing (own card with hide/manage) ───────────────────────────
+async function tmLoadMyListing(){
+  const trail = tmCurrentTrail();
+  const tn = tmTrailName();
+  const sb = (typeof getSupaClient === 'function') ? getSupaClient() : null;
+  if (!tn || !sb) { tmRenderMyListing(); return; }
+  try {
+    const { data } = await sb.from('slack_pack_trail_angels')
+      .select('*').eq('trail',trail).ilike('trail_name', tn).eq('active',true).limit(1);
+    _angelMyListing = (data && data[0]) || null;
+  } catch(e){ _angelMyListing = null; }
+  tmRenderMyListing();
+}
+function tmRenderMyListing(){
+  const el = document.getElementById('tm-my-listing');
+  if (!el) return;
+  if (!_angelMyListing) { el.style.display='none'; el.innerHTML=''; return; }
+  const r = _angelMyListing;
+  el.style.display = 'block';
+  el.innerHTML = `<div class="tm-mine">
+    <div style="font-weight:700;color:var(--forest);margin-bottom:4px">Your listing on the ${r.trail}</div>
+    <div style="font-size:.78rem;color:var(--text)">${tmEsc(r.road_crossing_label)} · Mile ${Number(r.nearest_mile).toFixed(1)}</div>
+    <div style="font-size:.74rem;color:var(--subtle);margin:4px 0 8px">✓ ${r.confirmation_count||0} confirmed</div>
+    <button class="pc-hiked-btn" onclick="tmHideMyListing()" aria-label="Hide my listing">Hide my listing</button>
+  </div>`;
+}
+async function tmHideMyListing(){
+  if (!_angelMyListing) return;
+  const code = prompt('Enter your 6-digit claim code to hide this listing:');
+  if (!code) return;
+  const expected = localStorage.getItem('tctp_angel_claim_'+_angelMyListing.trail+'_'+_angelMyListing.trail_name.toLowerCase());
+  if (expected && code !== expected) { tmToast('Claim code does not match.'); return; }
+  const sb = getSupaClient();
+  if (!sb) { tmToast('No connection.'); return; }
+  try {
+    await sb.from('slack_pack_trail_angels').update({ active:false }).eq('id', _angelMyListing.id);
+    _angelMyListing = null;
+    tmToast('Listing hidden.');
+    tmRenderMyListing();
+    tmRefreshDirectory(true);
+  } catch(e){ tmToast('Could not hide: '+e.message); }
+}
+
+// ── Confirm flow ─────────────────────────────────────────────────────
+let _tmPendingConfirmId = null;
+function tmOpenConfirm(angelId){
+  const trail = tmCurrentTrail();
+  const r = (_angelDirCache[trail]||[]).find(x => x.id === angelId);
+  if (!r) return;
+  _tmPendingConfirmId = angelId;
+  const body = document.getElementById('tm-confirm-body');
+  body.innerHTML = `<div style="font-size:.85rem;color:var(--text);line-height:1.5">
+    Confirm that <strong>${tmEsc(r.trail_name)}</strong> gave you trail magic at
+    <strong>${tmEsc(r.road_crossing_label)}</strong>?<br><br>
+    This adds one to their public count. You can only confirm an angel once.
+  </div>`;
+  if (typeof openModal === 'function') openModal('modal-tm-confirm');
+}
+async function tmDoConfirm(){
+  const trail = tmCurrentTrail();
+  const angelId = _tmPendingConfirmId;
+  if (!angelId) return;
+  const r = (_angelDirCache[trail]||[]).find(x => x.id === angelId);
+  if (!r) return;
+  const myName = tmTrailName();
+  if (!myName) { tmToast('Set your trail name first (Slack Pack → Post).'); return; }
+  if (myName.toLowerCase() === (r.trail_name||'').toLowerCase()) { tmToast("You can't confirm yourself 😄"); return; }
+  if (typeof lastGpsPos === 'undefined' || !lastGpsPos) { tmToast('Enable GPS to confirm.'); return; }
+  const d = tmHaversineMi(lastGpsPos.coords.latitude, lastGpsPos.coords.longitude, r.lat, r.lon);
+  if (d > 25) { tmToast(`Too far — ${d.toFixed(1)} mi. Confirm at the road crossing.`); return; }
+
+  const hash = await tmHashName(myName);
+  const row = {
+    angel_id: angelId, confirmer_hash: hash,
+    confirmer_lat: lastGpsPos.coords.latitude,
+    confirmer_lon: lastGpsPos.coords.longitude,
+    distance_mi: Number(d.toFixed(2))
+  };
+  const sb = getSupaClient();
+  if (!sb || !navigator.onLine) {
+    tmQueueWrite('insert_confirm', row);
+    _angelConfirmedSet[angelId] = true;
+    localStorage.setItem('tctp_angel_confirmed_'+trail, JSON.stringify(_angelConfirmedSet));
+    tmToast('Saved offline — will sync when online.');
+    if (typeof closeModal === 'function') closeModal('modal-tm-confirm');
+    tmRenderDirectory();
+    return;
+  }
+  try {
+    const { error } = await sb.from('slack_pack_angel_confirmations').insert([row]);
+    if (error) throw error;
+    _angelConfirmedSet[angelId] = true;
+    localStorage.setItem('tctp_angel_confirmed_'+trail, JSON.stringify(_angelConfirmedSet));
+    tmToast('✓ Thank you — confirmation recorded.');
+    if (typeof closeModal === 'function') closeModal('modal-tm-confirm');
+    await tmRefreshDirectory(true);
+  } catch(e){
+    const m = (e && e.message)||'';
+    if (m.includes('duplicate') || m.includes('one_per_hiker')) {
+      _angelConfirmedSet[angelId] = true;
+      localStorage.setItem('tctp_angel_confirmed_'+trail, JSON.stringify(_angelConfirmedSet));
+      tmToast('You\'ve already confirmed this angel.');
+    } else {
+      tmToast('Could not save: '+m);
+    }
+  }
+}
+
+// ── Contact reveal (mirrors Partner Board pattern) ───────────────────
+function tmRevealContact(angelId, btn){
+  const trail = tmCurrentTrail();
+  const r = (_angelDirCache[trail]||[]).find(x => x.id === angelId);
+  if (!r) return;
+  if (typeof contactHiker === 'function' && r.contact && r.contact_type) {
+    contactHiker(r.contact_type, r.contact, r.trail_name);
+  } else if (r.contact) {
+    btn.textContent = tmEsc(r.contact);
+    btn.onclick = null;
+  }
+}
+
+// ── Nominations ──────────────────────────────────────────────────────
+function tmOpenNominate(){
+  const trail = tmCurrentTrail();
+  const sel = document.getElementById('tm-nom-angel');
+  const list = (_angelDirCache[trail]||[]).slice().sort((a,b)=>(b.confirmation_count||0)-(a.confirmation_count||0));
+  sel.innerHTML = list.map(a =>
+    `<option value="${a.id}">${tmEsc(a.trail_name)} — ${tmEsc(a.road_crossing_label)} (✓ ${a.confirmation_count||0})</option>`
+  ).join('');
+  document.getElementById('tm-nom-title').textContent = `Nominate a Trail Angel · ${trail} ${new Date().getFullYear()}`;
+  document.getElementById('tm-nom-note').textContent = '';
+  document.getElementById('tm-nom-why').value = '';
+  if (typeof openModal === 'function') openModal('modal-tm-nominate');
+}
+async function tmSubmitNomination(){
+  const note = document.getElementById('tm-nom-note');
+  const trail = tmCurrentTrail();
+  const myName = tmTrailName();
+  if (!myName) { note.textContent = 'Set your trail name first.'; return; }
+  const angel_id = document.getElementById('tm-nom-angel').value;
+  const why = document.getElementById('tm-nom-why').value.trim();
+  if (!angel_id) { note.textContent = 'Pick an angel.'; return; }
+  if (why.length < 10 || why.length > 280) { note.textContent = 'Why must be 10–280 chars.'; return; }
+  const hash = await tmHashName(myName);
+  const row = {
+    angel_id, trail, award_year: new Date().getFullYear(),
+    nominator_hash: hash, why
+  };
+  const sb = getSupaClient();
+  if (!sb) { tmQueueWrite('insert_nomination', row); tmToast('Saved offline.'); if (typeof closeModal==='function') closeModal('modal-tm-nominate'); return; }
+  try {
+    const { error } = await sb.from('slack_pack_angel_award_nominations').insert([row]);
+    if (error) throw error;
+    tmToast('✨ Nomination recorded — thank you.');
+    if (typeof closeModal==='function') closeModal('modal-tm-nominate');
+  } catch(e){
+    const m = (e && e.message)||'';
+    if (m.includes('duplicate')) note.textContent = `You\'ve already nominated for ${trail} this year.`;
+    else note.textContent = 'Could not save: ' + m;
+  }
+}
+
+// ── Partner-Board pill: tmAngelPillFor(trail_name) ──────────────────
+function tmAngelPillFor(name){
+  if (!name) return '';
+  const a = (window._angelDirByName || {})[(name||'').toLowerCase()];
+  if (!a) return '';
+  const legacy = (a.confirmation_count||0) >= 50;
+  return legacy
+    ? '<span class="angel-badge legacy" title="Legacy Angel — 50+ confirmations">✨ LEGACY</span>'
+    : '<span class="angel-badge" title="Trail Angel">🌿</span>';
+}
+
+// ── Offline write queue (per spec item: retry on online event) ──────
+function tmQueueWrite(kind, payload){
+  try {
+    const q = JSON.parse(localStorage.getItem('tctp_angel_queue') || '[]');
+    q.push({ kind, payload, ts: Date.now(), id: Math.random().toString(36).slice(2) });
+    localStorage.setItem('tctp_angel_queue', JSON.stringify(q));
+  } catch(e){ console.warn('Queue failed', e); }
+}
+async function tmTryFlushQueue(){
+  if (!navigator.onLine) return;
+  const sb = (typeof getSupaClient === 'function') ? getSupaClient() : null;
+  if (!sb) return;
+  let q;
+  try { q = JSON.parse(localStorage.getItem('tctp_angel_queue') || '[]'); }
+  catch(e){ return; }
+  if (!q.length) return;
+  const remaining = [];
+  for (const item of q) {
+    try {
+      const table = item.kind === 'insert_angel' ? 'slack_pack_trail_angels'
+                  : item.kind === 'insert_confirm' ? 'slack_pack_angel_confirmations'
+                  : item.kind === 'insert_nomination' ? 'slack_pack_angel_award_nominations'
+                  : null;
+      if (!table) continue;
+      const { error } = await sb.from(table).insert([item.payload]);
+      if (error && !((error.message||'').includes('duplicate'))) remaining.push(item);
+    } catch(e){ remaining.push(item); }
+  }
+  localStorage.setItem('tctp_angel_queue', JSON.stringify(remaining));
+  if (remaining.length === 0 && q.length > 0) tmToast('Offline writes synced.');
+}
+window.addEventListener('online', tmTryFlushQueue);
+
 </script>
 
 <!-- ══════════════════════════════════════════
@@ -5716,9 +6480,10 @@ document.addEventListener('DOMContentLoaded',()=>{
       <button class="modal-close" onclick="closeModal('modal-sp')">✕</button>
     </div>
     <div class="sp-modal-tabs">
-      <button class="sp-modal-tab active" onclick="spTab('board',this)">🥾 Find a Partner</button>
-      <button class="sp-modal-tab" onclick="spTab('post',this)">✏️ Post a Request</button>
+      <button class="sp-modal-tab active" onclick="spTab('board',this)">🥾 Partners</button>
+      <button class="sp-modal-tab" onclick="spTab('post',this)">✏️ Post</button>
       <button class="sp-modal-tab" onclick="spTab('planner',this)">🚗 Planner</button>
+      <button class="sp-modal-tab" onclick="spTab('magic',this)">✨ Magic</button>
     </div>
     <div class="modal-body">
 
@@ -5905,7 +6670,198 @@ document.addEventListener('DOMContentLoaded',()=>{
 
     </div><!-- end sp-tab-planner -->
 
+    <!-- TAB: TRAIL MAGIC ──────────────────────────────────────────── -->
+    <div id="sp-tab-magic" style="display:none">
+
+      <!-- Find Magic ⇄ Be an Angel toggle -->
+      <div class="tm-mode-toggle" role="tablist" aria-label="Trail Magic mode">
+        <button id="tm-mode-find"  class="tm-mode-pill active" role="tab" aria-selected="true"
+                onclick="tmSetMode('find',this)">🧭 Find Magic</button>
+        <button id="tm-mode-angel" class="tm-mode-pill" role="tab" aria-selected="false"
+                onclick="tmSetMode('angel',this)">✨ Be an Angel</button>
+      </div>
+
+      <!-- ── FIND MAGIC view ────────────────────────────────────── -->
+      <div id="tm-view-find">
+        <!-- Annual award banner (only Oct 1 – Nov 30) -->
+        <div id="tm-award-banner" class="tm-award-banner" style="display:none">
+          <span class="tm-award-sparkle">✨</span>
+          <span id="tm-award-text">Nominate a Trail Angel for the 2026 Trail Angel Award</span>
+          <button class="tm-award-btn" onclick="tmOpenNominate()" aria-label="Open nomination form">Nominate</button>
+        </div>
+
+        <!-- Service filter chips -->
+        <div class="board-filters" id="tm-service-filters">
+          <button class="board-filter active" data-svc="all"            onclick="tmFilter(this)">All</button>
+          <button class="board-filter"        data-svc="rides"          onclick="tmFilter(this)">🚗 Rides</button>
+          <button class="board-filter"        data-svc="feed"           onclick="tmFilter(this)">🍔 Feed</button>
+          <button class="board-filter"        data-svc="bunk"           onclick="tmFilter(this)">🛏 Bunk</button>
+          <button class="board-filter"        data-svc="shower_laundry" onclick="tmFilter(this)">🚿 Shower</button>
+          <button class="board-filter"        data-svc="water_cache"    onclick="tmFilter(this)">💧 Water</button>
+          <button class="board-filter"        data-svc="resupply_hold"  onclick="tmFilter(this)">📦 Resupply</button>
+          <button class="board-filter"        data-svc="gear_fix"       onclick="tmFilter(this)">🔧 Gear</button>
+          <button class="board-filter"        data-svc="legacy"         onclick="tmFilter(this)">✨ Legacy</button>
+          <button class="board-filter" id="tm-near-me-btn" onclick="tmToggleNearMe(this)" title="Angels within 50 trail miles of you">📍 Near Me</button>
+        </div>
+
+        <!-- Directory list -->
+        <div id="tm-dir-list">
+          <div class="pc-loading">Loading Trail Angels…</div>
+        </div>
+        <div class="tm-cache-stamp" id="tm-cache-stamp"></div>
+
+        <!-- Conservancy guidance footer -->
+        <div class="tm-conservancy-foot" id="tm-conservancy-foot"></div>
+      </div>
+
+      <!-- ── BE AN ANGEL view ────────────────────────────────────── -->
+      <div id="tm-view-angel" style="display:none">
+        <div class="sp-section">
+          <div class="sp-section-title">✨ List yourself as a Trail Angel</div>
+          <div class="sp-section-desc">
+            One listing per trail name per trail. You can hide it anytime.
+            Trail Magic is best given in person — please follow Leave No Trace.
+          </div>
+
+          <div class="post-field">
+            <label for="tm-trail-name">Trail Name</label>
+            <input type="text" id="tm-trail-name" maxlength="40" placeholder="Stagger Lee">
+          </div>
+
+          <div class="post-grid">
+            <div class="post-field">
+              <label for="tm-display-name">Real First Name (optional)</label>
+              <input type="text" id="tm-display-name" maxlength="40" placeholder="Mike">
+            </div>
+            <div class="post-field">
+              <label>Trail</label>
+              <input type="text" id="tm-trail-readout" readonly style="background:var(--mist);font-weight:700;color:var(--forest)">
+            </div>
+          </div>
+
+          <div class="post-field">
+            <label for="tm-crossing-select">Road Crossing</label>
+            <select id="tm-crossing-select" onchange="tmOnCrossingChange()"></select>
+            <input type="text" id="tm-crossing-custom" maxlength="60" placeholder="Type your road crossing (≤ 60 chars)" style="margin-top:6px;display:none">
+          </div>
+
+          <div class="post-grid">
+            <div class="post-field">
+              <label for="tm-nearest-mile">Nearest Trail Mile</label>
+              <input type="number" id="tm-nearest-mile" step="0.1" min="0">
+            </div>
+            <div class="post-field">
+              <label>&nbsp;</label>
+              <button type="button" class="tm-use-gps-btn" onclick="tmFillFromGps()" aria-label="Use my GPS to fill nearest mile">🧭 Use my GPS</button>
+            </div>
+          </div>
+
+          <div class="post-field">
+            <label>What you offer  <span style="color:var(--subtle);font-weight:400">(pick 1–4)</span></label>
+            <div class="tm-svc-grid" id="tm-svc-grid">
+              <button type="button" class="tm-svc-chip" data-svc="rides"          onclick="tmToggleSvc(this)" aria-pressed="false">🚗 Rides</button>
+              <button type="button" class="tm-svc-chip" data-svc="feed"           onclick="tmToggleSvc(this)" aria-pressed="false">🍔 Feed</button>
+              <button type="button" class="tm-svc-chip" data-svc="bunk"           onclick="tmToggleSvc(this)" aria-pressed="false">🛏 Bunk / Hostel</button>
+              <button type="button" class="tm-svc-chip" data-svc="shower_laundry" onclick="tmToggleSvc(this)" aria-pressed="false">🚿 Shower / Laundry</button>
+              <button type="button" class="tm-svc-chip" data-svc="resupply_hold"  onclick="tmToggleSvc(this)" aria-pressed="false">📦 Resupply Hold</button>
+              <button type="button" class="tm-svc-chip" data-svc="gear_fix"       onclick="tmToggleSvc(this)" aria-pressed="false">🔧 Gear Fix</button>
+              <button type="button" class="tm-svc-chip" data-svc="water_cache"    onclick="tmToggleSvc(this)" aria-pressed="false">💧 Water Cache *</button>
+            </div>
+            <div id="tm-water-note" class="tm-water-note" style="display:none"></div>
+          </div>
+
+          <div class="post-field">
+            <label for="tm-note">Optional Note <span style="color:var(--subtle);font-weight:400">(≤ 80 chars)</span></label>
+            <input type="text" id="tm-note" maxlength="80" placeholder="e.g. Weekends only, May–Oct">
+          </div>
+
+          <div class="post-field">
+            <label>Contact Method</label>
+            <div class="tm-contact-row">
+              <label><input type="radio" name="tm-ctype" value="sms" checked> SMS</label>
+              <label><input type="radio" name="tm-ctype" value="email"> Email</label>
+              <label><input type="radio" name="tm-ctype" value="call_only"> Call only</label>
+              <label><input type="radio" name="tm-ctype" value="in_person_only"> In-person only</label>
+            </div>
+            <input type="text" id="tm-contact" maxlength="120" placeholder="Phone or email" style="margin-top:6px">
+          </div>
+
+          <label class="tm-lnt-row">
+            <input type="checkbox" id="tm-lnt-ack">
+            <span>I'll be present when I offer magic. No unattended coolers or caches. I follow <a href="https://lnt.org/trail-magic-how-to-support-long-distance-hikers/" target="_blank" rel="noopener">Leave No Trace</a>.</span>
+          </label>
+
+          <button class="post-submit" id="tm-submit-btn" onclick="tmSubmitAngel()">✨ List me as a Trail Angel</button>
+          <div class="post-note" id="tm-submit-note"></div>
+
+          <!-- My listing (shown if already listed) -->
+          <div id="tm-my-listing" class="tm-my-listing" style="display:none"></div>
+        </div>
+      </div>
+
+    </div><!-- end sp-tab-magic -->
+
     </div><!-- end modal-body -->
+  </div>
+</div>
+
+<!-- ── Trail Magic: Confirm action sheet ──────────────────────────── -->
+<div class="modal-overlay" id="modal-tm-confirm">
+  <div class="modal-box" style="width:min(95vw,420px)">
+    <div class="modal-hdr">
+      <span style="font-size:1.2rem">✓</span>
+      <h2>Confirm Trail Magic</h2>
+      <button class="modal-close" onclick="closeModal('modal-tm-confirm')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 18px">
+      <div id="tm-confirm-body"></div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="post-submit" style="background:var(--leaf)" onclick="tmDoConfirm()">✓ Confirm I received magic</button>
+      </div>
+      <div class="post-note" style="margin-top:8px">No ratings. Just a count of hikers helped. Counts are public; no message text is stored.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Trail Magic: Nomination modal ──────────────────────────────── -->
+<div class="modal-overlay" id="modal-tm-nominate">
+  <div class="modal-box" style="width:min(95vw,500px)">
+    <div class="modal-hdr">
+      <span style="font-size:1.2rem">✨</span>
+      <h2 id="tm-nom-title">Nominate a Trail Angel</h2>
+      <button class="modal-close" onclick="closeModal('modal-tm-nominate')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:14px 18px">
+      <div class="post-field">
+        <label for="tm-nom-angel">Angel</label>
+        <select id="tm-nom-angel"></select>
+      </div>
+      <div class="post-field">
+        <label for="tm-nom-why">Why this Angel? <span style="color:var(--subtle);font-weight:400">(10–280 chars)</span></label>
+        <textarea id="tm-nom-why" maxlength="280" rows="4" style="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:.82rem"></textarea>
+      </div>
+      <button class="post-submit" onclick="tmSubmitNomination()">✨ Submit Nomination</button>
+      <div class="post-note" id="tm-nom-note"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Trail Magic: Claim-code sheet (shown once after first listing) -->
+<div class="modal-overlay" id="modal-tm-claim">
+  <div class="modal-box" style="width:min(95vw,400px)">
+    <div class="modal-hdr">
+      <span style="font-size:1.2rem">🔑</span>
+      <h2>Save this code</h2>
+      <button class="modal-close" onclick="closeModal('modal-tm-claim')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 18px;text-align:center">
+      <div style="font-size:.78rem;color:var(--subtle);margin-bottom:10px">
+        Use this 6-digit code if you ever need to edit or hide your listing.<br>
+        We do not email or text it. Screenshot it now.
+      </div>
+      <div id="tm-claim-code" class="tm-claim-code-display">— — — — — —</div>
+      <button class="post-submit" style="margin-top:14px" onclick="closeModal('modal-tm-claim')">Got it</button>
+    </div>
   </div>
 </div>
 
