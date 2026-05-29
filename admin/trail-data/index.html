@@ -109,6 +109,51 @@
   .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
   .config-warn{background:#fff3d6;border:1px solid var(--gold);color:#7a5d00;
     padding:10px 14px;border-radius:8px;font-size:.82rem;margin-bottom:18px}
+
+  /* ---- alerts: header + tabs ---- */
+  .page-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px}
+  .page-head .grow{flex:1}
+  .tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--border);margin-bottom:18px}
+  .tab{background:none;border:none;padding:9px 15px;font-size:.86rem;font-weight:700;
+    color:var(--subtle);border-bottom:2.5px solid transparent;margin-bottom:-1.5px}
+  .tab:hover{color:var(--pine)}
+  .tab.active{color:var(--forest);border-bottom-color:var(--pine)}
+  .tab .count{font-size:.7rem;background:var(--mist);color:var(--pine);
+    padding:1px 7px;border-radius:20px;margin-left:6px;font-weight:700}
+  .empty{padding:30px;text-align:center;color:var(--subtle);
+    background:var(--white);border:1px dashed var(--border);border-radius:12px}
+
+  /* ---- severity badges ---- */
+  .sev{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+    padding:2px 8px;border-radius:20px;display:inline-block;white-space:nowrap}
+  .sev-INFO{background:#dceaf2;color:#2c5d72}
+  .sev-ADVISORY{background:#fdeccb;color:#8a5d00}
+  .sev-HAZARD{background:#f6d4c9;color:#a3331a}
+  .alert-meta{font-size:.78rem;color:var(--subtle);margin-top:3px}
+  .needs-review{color:var(--rust);font-weight:700}
+  .row-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+
+  /* ---- modal: wider for the alert form + scroll ---- */
+  .modal.wide{width:min(96vw,560px);max-height:92vh;overflow-y:auto}
+  .modal .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:560px){.modal .grid2{grid-template-columns:1fr}}
+  .counter{float:right;font-weight:400;text-transform:none;letter-spacing:0;color:var(--subtle)}
+  .counter.over{color:var(--rust)}
+  textarea{width:100%;font-family:inherit;font-size:.92rem;padding:9px 11px;
+    border:1.5px solid var(--border);border-radius:8px;background:var(--white);
+    color:var(--text);resize:vertical;min-height:74px}
+  textarea:focus{outline:none;border-color:var(--sage);box-shadow:0 0 0 3px rgba(74,124,89,.15)}
+  /* severity radio cards */
+  .sev-pick{display:flex;gap:8px}
+  .sev-opt{flex:1;border:1.5px solid var(--border);border-radius:9px;padding:9px 10px;
+    cursor:pointer;background:var(--white);transition:border-color .12s,background .12s}
+  .sev-opt:hover{border-color:var(--sage)}
+  .sev-opt.sel{border-color:var(--pine);background:var(--mist)}
+  .sev-opt input{display:none}
+  .sev-opt .nm{font-weight:700;font-size:.86rem;color:var(--text)}
+  .sev-opt .hint{font-size:.72rem;color:var(--subtle);margin-top:2px;line-height:1.35}
+  .emergency-note{background:#f6d4c9;border:1px solid #e0a596;color:#8a2a12;
+    padding:9px 12px;border-radius:8px;font-size:.8rem;margin-top:6px}
 </style>
 </head>
 <body>
@@ -297,6 +342,10 @@ function buildShell(){
   if (me.is_super){
     sel.innerHTML = allConservancies.map(c=>`<option value="${esc(c.code)}">${esc(c.display_name_short)} · ${esc(c.trail)}</option>`).join('');
     show(sel);
+    sel.onchange = ()=>{
+      const active = document.querySelector('.navlink.active');
+      go(active ? active.dataset.page : 'alerts');
+    };
   } else { hide(sel); }
 
   document.querySelectorAll('.navlink').forEach(b=>{
@@ -310,8 +359,8 @@ function go(page){
   document.querySelectorAll('.navlink').forEach(b=>b.classList.toggle('active', b.dataset.page===page));
   const main = $('#main');
   if (page==='editors'){ renderEditors(main); return; }
+  if (page==='alerts'){ renderAlerts(main); return; }
   const stubs = {
-    alerts:   ['Alerts','Draft, approve, and publish trail alerts — closures, reroutes, hazards. Two-person publish with the emergency fast-path.','PROMPT 4'],
     baseline: ['Baseline','Publish waypoint / shelter / water / road-crossing / trek edits as deltas over the embedded seed.','PROMPT 5'],
     revisions:['Revisions','Full published history with one-click revert.','PROMPT 6'],
   };
@@ -320,6 +369,355 @@ function go(page){
     <div class="panel stub"><b>Arriving in ${prompt}.</b><div class="note" style="margin-top:6px">
     This tab is part of the build sequence; the auth, shell, and editor management you're using now are PROMPT 3.</div></div>`;
 }
+
+// =====================================================================
+//  ALERTS PAGE (PROMPT 4)
+// =====================================================================
+const SEV_INFO = {
+  INFO:    'General information — trail notes, seasonal reminders. No urgency.',
+  ADVISORY:'Plan-ahead conditions — detours, services closed, fire restrictions.',
+  HAZARD:  'Immediate danger — washout, rockfall, active fire. Can be published immediately.',
+};
+let alertTab = 'active';          // 'active' | 'pending' | 'retired'
+let alertCache = [];              // last-loaded rows for the active trail
+let editingAlertId = null;        // set when the modal is in "edit" mode
+
+// Which trail is the editor acting on right now?
+//  - superadmin: follows the topbar conservancy selector
+//  - single-conservancy editor: their own conservancy's trail
+function activeConsv(){
+  let code = me.conservancy_code;
+  if (me.is_super){
+    const sel = $('#conservancy-select');
+    if (sel && sel.value) code = sel.value;
+  }
+  const c = allConservancies.find(x=>x.code===code) || {code, trail:''};
+  return { code:c.code, trail:c.trail };
+}
+
+// Can the current editor approve/reject/retire on the active trail?
+//  Plain 'editor' is draft-only (matches the deployed RLS update policy).
+function canApprove(){ return me.is_super || me.role==='approver'; }
+
+async function renderAlerts(main){
+  const { trail } = activeConsv();
+  main.innerHTML = `
+    <div class="page-head">
+      <div class="grow">
+        <h2>Alerts</h2>
+        <div class="page-sub">Closures, reroutes, and hazards for the ${esc(trail||'—')}. Two-person publish, with an emergency fast-path for hazards.</div>
+      </div>
+      <button class="btn" id="new-alert">+ New Alert</button>
+    </div>
+    <div class="tabs">
+      <button class="tab" data-tab="active">Active <span class="count" id="c-active">·</span></button>
+      <button class="tab" data-tab="pending">Pending Approval <span class="count" id="c-pending">·</span></button>
+      <button class="tab" data-tab="retired">Retired <span class="count" id="c-retired">·</span></button>
+    </div>
+    <div id="alerts-body">Loading…</div>`;
+  $('#new-alert').onclick = ()=>openAlertModal(null);
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.classList.toggle('active', t.dataset.tab===alertTab);
+    t.onclick = ()=>{ alertTab=t.dataset.tab; renderAlerts(main); };
+  });
+  loadAlerts();
+}
+
+// Classify a row into a tab bucket.
+function bucketOf(a){
+  if (a.retired_at || a.rejected_at) return 'retired';
+  if (a.published_at) return 'active';
+  return 'pending';
+}
+
+async function loadAlerts(){
+  const { trail } = activeConsv();
+  await withAuth(async ()=>{
+    // RLS lets editors see rows for trails they can edit; we filter by trail.
+    const { data, error } = await sb.from('trail_alerts')
+      .select('*').eq('trail', trail)
+      .order('published_at',{ascending:false, nullsFirst:true})
+      .order('effective_from',{ascending:false});
+    if (error) throw error;
+    alertCache = data || [];
+    const counts = { active:0, pending:0, retired:0 };
+    alertCache.forEach(a=>counts[bucketOf(a)]++);
+    const ca=$('#c-active'), cp=$('#c-pending'), cr=$('#c-retired');
+    if (ca) ca.textContent = counts.active;
+    if (cp) cp.textContent = counts.pending;
+    if (cr) cr.textContent = counts.retired;
+    paintAlerts();
+  });
+}
+
+function paintAlerts(){
+  const rows = alertCache.filter(a=>bucketOf(a)===alertTab);
+  const body = $('#alerts-body');
+  if (!body) return;
+  if (!rows.length){
+    const msg = alertTab==='active' ? 'No active alerts on this trail right now.'
+              : alertTab==='pending'? 'Nothing waiting for approval.'
+              : 'No retired or rejected alerts yet.';
+    body.innerHTML = `<div class="empty">${msg}</div>`;
+    return;
+  }
+  body.innerHTML = `<table><thead><tr>
+      <th>Severity</th><th>Alert</th><th>Mile</th><th>Status</th><th></th>
+    </tr></thead><tbody>${rows.map(rowHtml).join('')}</tbody></table>`;
+}
+
+function rowHtml(a){
+  const sev = `<span class="sev sev-${esc(a.severity)}">${esc(a.severity)}</span>`;
+  const mile = (a.nearest_mile!=null) ? esc(a.nearest_mile) : '—';
+  const drafterIsMe = a.created_by === me.editor_id;
+
+  // status cell
+  let status='';
+  if (a.rejected_at){
+    status = `<span class="tag tag-revoked">rejected</span>${a.rejection_reason?`<div class="alert-meta">${esc(a.rejection_reason)}</div>`:''}`;
+  } else if (a.retired_at){
+    status = `<span class="note">retired ${fmtDate(a.retired_at)}</span>`;
+  } else if (a.published_at && !a.approved_by){
+    status = `<span class="needs-review">Emergency — needs 2nd review</span><div class="alert-meta">published ${fmtDate(a.published_at)}</div>`;
+  } else if (a.published_at && a.approved_by){
+    status = `<span class="note">live · approved</span><div class="alert-meta">published ${fmtDate(a.published_at)}</div>`;
+  } else {
+    status = `<span class="tag tag-pending">draft</span>`;
+  }
+
+  // actions per bucket + role
+  const acts=[];
+  const b = bucketOf(a);
+  if (b==='pending'){
+    if (canApprove() && !drafterIsMe){
+      acts.push(`<button class="btn btn-sm" onclick="approveAlert('${a.id}')">Approve &amp; Publish</button>`);
+      acts.push(`<button class="btn-ghost btn btn-sm" onclick="rejectAlert('${a.id}')">Reject</button>`);
+    }
+    if (drafterIsMe) acts.push(`<span class="note">awaiting another editor</span>`);
+    acts.push(`<button class="btn-ghost btn btn-sm" onclick="editAlert('${a.id}')">Edit</button>`);
+  } else if (b==='active'){
+    if (canApprove() && a.published_at && !a.approved_by && !drafterIsMe)
+      acts.push(`<button class="btn btn-sm" onclick="approveAlert('${a.id}')">Confirm review</button>`);
+    acts.push(`<button class="btn-ghost btn btn-sm" onclick="editAlert('${a.id}')">Edit</button>`);
+    if (canApprove()) acts.push(`<button class="btn-danger btn btn-sm" onclick="retireAlert('${a.id}')">Retire</button>`);
+  }
+
+  const bodyPrev = (a.body||'').slice(0,90);
+  return `<tr>
+    <td>${sev}</td>
+    <td><b>${esc(a.title)}</b><div class="alert-meta">${esc(bodyPrev)}${(a.body||'').length>90?'…':''}</div>
+      ${a.source_url?`<div class="alert-meta"><a href="${esc(a.source_url)}" target="_blank" rel="noopener">source ↗</a></div>`:''}</td>
+    <td>${mile}</td>
+    <td>${status}</td>
+    <td><div class="row-actions">${acts.join('')||'<span class="note">—</span>'}</div></td>
+  </tr>`;
+}
+
+// ---- New / Edit modal ----------------------------------------------
+function openAlertModal(existing){
+  editingAlertId = existing ? existing.id : null;
+  const { trail } = activeConsv();
+  const a = existing || { severity:'ADVISORY', title:'', body:'', nearest_mile:'', lat:'', lon:'',
+                          effective_from:'', effective_until:'', source_url:'' };
+  const sevCard = (val)=>`<label class="sev-opt ${a.severity===val?'sel':''}" data-sev="${val}" title="${esc(SEV_INFO[val])}">
+      <input type="radio" name="sev" value="${val}" ${a.severity===val?'checked':''}/>
+      <div class="nm">${val}</div><div class="hint">${esc(SEV_INFO[val])}</div></label>`;
+
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal wide">
+    <h3>${existing?'Edit alert':'New alert'} · ${esc(trail)}</h3>
+    <div class="note" style="margin-bottom:14px">${existing
+      ? 'Editing creates a new revision. The alert returns to <b>pending</b> until another editor re-approves it — a live alert will be pulled from hikers until then.'
+      : 'Drafts go to Pending Approval. A second editor publishes them — except a HAZARD, which you can publish immediately.'}</div>
+
+    <div class="field"><label>Severity</label>
+      <div class="sev-pick" id="sev-pick">${['INFO','ADVISORY','HAZARD'].map(sevCard).join('')}</div>
+    </div>
+
+    <div class="field"><label>Title <span class="counter" id="ct-title">0/80</span></label>
+      <input id="al-title" maxlength="80" value="${esc(a.title)}" placeholder="Rockfall near Lava Falls"/></div>
+
+    <div class="field"><label>Body <span class="counter" id="ct-body">0/600</span></label>
+      <textarea id="al-body" maxlength="600" placeholder="What hikers need to know, and what to do.">${esc(a.body)}</textarea></div>
+
+    <div class="grid2">
+      <div class="field"><label>Nearest mile</label>
+        <input id="al-mile" type="number" step="0.1" value="${esc(a.nearest_mile)}" placeholder="e.g. 178.4"/></div>
+      <div class="field"><label>Source URL (optional)</label>
+        <input id="al-src" value="${esc(a.source_url||'')}" placeholder="https://…"/></div>
+      <div class="field"><label>Latitude (optional)</label>
+        <input id="al-lat" type="number" step="any" value="${esc(a.lat)}" placeholder="auto / manual"/></div>
+      <div class="field"><label>Longitude (optional)</label>
+        <input id="al-lon" type="number" step="any" value="${esc(a.lon)}" placeholder="auto / manual"/></div>
+      <div class="field"><label>Effective from</label>
+        <input id="al-from" type="datetime-local" value="${toLocalInput(a.effective_from)}"/></div>
+      <div class="field"><label>Effective until (optional)</label>
+        <input id="al-until" type="datetime-local" value="${toLocalInput(a.effective_until)}"/></div>
+    </div>
+
+    <div class="field"><label>Reason for this change <span class="counter" id="ct-reason">0/20 min</span></label>
+      <textarea id="al-reason" placeholder="Why is this being posted? This goes into the permanent audit log (min 20 chars)."></textarea></div>
+
+    <div id="al-err" class="err hidden"></div>
+    <div id="emergency-zone"></div>
+
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">Cancel</button>
+      <button class="btn" id="al-draft">${existing?'Save changes':'Save as draft'}</button>
+    </div>
+  </div></div>`;
+
+  // counters
+  const wire=(inp,ct,max)=>{ const f=()=>{ const n=$(inp).value.length; const e=$(ct);
+      e.textContent = inp==='#al-reason'?`${n}/20 min`:`${n}/${max}`;
+      e.classList.toggle('over', inp==='#al-reason'? n<20 : n>max); }; $(inp).oninput=f; f(); };
+  wire('#al-title','#ct-title',80); wire('#al-body','#ct-body',600); wire('#al-reason','#ct-reason',20);
+
+  // severity selection + emergency button visibility
+  function refreshSev(){
+    const v = document.querySelector('input[name=sev]:checked').value;
+    document.querySelectorAll('.sev-opt').forEach(o=>o.classList.toggle('sel', o.dataset.sev===v));
+    const zone = $('#emergency-zone');
+    if (v==='HAZARD' && !existing){
+      zone.innerHTML = `<div class="emergency-note">A HAZARD can go live to hikers <b>immediately</b>. You'll be named as publisher, and a second editor must review within 24 hours.</div>`;
+      if (!$('#al-emerg')){
+        const b=document.createElement('button'); b.className='btn btn-danger'; b.id='al-emerg';
+        b.textContent='Publish immediately (Emergency)'; b.onclick=()=>submitAlert(true);
+        document.querySelector('.modal-actions').appendChild(b);
+      }
+    } else {
+      zone.innerHTML=''; const ex=$('#al-emerg'); if(ex) ex.remove();
+    }
+  }
+  document.querySelectorAll('.sev-opt').forEach(o=>{
+    o.onclick=()=>{ o.querySelector('input').checked=true; refreshSev(); };
+  });
+  refreshSev();
+  $('#al-draft').onclick = ()=>submitAlert(false);
+}
+
+// datetime-local helpers
+function toLocalInput(iso){
+  if(!iso) return '';
+  const d=new Date(iso); if(isNaN(d)) return '';
+  const p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function fromLocalInput(v){ return v ? new Date(v).toISOString() : null; }
+
+function readAlertForm(){
+  const num=(v)=> v===''||v==null ? null : Number(v);
+  return {
+    severity: document.querySelector('input[name=sev]:checked').value,
+    title: $('#al-title').value.trim(),
+    body:  $('#al-body').value.trim(),
+    nearest_mile: num($('#al-mile').value),
+    lat: num($('#al-lat').value),
+    lon: num($('#al-lon').value),
+    effective_from: fromLocalInput($('#al-from').value),
+    effective_until: fromLocalInput($('#al-until').value),
+    source_url: $('#al-src').value.trim(),
+    reason: $('#al-reason').value.trim(),
+  };
+}
+
+async function submitAlert(emergency){
+  const f = readAlertForm();
+  const err=$('#al-err'); hide(err);
+  if (!f.title){ err.textContent='Title is required.'; show(err); return; }
+  if (!f.body){ err.textContent='Body is required.'; show(err); return; }
+  if (f.reason.length<20){ err.textContent='Reason must be at least 20 characters (it goes into the audit log).'; show(err); return; }
+  const { trail } = activeConsv();
+  document.querySelectorAll('.modal-actions button').forEach(b=>b.disabled=true);
+  try {
+    await withAuth(async ()=>{
+      let error;
+      if (editingAlertId){
+        ({ error } = await sb.rpc('td_alert_edit', {
+          p_alert_id:editingAlertId, p_severity:f.severity, p_title:f.title, p_body:f.body,
+          p_nearest_mile:f.nearest_mile, p_lat:f.lat, p_lon:f.lon,
+          p_effective_from:f.effective_from, p_effective_until:f.effective_until,
+          p_source_url:f.source_url, p_reason:f.reason }));
+      } else if (emergency){
+        ({ error } = await sb.rpc('td_alert_emergency_publish', {
+          p_trail:trail, p_title:f.title, p_body:f.body,
+          p_nearest_mile:f.nearest_mile, p_lat:f.lat, p_lon:f.lon,
+          p_effective_from:f.effective_from, p_effective_until:f.effective_until,
+          p_source_url:f.source_url, p_reason:f.reason }));
+      } else {
+        ({ error } = await sb.rpc('td_alert_draft', {
+          p_trail:trail, p_severity:f.severity, p_title:f.title, p_body:f.body,
+          p_nearest_mile:f.nearest_mile, p_lat:f.lat, p_lon:f.lon,
+          p_effective_from:f.effective_from, p_effective_until:f.effective_until,
+          p_source_url:f.source_url, p_reason:f.reason }));
+      }
+      if (error) throw error;
+    });
+    closeModal();
+    alertTab = editingAlertId ? 'pending' : (emergency ? 'active' : 'pending');
+    editingAlertId = null;
+    renderAlerts($('#main'));
+  } catch(e){
+    err.textContent = e.message || 'Could not save the alert.'; show(err);
+    document.querySelectorAll('.modal-actions button').forEach(b=>b.disabled=false);
+  }
+}
+
+function editAlert(id){ const a=alertCache.find(x=>x.id===id); if(a) openAlertModal(a); }
+
+async function approveAlert(id){
+  try {
+    await withAuth(async ()=>{ const { error } = await sb.rpc('td_alert_approve', { p_alert_id:id }); if (error) throw error; });
+  } catch(e){ alert(e.message||'Could not approve.'); }
+  loadAlerts();
+}
+
+function rejectAlert(id){
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal">
+    <h3>Reject this draft?</h3>
+    <div class="note">The drafter will see why. Rejected alerts move to the Retired tab and are never published.</div>
+    <div class="field" style="margin-top:12px"><label>Reason (min 10 chars)</label>
+      <textarea id="rej-reason" placeholder="What needs fixing?"></textarea></div>
+    <div id="rej-err" class="err hidden"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">Cancel</button>
+      <button class="btn-danger btn" id="rej-go">Reject draft</button>
+    </div></div></div>`;
+  $('#rej-go').onclick = async ()=>{
+    const reason = $('#rej-reason').value.trim();
+    if (reason.length<10){ $('#rej-err').textContent='Please give at least 10 characters.'; show($('#rej-err')); return; }
+    $('#rej-go').disabled=true;
+    try {
+      await withAuth(async ()=>{ const { error } = await sb.rpc('td_alert_reject',{p_alert_id:id,p_reason:reason}); if(error) throw error; });
+      closeModal(); loadAlerts();
+    } catch(e){ $('#rej-err').textContent=e.message||'Could not reject.'; show($('#rej-err')); $('#rej-go').disabled=false; }
+  };
+}
+
+function retireAlert(id){
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal">
+    <h3>Retire this alert?</h3>
+    <div class="note">It stops showing to hikers. This is recorded in the revision history with your reason.</div>
+    <div class="field" style="margin-top:12px"><label>Reason (min 20 chars)</label>
+      <textarea id="ret-reason" placeholder="e.g. Reroute reopened; trail crew confirmed passable on 2026-06-02."></textarea></div>
+    <div id="ret-err" class="err hidden"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">Cancel</button>
+      <button class="btn-danger btn" id="ret-go">Retire alert</button>
+    </div></div></div>`;
+  $('#ret-go').onclick = async ()=>{
+    const reason = $('#ret-reason').value.trim();
+    if (reason.length<20){ $('#ret-err').textContent='Please give at least 20 characters (it goes into the audit log).'; show($('#ret-err')); return; }
+    $('#ret-go').disabled=true;
+    try {
+      await withAuth(async ()=>{ const { error } = await sb.rpc('td_alert_retire',{p_alert_id:id,p_reason:reason}); if(error) throw error; });
+      closeModal(); loadAlerts();
+    } catch(e){ $('#ret-err').textContent=e.message||'Could not retire.'; show($('#ret-err')); $('#ret-go').disabled=false; }
+  };
+}
+
+// expose alert handlers for inline onclick
+window.approveAlert=approveAlert; window.rejectAlert=rejectAlert;
+window.editAlert=editAlert; window.retireAlert=retireAlert;
 
 // ---- Editors page (superadmin only) ---------------------------------
 async function renderEditors(main){
