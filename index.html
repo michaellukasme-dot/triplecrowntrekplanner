@@ -672,6 +672,39 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
   color:var(--subtle);border:none;background:transparent;cursor:pointer;
   border-bottom:2px solid transparent;transition:all .15s;font-family:inherit}
 .sp-modal-tab.active{color:var(--pine);border-bottom-color:var(--pine);background:var(--white)}
+/* All Treks: lighter inner sub-tab row + Coming Soon watermark */
+.sp-modal-tabs.at-subtabs{background:var(--white);border-bottom:1px solid var(--border)}
+.at-subtabs .at-subtab{font-size:.68rem;padding:7px 6px;font-weight:600;opacity:.85}
+.at-subtabs .at-subtab.active{opacity:1;background:var(--stone)}
+#at-tab-alltreks{flex:1;flex-direction:column;min-height:0}
+.at-coming-wrap{position:relative;flex:1;display:flex;align-items:center;justify-content:center;
+  min-height:360px;padding:36px 26px;text-align:center;overflow:hidden}
+.at-coming-watermark{position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%) rotate(-27deg);font-family:'Playfair Display',serif;
+  font-weight:800;font-size:3.4rem;letter-spacing:.05em;text-transform:uppercase;
+  color:rgba(30,58,30,.09);white-space:nowrap;pointer-events:none;user-select:none}
+.at-coming-copy{position:relative;max-width:370px}
+.at-coming-copy .at-coming-flag{font-size:2.6rem;line-height:1}
+.at-coming-copy h3{font-family:'Playfair Display',serif;color:var(--forest);font-size:1.5rem;margin:8px 0 10px}
+.at-coming-copy p{font-size:.86rem;color:var(--subtle);line-height:1.55;margin:0 0 11px}
+.at-coming-copy .at-coming-note{font-size:.75rem;color:var(--pine);font-weight:600}
+/* GPS self-aware transparency toast */
+#gps-aware-toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);
+  width:min(92vw,460px);background:var(--forest);color:#eef3ec;
+  border:1px solid rgba(255,255,255,.12);border-radius:14px;
+  box-shadow:0 18px 50px rgba(0,0,0,.42);padding:14px 16px 12px;z-index:1200;
+  opacity:0;transition:opacity .3s,transform .3s;pointer-events:none}
+#gps-aware-toast.show{opacity:1;transform:translateX(-50%);pointer-events:auto}
+#gps-aware-toast .gat-row{display:flex;gap:11px;align-items:flex-start}
+#gps-aware-toast .gat-dot{font-size:1.2rem;line-height:1.35}
+#gps-aware-toast .gat-body{font-size:.8rem;line-height:1.5;color:#dce7d8}
+#gps-aware-toast .gat-body strong{color:#fff}
+#gps-aware-toast .gat-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:11px}
+#gps-aware-toast .gat-actions button{font-family:inherit;font-size:.74rem;font-weight:700;
+  border-radius:9px;padding:7px 13px;cursor:pointer;border:1px solid transparent;transition:filter .15s}
+#gps-aware-toast .gat-actions button:hover{filter:brightness(1.08)}
+#gps-aware-toast .gat-keep{background:#cfe0cf;color:#16321a}
+#gps-aware-toast .gat-off{background:transparent;border-color:rgba(255,255,255,.3);color:#cfe0cf}
 .board-filters{display:flex;gap:5px;padding:8px 14px;border-bottom:1px solid var(--border);
   flex-wrap:wrap;background:var(--stone)}
 .board-filter{padding:3px 9px;border-radius:10px;border:1px solid var(--border);
@@ -1020,6 +1053,13 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
           </div>
           <span class="trail-option-badge">Coming Soon</span>
         </div>
+        <div class="trail-option" onclick="openAllTreks(event)">
+          <span class="trail-option-icon">🇺🇸</span>
+          <div class="trail-option-info">
+            <div class="trail-option-name">All Treks</div>
+            <div class="trail-option-detail">Thousands of miles · all 50 states</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1348,7 +1388,43 @@ window.onload = () => {
   document.getElementById('startDate').value = d.toISOString().slice(0,10);
   buildStateDropdowns();
   recalc();
+  // Find Me / GPS is ON by default (opt-out). Acquire location, then explain — out loud.
+  setTimeout(initDefaultGps, 1200);
 };
+
+function initDefaultGps(){
+  try {
+    if (!navigator.geolocation) return;
+    if (localStorage.getItem('tctp_gps_off') === '1') return;   // hiker turned it off before — respect that
+    if (typeof gpsActive !== 'undefined' && gpsActive) return;
+    startGPS();
+    showGpsToast();
+  } catch(_){}
+}
+
+function showGpsToast(){
+  if (document.getElementById('gps-aware-toast')) return;
+  const w = document.createElement('div');
+  w.id = 'gps-aware-toast';
+  w.innerHTML =
+    '<div class="gat-row"><span class="gat-dot">📍</span>'+
+    '<div class="gat-body"><strong>Find&nbsp;Me is on — on purpose.</strong> '+
+    'Yes, the &ldquo;no tracking, ever&rdquo; app just switched on your GPS. The difference: your location is read on <em>your</em> phone to place you on the trail and show what&rsquo;s ahead. It never leaves your device — never sent, never stored, never sold. A map that doesn&rsquo;t know where you are isn&rsquo;t much of a trail companion, but it&rsquo;s your call.</div></div>'+
+    '<div class="gat-actions"><button class="gat-keep" onclick="dismissGpsToast()">Keep it on</button>'+
+    '<button class="gat-off" onclick="dismissGpsToast(true)">Turn it off</button></div>';
+  document.body.appendChild(w);
+  requestAnimationFrame(()=>w.classList.add('show'));
+  w._t = setTimeout(()=>dismissGpsToast(), 12000);
+}
+
+function dismissGpsToast(turnOff){
+  const w = document.getElementById('gps-aware-toast');
+  if (turnOff) { try { if (typeof gpsActive !== 'undefined' && gpsActive) toggleGPS(); } catch(_){} }
+  if (!w) return;
+  clearTimeout(w._t);
+  w.classList.remove('show');
+  setTimeout(()=>{ try { w.remove(); } catch(_){} }, 350);
+}
 
 function getTreks() {
   const trail = window.ACTIVE_TRAIL || AT;
@@ -1571,6 +1647,30 @@ function selectTrail(trail, e) {
   const _tnames = {AT:'Appalachian Trail 🌿',PCT:'Pacific Crest Trail 🏔',CDT:'Continental Divide Trail ⛰'};
   const _tmiles = {AT:'2,185',PCT:'2,653',CDT:'2,980'};
   showToast(`Switched to ${_tnames[trail]||trail} · ${_tmiles[trail]||''} mi`);
+}
+
+// ── All Treks: opened from the header pill (does NOT switch trail data) ──
+function openAllTreks(e){
+  if (e) e.stopPropagation();
+  const dd = document.getElementById('trailDropdown');
+  if (dd) dd.classList.remove('open');
+  openModal('modal-tracker');
+  allTreksTab('log');
+}
+
+// Toggle the two TOP tabs of the All Treks modal: My Trek Log | All Treks.
+// Scoped by ID so it never disturbs the inner Trek Log / Recorded Tracks sub-tabs.
+function allTreksTab(which, btn){
+  const isLog  = which === 'log';
+  const logTab = document.getElementById('at-tab-log');
+  const allTab = document.getElementById('at-tab-alltreks');
+  const tLog   = document.getElementById('at-toptab-log');
+  const tAll   = document.getElementById('at-toptab-all');
+  if (logTab) logTab.style.display = isLog ? 'contents' : 'none';
+  if (allTab) allTab.style.display = isLog ? 'none' : 'flex';
+  if (tLog) tLog.classList.toggle('active', isLog);
+  if (tAll) tAll.classList.toggle('active', !isLog);
+  if (isLog) { try { renderTracker(); } catch(_){} }
 }
 
 function switchTrailData(trail) {
@@ -3170,8 +3270,10 @@ function haversineMi(lat1,lon1,lat2,lon2) {
 
 function toggleGPS() {
   if (gpsActive) {
+    try { localStorage.setItem('tctp_gps_off','1'); } catch(_){}
     stopGPS();
   } else {
+    try { localStorage.removeItem('tctp_gps_off'); } catch(_){}
     startGPS();
   }
 }
@@ -4251,8 +4353,8 @@ function applyProfileToSidebar(profile) {
 //  TRACKER MODAL — Tab switching + Tracks list
 // ══════════════════════════════════════════════════════════════════
 function trackerTab(tab, btn) {
-  document.querySelectorAll('.sp-modal-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  document.querySelectorAll('.at-subtab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
   document.getElementById('tt-log').style.display    = tab==='log'    ? 'block' : 'none';
   document.getElementById('tt-tracks').style.display = tab==='tracks' ? 'block' : 'none';
   if (tab === 'tracks') renderTracksList();
@@ -6992,17 +7094,24 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
      TREK TRACKER MODAL
 ══════════════════════════════════════════ -->
 <div class="modal-overlay" id="modal-tracker">
-  <div class="modal-box" style="width:min(95vw,560px);max-height:90vh">
+  <div class="modal-box" style="width:min(95vw,620px);height:min(90vh,820px);max-height:90vh">
     <div class="modal-hdr">
-      <span style="font-size:1.2rem">🥾</span>
-      <h2>My Trek Log</h2>
+      <span style="font-size:1.2rem">🇺🇸</span>
+      <h2>All Treks</h2>
       <span class="modal-hdr-sub" id="rec-indicator-hdr"></span>
       <button class="modal-close" onclick="closeModal('modal-tracker')">✕</button>
     </div>
-    <!-- Tabs -->
+    <!-- TOP TABS: My Trek Log | All Treks -->
     <div class="sp-modal-tabs">
-      <button class="sp-modal-tab active" onclick="trackerTab('log',this)">🥾 Trek Log</button>
-      <button class="sp-modal-tab" onclick="trackerTab('tracks',this)">📍 Recorded Tracks</button>
+      <button class="sp-modal-tab active" id="at-toptab-log" onclick="allTreksTab('log',this)">🥾 My Trek Log</button>
+      <button class="sp-modal-tab" id="at-toptab-all" onclick="allTreksTab('alltreks',this)">🇺🇸 All Treks</button>
+    </div>
+    <!-- ===== TOP TAB 1: MY TREK LOG ===== -->
+    <div id="at-tab-log" style="display:contents">
+    <!-- inner sub-tabs (scoped class so they don't clash with the top tabs) -->
+    <div class="sp-modal-tabs at-subtabs">
+      <button class="sp-modal-tab at-subtab active" onclick="trackerTab('log',this)">🥾 Trek Log</button>
+      <button class="sp-modal-tab at-subtab" onclick="trackerTab('tracks',this)">📍 Recorded Tracks</button>
     </div>
     <!-- Trek Log tab -->
     <div id="tt-log">
@@ -7029,6 +7138,20 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
           Tracks record automatically when GPS is active · Purged after 30 days (emailed first)
         </div>
         <button class="sp-btn" onclick="closeModal('modal-tracker')">Done</button>
+      </div>
+    </div>
+    </div><!-- end at-tab-log -->
+
+    <!-- ===== TOP TAB 2: ALL TREKS (Coming Soon) ===== -->
+    <div id="at-tab-alltreks" style="display:none">
+      <div class="at-coming-wrap">
+        <div class="at-coming-watermark">Coming Soon</div>
+        <div class="at-coming-copy">
+          <div class="at-coming-flag">🇺🇸</div>
+          <h3>All Treks</h3>
+          <p>Thousands of miles across all 50 states — every named trek, not just the Big&nbsp;3. Plan it, log it, and find your trail family anywhere in the country.</p>
+          <p class="at-coming-note">The Appalachian, Pacific Crest &amp; Continental Divide trails stay free, forever. All&nbsp;Treks is on its way.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -7064,7 +7187,7 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
      SLACK PACK MODAL
 ══════════════════════════════════════════ -->
 <div class="modal-overlay" id="modal-sp">
-  <div class="modal-box" style="width:min(95vw,660px);max-height:90vh">
+  <div class="modal-box" style="width:min(95vw,660px);height:min(90vh,820px);max-height:90vh">
     <div class="modal-hdr">
       <span style="font-size:1.2rem">🚗</span>
       <h2>Slack Pack · Partner Board</h2>
@@ -7100,7 +7223,7 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
     </div>
 
     <!-- TAB: POST REQUEST -->
-    <div id="sp-tab-post" style="display:none;padding:14px 18px;overflow-y:auto;max-height:calc(90vh - 140px)">
+    <div id="sp-tab-post" style="display:none;padding:14px 18px">
       <!-- 3 Photo uploads -->
       <div class="pf-photo-hint" style="margin-bottom:6px"><strong>Photos (up to 3, optional)</strong>First photo shown as your avatar on the board.</div>
       <div class="pf-photo-row" id="pfPhotoRow">
@@ -7486,9 +7609,6 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
 <div class="fab-cluster">
   <button class="fab fab-sp" onclick="openModal('modal-sp');initSocialModal()">
     <span>🚗</span> Slack Pack
-  </button>
-  <button class="fab fab-tracker" onclick="openModal('modal-tracker');renderTracker()">
-    <span>🥾</span> My Trek Log
   </button>
   <button class="fab fab-pack" onclick="openModal('modal-pack');renderPackModal()">
     <span>🎒</span> <span id="fab-pack-lbl">Pack Weight</span>
