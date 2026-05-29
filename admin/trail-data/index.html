@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Trail Data Console · Triple Crown Trek Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --forest:#1e3a1e; --pine:#2d5a27; --sage:#4a7c59; --leaf:#6ba368;
+    --mist:#e8f0e8; --stone:#f4f6f4; --border:#d4ddd4; --subtle:#6b7b6b;
+    --bark:#3d2b1f; --rust:#b5451b; --gold:#c8a84b; --sky:#5b8fa8;
+    --white:#fff; --text:#2a2a2a;
+    --shadow:0 2px 12px rgba(30,58,30,.10);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:'DM Sans',system-ui,sans-serif;color:var(--text);
+    background:var(--stone);font-size:15px;line-height:1.5;
+  }
+  h1,h2,h3{font-family:'Playfair Display',serif;color:var(--forest);margin:0;font-weight:700}
+  a{color:var(--pine)}
+  button{font-family:inherit;cursor:pointer}
+  .hidden{display:none !important}
+
+  /* ---- generic controls ---- */
+  .btn{
+    background:var(--forest);color:var(--white);border:none;border-radius:8px;
+    padding:9px 16px;font-size:.9rem;font-weight:700;transition:filter .15s;
+  }
+  .btn:hover{filter:brightness(1.12)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn-ghost{background:transparent;color:var(--pine);border:1.5px solid var(--border)}
+  .btn-ghost:hover{filter:none;background:var(--mist)}
+  .btn-danger{background:var(--rust)}
+  .btn-sm{padding:5px 11px;font-size:.78rem;border-radius:7px}
+  label{display:block;font-size:.74rem;font-weight:700;color:var(--subtle);
+    text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+  input,select{
+    width:100%;font-family:inherit;font-size:.92rem;padding:9px 11px;
+    border:1.5px solid var(--border);border-radius:8px;background:var(--white);color:var(--text);
+  }
+  input:focus,select:focus{outline:none;border-color:var(--sage);box-shadow:0 0 0 3px rgba(74,124,89,.15)}
+  .field{margin-bottom:14px}
+  .note{font-size:.82rem;color:var(--subtle)}
+  .err{color:var(--rust);font-size:.85rem;margin-top:8px}
+  .ok{color:var(--pine);font-size:.85rem;margin-top:8px}
+
+  /* ---- sign-in ---- */
+  #signin-view{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{background:var(--white);border:1px solid var(--border);border-radius:14px;
+    box-shadow:var(--shadow);padding:34px 32px;width:min(94vw,420px)}
+  .brand{font-size:.72rem;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:.12em}
+  .card h1{font-size:1.7rem;margin:6px 0 4px}
+  .card .sub{color:var(--subtle);font-size:.9rem;margin-bottom:22px}
+
+  /* ---- app shell ---- */
+  #app-view{min-height:100%;display:flex;flex-direction:column}
+  .topbar{background:var(--forest);color:var(--white);display:flex;align-items:center;
+    gap:14px;padding:12px 20px}
+  .topbar .t-brand{font-family:'Playfair Display',serif;font-weight:800;font-size:1.05rem;color:var(--white)}
+  .topbar .t-spacer{flex:1}
+  .topbar select{width:auto;background:rgba(255,255,255,.10);color:var(--white);
+    border-color:rgba(255,255,255,.25);font-size:.82rem;padding:6px 10px}
+  .topbar .who{font-size:.8rem;color:#cfe0cf;text-align:right;line-height:1.3}
+  .topbar .who b{color:var(--white);display:block}
+  .role-pill{display:inline-block;font-size:.64rem;font-weight:700;text-transform:uppercase;
+    letter-spacing:.05em;padding:2px 7px;border-radius:20px;background:var(--gold);color:#4a3a10}
+  .shell{flex:1;display:flex;min-height:0}
+  .sidenav{width:188px;background:var(--white);border-right:1px solid var(--border);padding:14px 10px;flex-shrink:0}
+  .navlink{display:block;width:100%;text-align:left;background:none;border:none;
+    padding:10px 12px;border-radius:8px;font-size:.9rem;font-weight:600;color:var(--subtle)}
+  .navlink:hover{background:var(--stone);color:var(--pine)}
+  .navlink.active{background:var(--mist);color:var(--forest)}
+  .main{flex:1;padding:26px 30px;overflow-y:auto}
+  .main h2{font-size:1.45rem;margin-bottom:4px}
+  .main .page-sub{color:var(--subtle);font-size:.9rem;margin-bottom:22px}
+
+  /* ---- table ---- */
+  table{width:100%;border-collapse:collapse;background:var(--white);
+    border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  th,td{text-align:left;padding:11px 14px;font-size:.86rem;border-bottom:1px solid var(--border)}
+  th{background:var(--stone);font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--subtle)}
+  tr:last-child td{border-bottom:none}
+  td.revoked,tr.revoked td{color:var(--subtle)}
+  .tag{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+    padding:2px 7px;border-radius:20px;display:inline-block}
+  .tag-role{background:var(--mist);color:var(--forest)}
+  .tag-super{background:var(--gold);color:#4a3a10}
+  .tag-revoked{background:#f3dcd2;color:var(--rust)}
+  .tag-pending{background:#fff3d6;color:#8a6800}
+
+  .panel{background:var(--white);border:1px solid var(--border);border-radius:12px;
+    padding:22px 24px;box-shadow:var(--shadow)}
+  .panel.stub{border-style:dashed;background:var(--stone);box-shadow:none}
+  .invite-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:640px){.invite-grid{grid-template-columns:1fr}.sidenav{width:64px}.navlink{font-size:.7rem;padding:8px 6px}}
+
+  /* ---- modal ---- */
+  .overlay{position:fixed;inset:0;background:rgba(10,24,12,.6);display:flex;
+    align-items:center;justify-content:center;padding:20px;z-index:50}
+  .modal{background:var(--white);border-radius:14px;padding:26px;width:min(94vw,420px);box-shadow:0 24px 80px rgba(0,0,0,.4)}
+  .modal h3{font-size:1.2rem;margin-bottom:8px}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+  .config-warn{background:#fff3d6;border:1px solid var(--gold);color:#7a5d00;
+    padding:10px 14px;border-radius:8px;font-size:.82rem;margin-bottom:18px}
+</style>
+</head>
+<body>
+
+<!-- ============ SIGN-IN ============ -->
+<div id="signin-view">
+  <div class="card">
+    <div class="brand">Triple Crown Trek Planner</div>
+    <h1>Trail Data Console</h1>
+    <div class="sub">For authorized conservancy editors. Sign in with the email you were invited under.</div>
+    <div id="config-warn" class="config-warn hidden">
+      Set your Supabase <b>anon key</b> in this file (search <code>SUPABASE_ANON_KEY</code>) before this page will work.
+    </div>
+    <div class="field">
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="email" placeholder="you@conservancy.org" />
+    </div>
+    <button id="send-link" class="btn" style="width:100%">Send me a sign-in link</button>
+    <div id="signin-msg" class="ok hidden"></div>
+    <div id="signin-err" class="err hidden"></div>
+  </div>
+</div>
+
+<!-- ============ NOT AUTHORIZED ============ -->
+<div id="denied-view" class="hidden">
+  <div id="signin-view" style="display:flex">
+    <div class="card">
+      <div class="brand">Triple Crown Trek Planner</div>
+      <h1>Not authorized</h1>
+      <div class="sub">This email isn't on the editor list, or its access was revoked. If you believe this is a mistake, contact the console administrator.</div>
+      <button id="denied-signout" class="btn-ghost btn" style="width:100%">Sign out</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP SHELL ============ -->
+<div id="app-view" class="hidden">
+  <div class="topbar">
+    <span class="t-brand">Trail Data Console</span>
+    <select id="conservancy-select" class="hidden" title="Active conservancy"></select>
+    <span class="t-spacer"></span>
+    <span class="who"><b id="who-name">—</b><span id="who-meta">—</span></span>
+    <button id="signout" class="btn-ghost btn btn-sm" style="color:#cfe0cf;border-color:rgba(255,255,255,.3)">Sign out</button>
+  </div>
+  <div class="shell">
+    <nav class="sidenav">
+      <button class="navlink active" data-page="alerts">Alerts</button>
+      <button class="navlink" data-page="baseline">Baseline</button>
+      <button class="navlink" data-page="revisions">Revisions</button>
+      <button class="navlink hidden" id="nav-editors" data-page="editors">Editors</button>
+    </nav>
+    <main class="main" id="main"></main>
+  </div>
+</div>
+
+<!-- ============ MODAL MOUNT ============ -->
+<div id="modal-mount"></div>
+
+<script>
+// =====================================================================
+//  CONFIG  — the anon key is a PUBLIC key (safe to embed; RLS protects data).
+//  Find it in Supabase → Project Settings → API → Project API keys → "anon public".
+// =====================================================================
+const SUPABASE_URL      = 'https://lxlxaykwhaayapryfgom.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4bHhheWt3aGFheWFwcnlmZ29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzcxNzcsImV4cCI6MjA5NTA1MzE3N30.hWtBZBYuMK-Fr75YxwfkXlQPUachcMbHXidIoWvPsr0';
+
+// IMPORTANT (one-time Supabase setup): in Authentication → URL Configuration,
+// add this console's URL to BOTH "Site URL" and "Redirect URLs", e.g.
+//   https://triplecrowntrekplanner.com/admin/trail-data/
+
+const CONSERVANCIES = [
+  { code:'ATC',  trail:'AT'  },
+  { code:'PCTA', trail:'PCT' },
+  { code:'CDTC', trail:'CDT' },
+];
+const ROLES = ['editor','approver','superadmin'];
+
+const $ = (s)=>document.querySelector(s);
+const show = (el)=>el.classList.remove('hidden');
+const hide = (el)=>el.classList.add('hidden');
+const esc  = (s)=> (s==null?'':String(s)).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const fmtDate = (s)=> s ? new Date(s).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : '—';
+
+let sb = null;
+let me = null;            // { editor_id, display_name, conservancy_code, role, is_super }
+let allConservancies = []; // from DB (for selectors / labels)
+
+// ---- config guard ---------------------------------------------------
+function configured(){
+  return SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== 'PASTE_YOUR_SUPABASE_ANON_PUBLIC_KEY_HERE';
+}
+
+// ---- auth wrapper: run a data op, redirect to signin on auth failure --
+async function withAuth(fn){
+  const { data:{ session } } = await sb.auth.getSession();
+  if (!session){ return routeSignedOut(); }
+  try {
+    return await fn();
+  } catch (e){
+    const code = e && (e.status || e.code);
+    if (code === 401 || code === '401' || /jwt|expired|session/i.test(e?.message||'')){
+      await sb.auth.signOut();
+      return routeSignedOut();
+    }
+    throw e;
+  }
+}
+
+// ---- view routing ---------------------------------------------------
+function showOnly(id){
+  ['signin-view','denied-view','app-view'].forEach(v=>{
+    const el = document.getElementById(v);
+    if (v===id) show(el); else hide(el);
+  });
+}
+function routeSignedOut(){ me=null; showOnly('signin-view'); }
+
+async function routeSignedIn(){
+  // Bind / verify authorization via the SECURITY DEFINER RPC.
+  const { data, error } = await sb.rpc('editor_signin_bind');
+  if (error){ console.error(error); return showDenied(); }
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row || !row.authorized){ return showDenied(); }
+  me = row;
+  await loadConservancies();
+  buildShell();
+  showOnly('app-view');
+  go('alerts');
+}
+async function showDenied(){ showOnly('denied-view'); }
+
+// ---- bootstrap ------------------------------------------------------
+async function boot(){
+  if (!configured()){ show($('#config-warn')); $('#send-link').disabled = true; showOnly('signin-view'); return; }
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Tidy the magic-link callback params out of the URL once handled.
+  sb.auth.onAuthStateChange((event, session)=>{
+    if (event === 'SIGNED_IN'){
+      history.replaceState({}, '', location.pathname);
+      routeSignedIn();
+    } else if (event === 'SIGNED_OUT'){
+      routeSignedOut();
+    }
+  });
+
+  const { data:{ session } } = await sb.auth.getSession();
+  if (session){ routeSignedIn(); } else { routeSignedOut(); }
+}
+
+// ---- sign in / out --------------------------------------------------
+async function sendLink(){
+  const email = $('#email').value.trim();
+  hide($('#signin-err')); hide($('#signin-msg'));
+  if (!email || !/.+@.+\..+/.test(email)){ $('#signin-err').textContent='Enter a valid email.'; show($('#signin-err')); return; }
+  $('#send-link').disabled = true;
+  const { error } = await sb.auth.signInWithOtp({
+    email,
+    options:{ emailRedirectTo: location.origin + location.pathname }
+  });
+  $('#send-link').disabled = false;
+  if (error){ $('#signin-err').textContent = error.message; show($('#signin-err')); return; }
+  $('#signin-msg').textContent = 'Check your email for a sign-in link.'; show($('#signin-msg'));
+}
+
+async function loadConservancies(){
+  const { data, error } = await sb.from('conservancies')
+    .select('code,display_name_short,trail').order('code');
+  allConservancies = error ? CONSERVANCIES.map(c=>({code:c.code,trail:c.trail,display_name_short:c.code})) : data;
+}
+
+// ---- shell ----------------------------------------------------------
+function consvLabel(code){
+  const c = allConservancies.find(x=>x.code===code);
+  return c ? (c.display_name_short+' · '+c.trail) : code;
+}
+function buildShell(){
+  $('#who-name').textContent = me.display_name;
+  $('#who-meta').innerHTML = (me.is_super ? '<span class="role-pill">Superadmin</span>'
+                                          : esc(me.role)) + ' · ' + esc(me.is_super ? 'All conservancies' : consvLabel(me.conservancy_code));
+  // Editors nav is superadmin-only
+  if (me.is_super) show($('#nav-editors')); else hide($('#nav-editors'));
+
+  // Conservancy selector (superadmin sees all; single-conservancy editors see nothing to pick)
+  const sel = $('#conservancy-select');
+  if (me.is_super){
+    sel.innerHTML = allConservancies.map(c=>`<option value="${esc(c.code)}">${esc(c.display_name_short)} · ${esc(c.trail)}</option>`).join('');
+    show(sel);
+  } else { hide(sel); }
+
+  document.querySelectorAll('.navlink').forEach(b=>{
+    b.onclick = ()=>{ if (b.dataset.page==='editors' && !me.is_super) return; go(b.dataset.page); };
+  });
+  $('#signout').onclick   = ()=> sb.auth.signOut();
+}
+
+function go(page){
+  if (page==='editors' && !me.is_super) page='alerts';
+  document.querySelectorAll('.navlink').forEach(b=>b.classList.toggle('active', b.dataset.page===page));
+  const main = $('#main');
+  if (page==='editors'){ renderEditors(main); return; }
+  const stubs = {
+    alerts:   ['Alerts','Draft, approve, and publish trail alerts — closures, reroutes, hazards. Two-person publish with the emergency fast-path.','PROMPT 4'],
+    baseline: ['Baseline','Publish waypoint / shelter / water / road-crossing / trek edits as deltas over the embedded seed.','PROMPT 5'],
+    revisions:['Revisions','Full published history with one-click revert.','PROMPT 6'],
+  };
+  const [title,desc,prompt] = stubs[page];
+  main.innerHTML = `<h2>${title}</h2><div class="page-sub">${desc}</div>
+    <div class="panel stub"><b>Arriving in ${prompt}.</b><div class="note" style="margin-top:6px">
+    This tab is part of the build sequence; the auth, shell, and editor management you're using now are PROMPT 3.</div></div>`;
+}
+
+// ---- Editors page (superadmin only) ---------------------------------
+async function renderEditors(main){
+  main.innerHTML = `<h2>Editors</h2>
+    <div class="page-sub">Named humans authorized to draft and approve trail-data changes. Access is per-conservancy; revoke is a soft-revoke that preserves the audit trail.</div>
+    <div class="panel" style="margin-bottom:22px">
+      <h3 style="font-size:1.05rem;margin-bottom:14px">Invite an editor</h3>
+      <div class="invite-grid">
+        <div class="field"><label>Full name</label><input id="inv-name" placeholder="Jane Ridgeline" /></div>
+        <div class="field"><label>Email</label><input id="inv-email" type="email" placeholder="jane@conservancy.org" /></div>
+        <div class="field"><label>Conservancy</label><select id="inv-consv">${allConservancies.map(c=>`<option value="${esc(c.code)}">${esc(c.display_name_short)} · ${esc(c.trail)}</option>`).join('')}</select></div>
+        <div class="field"><label>Role</label><select id="inv-role">${ROLES.map(r=>`<option value="${r}">${r}</option>`).join('')}</select></div>
+      </div>
+      <button id="inv-send" class="btn">Create &amp; send sign-in link</button>
+      <div id="inv-msg" class="ok hidden"></div>
+      <div id="inv-err" class="err hidden"></div>
+    </div>
+    <div id="editors-table">Loading editors…</div>`;
+  $('#inv-send').onclick = inviteEditor;
+  loadEditors();
+}
+
+async function loadEditors(){
+  await withAuth(async ()=>{
+    const { data, error } = await sb.from('conservancy_editors')
+      .select('*').order('conservancy_code').order('display_name');
+    if (error) throw error;
+    const rows = (data||[]).map(e=>{
+      const revoked = !!e.revoked_at;
+      const pending = !e.accepted_at && !revoked;
+      const roleTag = e.role==='superadmin' ? '<span class="tag tag-super">superadmin</span>'
+                                            : `<span class="tag tag-role">${esc(e.role)}</span>`;
+      const status = revoked ? '<span class="tag tag-revoked">revoked</span>'
+                   : pending ? '<span class="tag tag-pending">invited</span>'
+                             : `<span class="note">${fmtDate(e.last_active_at)}</span>`;
+      const action = revoked
+        ? `<button class="btn-ghost btn btn-sm" onclick="restoreEditor('${e.id}')">Restore</button>`
+        : `<button class="btn-danger btn btn-sm" onclick="confirmRevoke('${e.id}','${esc(e.display_name).replace(/'/g,"&#39;")}')">Revoke</button>`;
+      return `<tr class="${revoked?'revoked':''}">
+        <td><b>${esc(e.display_name)}</b><br><span class="note">${esc(e.email)}</span></td>
+        <td>${esc(e.conservancy_code)}</td>
+        <td>${roleTag}</td>
+        <td>${fmtDate(e.invited_at)}</td>
+        <td>${status}</td>
+        <td style="text-align:right">${action}</td>
+      </tr>`;
+    }).join('');
+    $('#editors-table').innerHTML = `<table>
+      <thead><tr><th>Editor</th><th>Conservancy</th><th>Role</th><th>Invited</th><th>Last active / status</th><th></th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="6" class="note">No editors yet.</td></tr>'}</tbody></table>`;
+  });
+}
+
+async function inviteEditor(){
+  const name  = $('#inv-name').value.trim();
+  const email = $('#inv-email').value.trim();
+  const code  = $('#inv-consv').value;
+  const role  = $('#inv-role').value;
+  hide($('#inv-err')); hide($('#inv-msg'));
+  if (!name || !email || !/.+@.+\..+/.test(email)){ $('#inv-err').textContent='Name and a valid email are required.'; show($('#inv-err')); return; }
+  $('#inv-send').disabled = true;
+  try {
+    await withAuth(async ()=>{
+      const { error } = await sb.from('conservancy_editors').insert({
+        email, display_name:name, conservancy_code:code, role,
+        invited_by: me.editor_id, accepted_at: null
+      });
+      if (error) throw error;
+    });
+    // Fire the sign-in link to the invitee (Supabase default magic-link email).
+    const { error:otpErr } = await sb.auth.signInWithOtp({
+      email, options:{ emailRedirectTo: location.origin + location.pathname, shouldCreateUser:true }
+    });
+    $('#inv-msg').textContent = otpErr
+      ? `Editor created. (Couldn't auto-send the link: ${otpErr.message} — they can request one on the sign-in page.)`
+      : 'Editor created and a sign-in link was emailed.';
+    show($('#inv-msg'));
+    $('#inv-name').value=''; $('#inv-email').value='';
+    loadEditors();
+  } catch(e){
+    $('#inv-err').textContent = /duplicate|unique/i.test(e.message||'')
+      ? 'That email already has an active row for this conservancy.' : (e.message||'Could not create editor.');
+    show($('#inv-err'));
+  } finally { $('#inv-send').disabled = false; }
+}
+
+function confirmRevoke(id, name){
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal">
+    <h3>Revoke access?</h3>
+    <div class="note"><b>${name}</b> will lose console access immediately and see the "not authorized" screen on their next page load. Their audit history is preserved. You can restore them later.</div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">Cancel</button>
+      <button class="btn-danger btn" onclick="doRevoke('${id}')">Revoke</button>
+    </div></div></div>`;
+}
+function closeModal(){ $('#modal-mount').innerHTML=''; }
+
+async function doRevoke(id){
+  closeModal();
+  await withAuth(async ()=>{
+    const { error } = await sb.from('conservancy_editors').update({ revoked_at:new Date().toISOString() }).eq('id', id);
+    if (error) throw error;
+  });
+  loadEditors();
+}
+async function restoreEditor(id){
+  try {
+    await withAuth(async ()=>{
+      const { error } = await sb.from('conservancy_editors').update({ revoked_at:null }).eq('id', id);
+      if (error) throw error;
+    });
+  } catch(e){ alert(/duplicate|unique/i.test(e.message||'') ? 'Cannot restore: an active row already exists for that email + conservancy.' : e.message); }
+  loadEditors();
+}
+
+// expose handlers used in inline onclick
+window.confirmRevoke = confirmRevoke;
+window.closeModal = closeModal;
+window.doRevoke = doRevoke;
+window.restoreEditor = restoreEditor;
+
+$('#send-link').onclick = sendLink;
+$('#email').addEventListener('keydown', e=>{ if(e.key==='Enter') sendLink(); });
+$('#denied-signout').onclick = ()=> sb && sb.auth.signOut();
+
+boot();
+</script>
+</body>
+</html>
