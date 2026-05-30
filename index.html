@@ -1270,6 +1270,9 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 <!-- ── MAIN CONTENT ── -->
 <main class="main" id="mainContent">
 
+  <!-- Trail alerts — second mount point so conservancy alerts surface on the main planner, not only the expanded view -->
+  <div class="trail-alert-stack" id="trailAlertStackMain"></div>
+
   <!-- Elevation Profile Card -->
   <div class="card" id="elevCard">
     <div class="card-head">
@@ -7125,8 +7128,8 @@ async function tdFetchAlerts(){
 // Inserts one .trail-alert-banner per visible alert into #trailAlertStack.
 // Sorting: HAZARD first, then ADVISORY, then INFO; within each, newest first.
 function tdRenderAlertBanner(){
-  const stack = document.getElementById('trailAlertStack');
-  if (!stack) return;
+  const stacks = Array.from(document.querySelectorAll('.trail-alert-stack'));
+  if (!stacks.length) return;
   const trail = window.ACTIVE_TRAIL_ID || 'AT';
   // Never render a draft (null published_at). RLS keeps drafts from real anonymous
   // hikers; this also keeps an editor's same-origin signed-in preview correct.
@@ -7149,9 +7152,10 @@ function tdRenderAlertBanner(){
   const showTop = alerts.slice(0, 3);
   const extra = alerts.length - showTop.length;
 
-  stack.innerHTML = ''; // wipe + repopulate
+  stacks.forEach(s => s.innerHTML = ''); // wipe all mount points
   if (!showTop.length) return;
 
+  stacks.forEach(stack => {
   showTop.forEach(a => {
     const div = document.createElement('div');
     const sev = (a.severity || 'INFO').toLowerCase();
@@ -7205,6 +7209,7 @@ function tdRenderAlertBanner(){
       ' for this trail</span></div>';
     stack.appendChild(more);
   }
+  }); // end stacks.forEach — render into every mount point
 }
 
 // Small HTML escape — alert title/body come from the conservancy database
