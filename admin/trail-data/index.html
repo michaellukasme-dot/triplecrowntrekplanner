@@ -179,6 +179,11 @@
   .rr-ack input{width:auto}
   .dadd{color:var(--pine);font-weight:700}
   .ddel{color:var(--rust);font-weight:700}
+  /* per-trail theming (mirrors the hiker app palette; switches with the selector) */
+  body[data-trail="PCT"]{ --forest:#1b2f45; --pine:#1e4d72; --sage:#4a90b8; --leaf:#4a90b8; --mist:#e3eef6; }
+  body[data-trail="CDT"]{ --forest:#3b2010; --pine:#6b3c1a; --sage:#b8773c; --leaf:#b8773c; --mist:#f6ede3; }
+  .trail-chip{display:inline-block;background:var(--forest);color:var(--white);font-size:.62rem;font-weight:800;
+    text-transform:uppercase;letter-spacing:.07em;padding:3px 9px;border-radius:7px;vertical-align:middle;margin-left:8px}
 </style>
 </head>
 <body>
@@ -380,6 +385,7 @@ function buildShell(){
 }
 
 function go(page){
+  try { document.body.dataset.trail = activeConsv().trail || 'AT'; } catch(e){}
   if (page==='editors' && !me.is_super) page='alerts';
   document.querySelectorAll('.navlink').forEach(b=>b.classList.toggle('active', b.dataset.page===page));
   const main = $('#main');
@@ -549,7 +555,7 @@ function openAlertModal(existing){
       <div class="nm">${val}</div><div class="hint">${esc(SEV_INFO[val])}</div></label>`;
 
   $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal wide">
-    <h3>${existing?'Edit alert':'New alert'} · ${esc(trail)}</h3>
+    <h3>${existing?'Edit alert':'New alert'} <span class="trail-chip">${esc(trail)} — DRAFT EDIT</span></h3>
     <div class="note" style="margin-bottom:14px">${existing
       ? 'Editing creates a new revision. The alert returns to <b>pending</b> until another editor re-approves it — a live alert will be pulled from hikers until then.'
       : 'Drafts go to Pending Approval. A second editor publishes them — except a HAZARD, which you can publish immediately.'}</div>
@@ -1010,7 +1016,7 @@ function openBaselineModal(existing, et){
   const v = (i,d='')=> (r[i]!==undefined && r[i]!==null) ? r[i] : d;
   const typeLabel = BL_SINGULAR[et]||et;
   $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal wide">
-    <h3>${existing?'Edit':'New'} ${esc(typeLabel)} · ${esc(trail)}</h3>
+    <h3>${existing?'Edit':'New'} ${esc(typeLabel)} <span class="trail-chip">${esc(trail)} — DRAFT EDIT</span></h3>
     <div class="note" style="margin-bottom:14px">Saving drafts a revision. It appears in <b>Pending baseline changes</b> until a second editor approves &amp; publishes — then it merges into what hikers see.</div>
     <div class="frow"><label>Mile<input id="bl-f-mile" type="number" step="0.1" value="${esc(v(0))}"/></label>
       <label>State<input id="bl-f-state" value="${esc(v(2))}"/></label></div>
@@ -1072,7 +1078,7 @@ function blRetireRow(i){
   const w = blVisible[i]; if (!w) return;
   const { trail } = activeConsv();
   $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal">
-    <h3>Retire ${esc(BL_SINGULAR[w.et]||w.et)}</h3>
+    <h3>Retire ${esc(BL_SINGULAR[w.et]||w.et)} <span class="trail-chip">${esc(trail)} — DRAFT EDIT</span></h3>
     <div class="note" style="margin-bottom:12px">Drafts a retirement of <b>${esc(w.raw[1])}</b> (mile ${esc(w.raw[0])}). On publish it disappears from the hiker planner and map. A second editor must approve.</div>
     <label>Reason (min 20 chars)<textarea id="bl-r-reason" rows="2"></textarea></label>
     <div class="modal-err" id="bl-r-err"></div>
@@ -1137,7 +1143,7 @@ function blReroute(dir, segId){
   const picked = (blMerged.treks[dir].find(x=>x.seg.id===segId)||{}).seg;
   if (!picked) return;
   $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal wide">
-    <h3>Reroute · ${esc(dir)} #${esc(picked.id)} ${esc(picked.name)} · ${esc(trail)}</h3>
+    <h3>Reroute · ${esc(dir)} #${esc(picked.id)} ${esc(picked.name)} <span class="trail-chip">${esc(trail)} — DRAFT EDIT</span></h3>
     <div class="note" style="margin-bottom:14px">Changing this segment's length shifts the cumulative miles of every downstream segment in <b>both</b> directions. The elevation chart for those miles drifts by the same amount until a future resync — fine for small reroutes.</div>
     <div class="frow">
       <label>Current length<input value="${esc(picked.miles)} mi" disabled/></label>
@@ -1191,7 +1197,7 @@ async function blApprove(revId){
 }
 function blReject(revId){
   $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal">
-    <h3>Reject baseline draft</h3>
+    <h3>Reject baseline draft <span class="trail-chip">${esc(activeConsv().trail)} — DRAFT EDIT</span></h3>
     <label>Reason (min 20 chars)<textarea id="bl-rj-reason" rows="2"></textarea></label>
     <div class="modal-err" id="bl-rj-err"></div>
     <div class="modal-actions">
@@ -1211,7 +1217,7 @@ function blReject(revId){
 // ---- companion alert offer (suggest, don't force; prefilled) --------
 function blOfferCompanionAlert(info){
   $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal">
-    <h3>Tell hikers?</h3>
+    <h3>Tell hikers? <span class="trail-chip">${esc(activeConsv().trail)} — DRAFT EDIT</span></h3>
     <div class="note" style="margin-bottom:14px">Draft saved. Want to also post a trail alert so hikers see this change? Optional — the baseline edit stands on its own.</div>
     <div class="alert-meta" style="margin-bottom:14px">${esc(info.title)}${info.mile!=null?` · mile ${esc(info.mile)}`:''}</div>
     <div class="modal-actions">
