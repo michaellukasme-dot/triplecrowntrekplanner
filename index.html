@@ -736,6 +736,12 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .pf-photo-circle:hover .pf-remove{display:flex}
 .pf-photo-hint{font-size:.72rem;color:var(--subtle);line-height:1.4;flex:1}
 .pf-photo-hint strong{color:var(--pine);display:block;margin-bottom:2px}
+.pf-photo-circle .pf-ava{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);
+  min-width:17px;height:17px;padding:0 5px;border-radius:9px;display:flex;align-items:center;
+  justify-content:center;font-size:9px;font-weight:700;line-height:1;white-space:nowrap}
+.pf-ava.is-ava{background:var(--forest);color:#fff}
+.pf-ava.set-ava{background:rgba(255,255,255,.92);color:var(--pine);border:1px solid var(--leaf);cursor:pointer}
+.pf-ava.set-ava:hover{background:var(--forest);color:#fff;border-color:var(--forest)}
 /* Partner card photo gallery strip */
 .pc-photos{display:flex;gap:6px;padding:4px 0}
 .pc-photo-thumb{width:52px;height:52px;border-radius:8px;object-fit:cover;cursor:pointer;border:1.5px solid var(--border);transition:border-color .12s}
@@ -4991,9 +4997,12 @@ function renderBoard() {
         ${yoyoBadge}
         ${typeof tmAngelPillFor === 'function' ? tmAngelPillFor(p.trail_name) : ''}
       </div>
-      <button class="pc-contact" data-ctype="${esc(p.contact_type)}" data-cinfo="${esc(p.contact)}" data-cname="${esc(p.trail_name)}" onclick="contactHikerEl(this)">
-        ${contactIcon} Contact ${esc(p.trail_name)} via ${esc(p.contact_type)}
-      </button>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <button class="pc-contact" data-ctype="${esc(p.contact_type)}" data-cinfo="${esc(p.contact)}" data-cname="${esc(p.trail_name)}" onclick="contactHikerEl(this)">
+          ${contactIcon} Contact ${esc(p.trail_name)} via ${esc(p.contact_type)}
+        </button>
+        <button class="pc-contact" onclick="copyMyCoords()" title="Copy your GPS coordinates to share a meetup point" aria-label="Copy your coordinates to share a meetup point">📍 My spot</button>
+      </div>
     </div>`;
   }).join('');
 }
@@ -5013,6 +5022,25 @@ function contactHiker(type, info, name) {
     window.open('https://instagram.com/' + info.replace('@',''), '_blank');
   } else {
     alert('Contact ' + name + ': ' + info);
+  }
+}
+
+// Copy the user's OWN current GPS coordinates — to paste into a text/email as a meetup point.
+function copyMyCoords(){
+  if (typeof lastGpsPos === 'undefined' || !lastGpsPos) {
+    showToast('📍 Turn on Find Me (GPS) up top to share your location.');
+    return;
+  }
+  const lat = (lastGpsPos.lat != null) ? lastGpsPos.lat : (lastGpsPos.coords && lastGpsPos.coords.latitude);
+  const lon = (lastGpsPos.lon != null) ? lastGpsPos.lon : (lastGpsPos.coords && lastGpsPos.coords.longitude);
+  if (lat == null || lon == null) { showToast('📡 Still locating you — try again in a moment.'); return; }
+  const ll = lat.toFixed(5) + ', ' + lon.toFixed(5);
+  const text = ll + ' (https://maps.google.com/?q=' + lat.toFixed(5) + ',' + lon.toFixed(5) + ')';
+  const ok = () => showToast('📍 Your coordinates are copied — paste them to share a meetup point.');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(ok).catch(() => showToast('📍 ' + ll));
+  } else {
+    showToast('📍 ' + ll);
   }
 }
 
@@ -5051,7 +5079,10 @@ function renderPhotoSlots() {
     const el = document.getElementById(`pfPhoto${i}`);
     if (!el) continue;
     if (_pfPhotos[i]) {
-      el.innerHTML = `<img src="${_pfPhotos[i]}" alt="Photo ${i+1}"><button class="pf-remove" onclick="removePhoto(event,${i})">✕</button>`;
+      const ava = (i === 0)
+        ? `<span class="pf-ava is-ava" title="Your avatar on the board">★</span>`
+        : `<span class="pf-ava set-ava" title="Set as avatar" onclick="setAvatarPhoto(event,${i})">★</span>`;
+      el.innerHTML = `<img src="${_pfPhotos[i]}" alt="Photo ${i+1}"><button class="pf-remove" onclick="removePhoto(event,${i})">✕</button>${ava}`;
       el.style.opacity = '1';
       el.style.borderStyle = 'solid';
     } else {
@@ -5060,6 +5091,17 @@ function renderPhotoSlots() {
       el.style.borderStyle = 'dashed';
     }
   }
+}
+
+// Promote any photo to slot 0 — slot 0 is the board avatar.
+function setAvatarPhoto(e, slot){
+  e.stopPropagation();
+  if (!_pfPhotos[slot]) return;
+  const chosen = _pfPhotos[slot];
+  const rest = _pfPhotos.filter((p, idx) => idx !== slot && p);
+  _pfPhotos = [chosen, ...rest].concat([null, null, null]).slice(0, 3);
+  renderPhotoSlots();
+  if (typeof showToast === 'function') showToast('★ Avatar set — this photo shows on the board.');
 }
 
 // ── YOYO Detection ──
@@ -6159,6 +6201,7 @@ function tmAngelCardHtml(r){
       <span class="tm-confirm-count" aria-label="${r.confirmation_count||0} hikers confirmed">✓ ${r.confirmation_count||0} confirmed</span>
       ${confirmBtn}
       ${contactBtn}
+      <button class="pc-contact" onclick="copyMyCoords()" title="Copy your GPS coordinates to share a meetup point" aria-label="Copy your coordinates to share a meetup point">📍 My spot</button>
     </div>
   </div>`;
 }
@@ -7292,7 +7335,7 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
     <!-- TAB: POST REQUEST -->
     <div id="sp-tab-post" style="display:none;padding:14px 18px">
       <!-- 3 Photo uploads -->
-      <div class="pf-photo-hint" style="margin-bottom:6px"><strong>Photos (up to 3, optional)</strong>First photo shown as your avatar on the board.</div>
+      <div class="pf-photo-hint" style="margin-bottom:6px"><strong>Photos (up to 3, optional)</strong>Tap the ★ on any photo to make it your avatar.</div>
       <div class="pf-photo-row" id="pfPhotoRow">
         <div class="pf-photo-circle" id="pfPhoto0" onclick="triggerPhotoUpload(0)" title="Add photo 1">📷
           <button class="pf-remove" onclick="removePhoto(event,0)">✕</button>
