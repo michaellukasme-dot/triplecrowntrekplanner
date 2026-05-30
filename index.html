@@ -4793,16 +4793,64 @@ function spTab(tab, btn) {
   if (tab === 'magic') tmInit();
 }
 
+let _editingPostId = null;   // set when this device's existing post is loaded for editing
+
 function prefillPostForm() {
   const from = getFromTrekObj();
   const to   = getToTrekObj();
   const dir  = direction || 'NOBO';
-  if (from) document.getElementById('pf-from').value = from.name || from.name;
-  if (to)   document.getElementById('pf-to').value   = to.name || to.name;
+  if (from) document.getElementById('pf-from').value = from.name || '';
+  if (to)   document.getElementById('pf-to').value   = to.name || '';
   const dirSel = document.getElementById('pf-dir');
   if (dirSel) dirSel.value = dir;
   const dateEl = document.getElementById('startDate');
   if (dateEl && dateEl.value) document.getElementById('pf-date').value = dateEl.value;
+
+  // If this device already has a live post, re-hydrate the form so submit EDITS it (no duplicate).
+  let myId = null;
+  try { myId = localStorage.getItem('tctp_my_post_id'); } catch(e){}
+  const btn = document.getElementById('pf-submit');
+  if (myId) {
+    rehydrateMyPost(myId);
+  } else {
+    _editingPostId = null;
+    if (btn) btn.textContent = '🥾 Post to the Partner Board';
+  }
+}
+
+// Load this device's existing post and fill the form for editing.
+async function rehydrateMyPost(id){
+  const sb = getSupaClient();
+  if (!sb) return;  // offline — leave the new-post prefill in place
+  try {
+    const { data, error } = await sb.from('slack_pack_posts').select('*').eq('id', id).single();
+    if (error || !data) {  // post was removed/stale — fall back to a fresh post
+      try { localStorage.removeItem('tctp_my_post_id'); } catch(_){}
+      _editingPostId = null;
+      return;
+    }
+    _editingPostId = id;
+    const set = (k,v)=>{ const el=document.getElementById(k); if(el && v!=null) el.value=v; };
+    set('pf-name', data.trail_name);
+    set('pf-dir', data.direction);
+    set('pf-from', data.from_trek);
+    set('pf-to', data.to_trek);
+    set('pf-date', data.start_date);
+    set('pf-date-end', data.end_date);
+    set('pf-pace', data.pace);
+    set('pf-gear', data.gear_style);
+    set('pf-exp', data.experience);
+    set('pf-contact-type', data.contact_type);
+    set('pf-contact', data.contact);
+    set('pf-about', data.about);
+    try {
+      const ph = data.photo_url ? JSON.parse(data.photo_url) : [];
+      _pfPhotos = (Array.isArray(ph)?ph:[]).filter(Boolean).concat([null,null,null]).slice(0,3);
+    } catch(_){ _pfPhotos = [null,null,null]; }
+    renderPhotoSlots();
+    const btn = document.getElementById('pf-submit');
+    if (btn) btn.textContent = '💾 Update my post';
+  } catch(_){ /* leave new-post prefill in place */ }
 }
 
 function toggleNearMe(btn) {
@@ -5693,30 +5741,41 @@ async function submitPost() {
     return;
   }
 
-  try {
-    const { error } = await sb.from('slack_pack_posts').insert([{
-      trail_name: name,
-      from_trek: from,
-      to_trek: to,
-      direction: dir,
-      start_date: date,
-      end_date: dateEnd || null,
-      pace: pace,
-      experience: exp,
-      gear_style: gear,
-      about: about || null,
-      contact: contact,
-      contact_type: ctype,
-      state_region: stateRegion,
-      photo_url: _pfPhotos.filter(Boolean).length ? JSON.stringify(_pfPhotos.filter(Boolean)) : null
-    }]);
-    if (error) throw error;
+  const row = {
+    trail_name: name,
+    from_trek: from,
+    to_trek: to,
+    direction: dir,
+    start_date: date,
+    end_date: dateEnd || null,
+    pace: pace,
+    experience: exp,
+    gear_style: gear,
+    about: about || null,
+    contact: contact,
+    contact_type: ctype,
+    state_region: stateRegion,
+    photo_url: _pfPhotos.filter(Boolean).length ? JSON.stringify(_pfPhotos.filter(Boolean)) : null
+  };
 
-    btn.textContent = '✓ Posted!';
-    showToast('🥾 You are on the board, ' + name + '!');
-    // Keep the just-posted photos in the slots so the form mirrors your live card.
-    // (Blanking them here made photos look unsaved — text stayed but photos vanished.)
-    // To post a different trip, tap the ✕ on a photo to clear it.
+  try {
+    if (_editingPostId) {
+      // Editing this device's existing post — update in place (no duplicate on the board).
+      const { error } = await sb.from('slack_pack_posts').update(row).eq('id', _editingPostId);
+      if (error) throw error;
+      btn.textContent = '✓ Updated!';
+      showToast('✅ Your post is updated, ' + name + '!');
+    } else {
+      const { data, error } = await sb.from('slack_pack_posts').insert([row]).select('id').single();
+      if (error) throw error;
+      if (data && data.id != null) {
+        _editingPostId = data.id;                         // subsequent saves edit this same post
+        try { localStorage.setItem('tctp_my_post_id', String(data.id)); } catch(_){}
+      }
+      btn.textContent = '✓ Posted!';
+      showToast('🥾 You are on the board, ' + name + '!');
+    }
+    // Keep the just-saved photos in the slots so the form mirrors your live card.
     localStorage.setItem('at_last_trail_name', name);
 
     // Switch to board to see it
@@ -5725,12 +5784,10 @@ async function submitPost() {
       fetchPosts();
     }, 1200);
 
-    // Show donation moment — trigger 1
-
   } catch(e) {
-    showToast('Error posting: ' + e.message);
+    showToast('Error saving your post: ' + e.message);
     btn.disabled = false;
-    btn.textContent = '🥾 Post to the Partner Board';
+    btn.textContent = _editingPostId ? '💾 Update my post' : '🥾 Post to the Partner Board';
   }
 }
 
