@@ -6946,7 +6946,9 @@ function tdRenderAlertBanner(){
   const stack = document.getElementById('trailAlertStack');
   if (!stack) return;
   const trail = window.ACTIVE_TRAIL_ID || 'AT';
-  const alerts = (_tdAlertCache[trail] || []).slice();
+  // Never render a draft (null published_at). RLS keeps drafts from real anonymous
+  // hikers; this also keeps an editor's same-origin signed-in preview correct.
+  const alerts = (_tdAlertCache[trail] || []).filter(a => a.published_at).slice();
 
   const sevRank = { HAZARD: 0, ADVISORY: 1, INFO: 2 };
   alerts.sort((a,b) => {
@@ -6981,6 +6983,7 @@ function tdRenderAlertBanner(){
 
     // Posted time as a relative human string.
     function relTime(iso){
+      if (!iso) return '';
       try {
         const d = new Date(iso);
         const diff = (Date.now() - d.getTime()) / 1000;
