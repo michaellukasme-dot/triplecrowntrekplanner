@@ -672,10 +672,14 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
   color:var(--subtle);border:none;background:transparent;cursor:pointer;
   border-bottom:2px solid transparent;transition:all .15s;font-family:inherit}
 .sp-modal-tab.active{color:var(--pine);border-bottom-color:var(--pine);background:var(--white)}
-/* All Treks: lighter inner sub-tab row + Coming Soon watermark */
-.sp-modal-tabs.at-subtabs{background:var(--white);border-bottom:1px solid var(--border)}
-.at-subtabs .at-subtab{font-size:.68rem;padding:7px 6px;font-weight:600;opacity:.85}
-.at-subtabs .at-subtab.active{opacity:1;background:var(--stone)}
+/* All Treks: inner views as a segmented PILL (distinct from the L1 underline tabs → no 2nd underline) + Coming Soon watermark */
+.sp-modal-tabs.at-subtabs{background:var(--stone);border-bottom:none;display:flex;gap:3px;
+  margin:10px 14px 2px;padding:3px;border-radius:999px}
+.at-subtabs .at-subtab{flex:1;font-size:.72rem;font-weight:600;opacity:1;padding:7px 8px;
+  color:var(--subtle);border:none;border-radius:999px;background:transparent;
+  display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s}
+.at-subtabs .at-subtab.active{color:var(--pine);background:var(--white);border-bottom-color:transparent;
+  box-shadow:0 1px 3px rgba(0,0,0,.08)}
 #at-tab-alltreks{flex:1;flex-direction:column;min-height:0}
 .at-coming-wrap{position:relative;flex:1;display:flex;align-items:center;justify-content:center;
   min-height:360px;padding:36px 26px;text-align:center;overflow:hidden}
@@ -869,6 +873,17 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .rec-dot{width:8px;height:8px;border-radius:50%;background:var(--rust);
   animation:recpulse 1.2s ease-in-out infinite}
 @keyframes recpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+@keyframes gpsPulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes gpsBlink{0%,48%{opacity:1}50%,62%{opacity:.12}100%{opacity:1}}
+@keyframes gpsWave{0%{opacity:0}25%{opacity:.85}100%{opacity:0}}
+#gps-btn-icon.gps-sat{display:inline-flex;align-items:center}
+.gps-sat .wave{opacity:0}
+.gps-off .tip{opacity:.55}
+.gps-acquiring .tip{animation:gpsPulse 1s ease-in-out infinite}
+.gps-live .tip{animation:gpsBlink 1.3s ease-in-out infinite}
+.gps-live .w1{animation:gpsWave 1.9s ease-out infinite}
+.gps-live .w2{animation:gpsWave 1.9s ease-out infinite .35s}
+@media (prefers-reduced-motion:reduce){.gps-sat .tip{animation:none}.gps-live .w1,.gps-live .w2{animation:none;opacity:.7}}
 .tr-trek-row{position:relative}
 .tr-track-badge{position:absolute;right:36px;top:50%;transform:translateY(-50%);
   font-size:.6rem;font-weight:700;background:var(--rust);color:white;
@@ -1257,7 +1272,7 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
       <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;padding:4px 16px 0;border-top:1px solid var(--border)">
         <div id="gps-status-bar" style="font-size:.68rem;color:var(--subtle);flex:1"></div>
         <button id="gps-btn" onclick="toggleGPS()" style="padding:4px 12px;border-radius:12px;border:1.5px solid var(--border);background:var(--white);font-size:.72rem;font-weight:700;cursor:pointer;color:var(--subtle);display:flex;align-items:center;gap:5px;transition:all .2s">
-          <span id="gps-btn-icon">📍</span><span id="gps-btn-txt">Find Me</span>
+          <span id="gps-btn-icon" class="gps-sat gps-off"><svg viewBox="0 0 34 34" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block"><path d="M12 31 V22"/><path d="M8 31 H16"/><path d="M6 20 A 11 11 0 0 1 19 7"/><path d="M11 15 L20 8"/><circle class="tip" cx="20.5" cy="7.5" r="3" fill="currentColor" stroke="none"/><path class="wave w1" d="M23 6 A 4.5 4.5 0 0 1 24.5 11"/><path class="wave w2" d="M25 4 A 8 8 0 0 1 27 12"/></svg></span><span id="gps-btn-txt">Find Me</span>
         </button>
       </div>
       <div class="elev-wrap" id="elevWrap">
@@ -3285,6 +3300,7 @@ function startGPS() {
     return;
   }
   gpsActive = true;
+  window._gpsAcquired = false;
   setGpsBtnState('acquiring');
   setGpsStatus('📡 Acquiring GPS signal...', 'acquiring');
   // Load water conditions and check bears when on trail
@@ -3351,6 +3367,12 @@ function onGpsSuccess(pos) {
   const elevFt = elevPt ? elevPt[1] : 0;
 
   lastGpsPos = { lat, lon, acc, mile: trailMile, elev: elevFt, distOffTrail, coords: { latitude: lat, longitude: lon, accuracy: acc } };
+
+  // First successful fix after acquiring — one-time reassurance toast (no spam on later updates)
+  if (!window._gpsAcquired) {
+    window._gpsAcquired = true;
+    if (typeof showToast === 'function') showToast('📍 Location found — you\'re on the map.');
+  }
 
   // ── PASSIVE RECORDING — every 60 seconds ──
   trackRecordPoint(lat, lon, trailMile, elevFt);
@@ -3521,17 +3543,27 @@ function setGpsBtnState(state) {
   const txt = document.getElementById('gps-btn-txt');
   if (!btn) return;
   const states = {
-    off:        { icon:'📍', txt:'Find Me',   bg:'var(--white)',  color:'var(--subtle)', border:'var(--border)' },
-    acquiring:  { icon:'⏳', txt:'Locating…', bg:'#fff8e7',      color:'#8a6800',       border:'#c8a84b' },
-    live:       { icon:'🔵', txt:'GPS Live',  bg:'#e8f0fb',      color:'#1e64dc',       border:'#1e64dc' },
-    error:      { icon:'⚠️', txt:'Retry GPS', bg:'#fff0f0',      color:'#b5451b',       border:'#b5451b' },
-    outside:    { icon:'📍', txt:'GPS Live',  bg:'#e8f0fb',      color:'#1e64dc',       border:'#1e64dc' },
+    off:        { txt:'Find Me',   bg:'var(--white)',  color:'var(--subtle)', border:'var(--border)' },
+    acquiring:  { txt:'Locating…', bg:'#fff8e7',      color:'#8a6800',       border:'#c8a84b' },
+    live:       { txt:'GPS Live',  bg:'#e8f0fb',      color:'#1e64dc',       border:'#1e64dc' },
+    error:      { txt:'Retry GPS', bg:'#fff0f0',      color:'#b5451b',       border:'#b5451b' },
+    outside:    { txt:'GPS Live',  bg:'#e8f0fb',      color:'#1e64dc',       border:'#1e64dc' },
   };
   const s = states[state] || states.off;
   btn.style.background = s.bg;
   btn.style.color = s.color;
   btn.style.borderColor = s.border;
-  icon.textContent = s.icon;
+  // Icon: satellite dish with a signal pip — blinks + signal waves when live,
+  // pulses while acquiring, static when off; ⚠️ kept for the error state.
+  if (state === 'error') {
+    icon.className = ''; icon.style.animation = ''; icon.textContent = '⚠️';
+  } else {
+    const cls = (state === 'live' || state === 'outside') ? 'live'
+              : (state === 'acquiring' ? 'acquiring' : 'off');
+    icon.style.animation = '';
+    icon.className = 'gps-sat gps-' + cls;
+    icon.innerHTML = '<svg viewBox="0 0 34 34" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block"><path d="M12 31 V22"/><path d="M8 31 H16"/><path d="M6 20 A 11 11 0 0 1 19 7"/><path d="M11 15 L20 8"/><circle class="tip" cx="20.5" cy="7.5" r="3" fill="currentColor" stroke="none"/><path class="wave w1" d="M23 6 A 4.5 4.5 0 0 1 24.5 11"/><path class="wave w2" d="M25 4 A 8 8 0 0 1 27 12"/></svg>';
+  }
   txt.textContent = s.txt;
 }
 
@@ -6211,7 +6243,14 @@ function tmOnCrossingChange(){
   }
 }
 function tmFillFromGps(){
-  if (typeof lastGpsPos === 'undefined' || !lastGpsPos) { tmToast('📍 Enable GPS first.'); return; }
+  if (typeof lastGpsPos === 'undefined' || !lastGpsPos) {
+    if (typeof gpsActive !== 'undefined' && gpsActive) {
+      tmToast('📡 Still locating you — give it a few seconds, then tap Use my GPS again.');
+    } else {
+      tmToast('📍 Turn on Find Me (GPS) up top first.');
+    }
+    return;
+  }
   // Snap to nearest waypoint mile
   const lat = lastGpsPos.coords.latitude, lon = lastGpsPos.coords.longitude;
   const wps = (window.ACTIVE_WAYPOINTS||[]);
@@ -7139,14 +7178,13 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
     <div id="at-tab-log" style="display:contents">
     <!-- inner sub-tabs (scoped class so they don't clash with the top tabs) -->
     <div class="sp-modal-tabs at-subtabs">
-      <button class="sp-modal-tab at-subtab active" onclick="trackerTab('log',this)">🥾 Trek Log</button>
+      <button class="sp-modal-tab at-subtab active" onclick="trackerTab('log',this)">⚡ Auto Log</button>
       <button class="sp-modal-tab at-subtab" onclick="trackerTab('tracks',this)">📍 Recorded Tracks</button>
     </div>
     <!-- Trek Log tab -->
     <div id="tt-log">
-      <div style="padding:6px 16px 0;font-size:.68rem;color:var(--subtle);display:flex;align-items:center;gap:5px">
-        <span>📍</span>
-        <span>Hikes are automatically logged when GPS tracking covers 90% of a trek · Tap any row to mark manually</span>
+      <div style="padding:6px 16px 0;font-size:.68rem;color:var(--subtle)">
+        Auto-logged at 90% GPS coverage · tap any row to mark manually
       </div>
       <div class="modal-body" id="tracker-body"></div>
       <div class="modal-footer">
