@@ -6024,7 +6024,10 @@ async function tmRefreshDirectory(force){
     _angelDirCache[trail].forEach(a => { window._angelDirByName[(a.trail_name||'').toLowerCase()] = a; });
     tmRenderDirectory();
   } catch(e){
-    console.warn('Angel directory refresh failed:', e);
+    const _detail = (e && (e.message || e.code))
+      ? ['code='+(e.code||'?'), e.message, e.details, e.hint].filter(Boolean).join(' · ')
+      : (function(){ try { return JSON.stringify(e); } catch(_){ return String(e); } })();
+    console.warn('Angel directory refresh failed:', _detail);
     if (!_angelDirCache[trail]) {
       document.getElementById('tm-dir-list').innerHTML =
         '<div class="board-empty"><div class="board-empty-icon">⚠</div>Couldn\'t load Trail Angels. Pull to retry.</div>';
