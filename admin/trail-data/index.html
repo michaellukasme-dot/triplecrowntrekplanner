@@ -101,6 +101,8 @@
   .rev-meta{margin:10px 0;font-size:.85rem;line-height:1.7}
   .rev-reason{margin:10px 0;font-size:.88rem}
   .rev-diff-h{margin-top:16px;font-weight:700;font-size:.9rem}
+  .rev-iv{margin:12px 0;padding:10px 12px;border-radius:8px;background:#fff3d6;color:#6b4e00;font-size:.85rem}
+  .rev-revert-box{margin-top:14px}
 
   .panel{background:var(--white);border:1px solid var(--border);border-radius:12px;
     padding:22px 24px;box-shadow:var(--shadow)}
@@ -1316,6 +1318,30 @@ function revPaint(){
     </tr></thead><tbody>${rows}</tbody></table>`;
 }
 
+// A published baseline revision is revertable: not rejected, not already
+// reverted, kind baseline_*, with stored patches to invert. (Alert reverts: 2d.)
+function revCanRevert(r){
+  return !!(r.published_at && !r.rejected_at && !r.reverted_by_revision_id
+    && String(r.kind||'').indexOf('baseline_')===0
+    && Array.isArray(r.draft_patches) && r.draft_patches.length>0);
+}
+// An existing pending revert that already targets this revision (avoid doubles).
+function revPendingRevertFor(id){
+  return revCache.find(s=> s.reverts_revision_id===id && !s.published_at && !s.rejected_at);
+}
+// Later PUBLISHED revisions that touched the same entity_keys as r — reverting
+// r restores state from before r and may undo these. Surfaced, never auto-blocked.
+function revInterveningEdits(r){
+  if (!Array.isArray(r.draft_patches) || !r.published_at) return [];
+  const keys = new Set(r.draft_patches.map(p=>p && p.entity_key).filter(Boolean));
+  if (!keys.size) return [];
+  const t0 = new Date(r.published_at).getTime();
+  return revCache.filter(s=> s.id!==r.id && s.published_at
+    && new Date(s.published_at).getTime() > t0
+    && Array.isArray(s.draft_patches)
+    && s.draft_patches.some(p=> p && keys.has(p.entity_key)));
+}
+
 function revOpen(id){
   const r = revById[id];
   if (!r) return;
@@ -1337,6 +1363,48 @@ function revOpen(id){
   if (r.reverted_by_revision_id && revById[r.reverted_by_revision_id])
     links += `<div class="alert-meta">⟲ Reverted by: “${esc(revById[r.reverted_by_revision_id].summary)}”</div>`;
 
+  // ---- contextual footer -------------------------------------------
+  let footer;
+  const isPendingRevert = r.kind==='revert' && !r.published_at && !r.rejected_at;
+  if (isPendingRevert){
+    const mine = r.drafted_by===me.editor_id;
+    const acts = [];
+    if (canApprove() && !mine){
+      acts.push('<button class="btn" id="rev-approve">Approve &amp; Publish</button>');
+      acts.push('<button class="btn-danger btn" id="rev-reject">Reject</button>');
+    } else {
+      acts.push(`<span class="note">${mine?'awaiting another editor to approve':'approver review required'}</span>`);
+      // Reject needs no second editor (and a solo operator must be able to clear
+      // their own draft) — so the drafter may withdraw their own pending revert.
+      if (mine || canApprove()) acts.push('<button class="btn-danger btn" id="rev-reject">Reject</button>');
+    }
+    footer = `<div class="modal-err" id="rev-act-err"></div>
+      <div class="modal-actions">${acts.join('')}<button class="btn-ghost btn" onclick="closeModal()">Close</button></div>`;
+  } else if (revCanRevert(r)){
+    const pend = revPendingRevertFor(r.id);
+    if (pend){
+      footer = `<div class="rev-reason note">A revert of this change is already pending review.</div>
+        <div class="modal-actions"><button class="btn-ghost btn" onclick="closeModal()">Close</button></div>`;
+    } else {
+      const iv = revInterveningEdits(r);
+      const ivWarn = iv.length ? `<div class="rev-iv"><b>Heads up:</b> ${iv.length} later published change${iv.length===1?'':'s'} touched the same entit${iv.length===1?'y':'ies'}:
+        <ul class="bl-prev">${iv.slice(0,6).map(s=>`<li>${esc(s.summary)} <span class="note">(${fmtDate(s.published_at)})</span></li>`).join('')}${iv.length>6?`<li class="note">…and ${iv.length-6} more</li>`:''}</ul>
+        Reverting restores the state from before <em>this</em> change and may undo those too — your call.</div>` : '';
+      footer = `${ivWarn}
+        <div class="rev-revert-box">
+          <label class="rev-reason">Reason for the revert <span class="counter" id="rev-rv-ct">0/20 min</span>
+            <textarea id="rev-revert-reason" rows="2" placeholder="Why is this being reverted? Goes into the permanent audit log (min 20 chars)."></textarea></label>
+          <div class="modal-err" id="rev-revert-err"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-ghost btn" onclick="closeModal()">Close</button>
+          <button class="btn-danger btn" id="rev-revert-go">Draft revert</button>
+        </div>`;
+    }
+  } else {
+    footer = `<div class="modal-actions"><button class="btn-ghost btn" onclick="closeModal()">Close</button></div>`;
+  }
+
   $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal wide">
     <h3>${esc(r.summary)}</h3>
     <div class="alert-meta">${esc(r.kind)} · ${st.html}</div>
@@ -1351,8 +1419,57 @@ function revOpen(id){
     ${links}
     <div class="rev-diff-h">Change detail</div>
     ${diff}
-    <div class="modal-actions"><button class="btn-ghost btn" onclick="closeModal()">Close</button></div>
+    ${footer}
   </div></div>`;
+
+  // wire contextual actions
+  const ag=$('#rev-approve');     if (ag) ag.onclick=()=>revApprove(r.id);
+  const rj=$('#rev-reject');      if (rj) rj.onclick=()=>revReject(r.id);
+  const rg=$('#rev-revert-go');   if (rg) rg.onclick=()=>revDoRevert(r.id);
+  const rt=$('#rev-revert-reason'), ct=$('#rev-rv-ct');
+  if (rt && ct) rt.oninput=()=>{ ct.textContent = rt.value.trim().length+'/20 min'; };
+}
+
+// ---- revert actions -------------------------------------------------
+async function revDoRevert(id){
+  const ta=$('#rev-revert-reason'), err=$('#rev-revert-err'), go=$('#rev-revert-go');
+  const reason = ta ? ta.value.trim() : '';
+  if (err) err.textContent='';
+  if (reason.length<20){ if (err) err.textContent='Please give a reason of at least 20 characters for the audit log.'; return; }
+  if (go) go.disabled=true;
+  try{
+    await withAuth(async ()=>{ const { error } = await sb.rpc('td_revert_draft', { p_revision_id:id, p_reason:reason }); if (error) throw error; });
+    closeModal(); revLoad();
+  }catch(e){ if (err) err.textContent=e.message||'Could not draft the revert.'; if (go) go.disabled=false; }
+}
+async function revApprove(id){
+  const err=$('#rev-act-err');
+  document.querySelectorAll('.modal-actions button').forEach(b=>b.disabled=true);
+  try{
+    await withAuth(async ()=>{ const { error } = await sb.rpc('td_revert_approve', { p_revision_id:id }); if (error) throw error; });
+    closeModal(); revLoad();
+  }catch(e){
+    if (err) err.textContent=e.message||'Could not approve the revert.';
+    document.querySelectorAll('.modal-actions button').forEach(b=>b.disabled=false);
+  }
+}
+function revReject(id){
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal">
+    <h3>Reject revert</h3>
+    <label>Reason (min 20 chars)<textarea id="rev-rj-reason" rows="2"></textarea></label>
+    <div class="modal-err" id="rev-rj-err"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">Cancel</button>
+      <button class="btn-danger btn" id="rev-rj-save">Reject</button>
+    </div></div></div>`;
+  $('#rev-rj-save').onclick = async ()=>{
+    const reason=$('#rev-rj-reason').value.trim(); const err=$('#rev-rj-err'); err.textContent='';
+    if (reason.length<20){ err.textContent='Reason must be at least 20 characters.'; return; }
+    $('#rev-rj-save').disabled=true;
+    try{ await withAuth(async ()=>{ const { error } = await sb.rpc('td_revert_reject', { p_revision_id:id, p_reason:reason }); if (error) throw error; });
+      closeModal(); revLoad();
+    }catch(e){ err.textContent=e.message||'Could not reject.'; $('#rev-rj-save').disabled=false; }
+  };
 }
 
 async function renderEditors(main){
