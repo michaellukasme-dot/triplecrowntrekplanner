@@ -7955,11 +7955,12 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
 
     <!-- Coordinates: always visible, large enough to read with gloves -->
     <div class="fs-coords-row">
-      <div class="fs-coords-live" id="fsCoordsLive">
+      <div class="fs-coords-live" id="fsCoordsLive" style="flex:0 1 auto">
         <small>📡 YOUR COORDINATES</small>
         <span id="fsCoordsText" style="font-size:.85rem;font-weight:700;letter-spacing:.03em">No GPS fix — tap Tracking</span>
       </div>
       <button class="fs-copy-btn" onclick="copyCoords()" id="fsCoordsCopyBtn">📋 Copy</button>
+      <div style="flex:1"></div>
       <button class="fs-share-btn" onclick="shareCoordsViaSMS()">📱 Share</button>
     </div>
 
