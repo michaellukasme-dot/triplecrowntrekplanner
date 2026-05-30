@@ -366,11 +366,15 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .hl-dot-row{display:flex;gap:4px;justify-content:center;padding:4px 0 8px}
 .hl-dot{width:6px;height:6px;border-radius:50%;background:var(--border);cursor:pointer;transition:background .15s}
 .hl-dot.active{background:var(--pine)}
-.hl-names{display:inline-flex;flex-wrap:wrap;align-items:center;gap:0 2px}
-.hl-name{cursor:pointer;color:var(--subtle);font-weight:600;padding:1px 5px;border-radius:7px;transition:color .12s,background .12s,box-shadow .12s}
-.hl-name:hover{color:var(--forest);background:var(--stone)}
-.hl-name.active{color:var(--pine);font-weight:800;background:var(--stone);box-shadow:inset 0 -2px 0 var(--pine)}
-.hl-name-sep{color:var(--leaf);user-select:none}
+#hlCardTitle{display:flex;align-items:center;gap:5px;min-width:0;flex:1}
+.hl-emoji{flex:none}
+.hl-names{display:flex;flex-wrap:nowrap;align-items:center;gap:0 1px;min-width:0;position:relative;overflow-x:auto;scrollbar-width:thin}
+.hl-names::-webkit-scrollbar{height:3px}
+.hl-names::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.hl-name{flex:none;display:inline-block;white-space:nowrap;cursor:pointer;color:var(--subtle);font-weight:600;font-size:.7rem;padding:0 3px;border-radius:6px;transform-origin:center;transition:transform .12s,color .12s,box-shadow .12s}
+.hl-name:hover{color:var(--forest);transform:scale(1.3)}
+.hl-name.active{color:var(--pine);font-weight:800;box-shadow:inset 0 -2px 0 var(--pine)}
+.hl-name-sep{flex:none;color:var(--leaf);user-select:none;font-size:.7rem}
 
 /* ── ITINERARY TABLE ── */
 .trek-header-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border)}
@@ -2126,7 +2130,11 @@ function renderHighlights() {
     const nm = ((window.ACTIVE_TRAIL||AT).stateInfo[s]||{}).name||s;
     return `<span class="hl-name${i===hlIndex?' active':''}" onclick="hlGoTo(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();hlGoTo(${i})}" role="button" tabindex="0" aria-label="Show ${nm} highlights"${i===hlIndex?' aria-current="true"':''}>${nm}</span>`;
   }).join('<span class="hl-name-sep"> · </span>');
-  document.getElementById('hlCardTitle').innerHTML = '🏔 <span class="hl-names">'+names+'</span>';
+  document.getElementById('hlCardTitle').innerHTML = '<span class="hl-emoji">🏔</span><span class="hl-names" id="hlNames">'+names+'</span>';
+  // Keep the active state centered in the one-line scroll strip
+  const _hlc = document.getElementById('hlNames');
+  const _hla = _hlc && _hlc.querySelector('.hl-name.active');
+  if (_hlc && _hla) _hlc.scrollLeft = Math.max(0, _hla.offsetLeft - _hlc.clientWidth/2 + _hla.offsetWidth/2);
 }
 
 function hlNav(dir) { hlIndex = Math.max(0,Math.min(hlStateList.length-1, hlIndex+dir)); renderHighlights(); }
