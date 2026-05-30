@@ -540,7 +540,7 @@ function openAlertModal(existing){
       <textarea id="al-body" maxlength="600" placeholder="What hikers need to know, and what to do.">${esc(a.body)}</textarea></div>
 
     <div class="grid2">
-      <div class="field"><label>Nearest mile</label>
+      <div class="field"><label>Nearest mile <span class="counter">required</span></label>
         <input id="al-mile" type="number" step="0.1" value="${esc(a.nearest_mile)}" placeholder="e.g. 178.4"/></div>
       <div class="field"><label>Source URL (optional)</label>
         <input id="al-src" value="${esc(a.source_url||'')}" placeholder="https://…"/></div>
@@ -625,6 +625,7 @@ async function submitAlert(emergency){
   const err=$('#al-err'); hide(err);
   if (!f.title){ err.textContent='Title is required.'; show(err); return; }
   if (!f.body){ err.textContent='Body is required.'; show(err); return; }
+  if (f.nearest_mile==null || Number.isNaN(f.nearest_mile)){ err.textContent='Nearest mile is required — every alert is anchored to a point on the trail.'; show(err); return; }
   if (f.reason.length<20){ err.textContent='Reason must be at least 20 characters (it goes into the audit log).'; show(err); return; }
   const { trail } = activeConsv();
   document.querySelectorAll('.modal-actions button').forEach(b=>b.disabled=true);
