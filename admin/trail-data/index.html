@@ -154,14 +154,25 @@
   .sev-opt .hint{font-size:.72rem;color:var(--subtle);margin-top:2px;line-height:1.35}
   .emergency-note{background:#f6d4c9;border:1px solid #e0a596;color:#8a2a12;
     padding:9px 12px;border-radius:8px;font-size:.8rem;margin-top:6px}
+  /* baseline page (PROMPT 5) */
   .bl-banner{background:var(--stone);border:1px dashed var(--border);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:.84rem;color:var(--subtle)}
   .bl-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
-  .bl-search{flex:1;min-width:180px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font:inherit;background:var(--white)}
-  .bl-sort{padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font:inherit;background:var(--white)}
+  .bl-search{flex:1;min-width:180px}
+  .bl-sort{width:auto}
   .origin{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:6px}
   .origin-seed{background:var(--mist);color:var(--pine)}
   .origin-patch{background:var(--gold);color:#4a3a10}
   .bl-dir{font-size:.64rem;font-weight:700;color:var(--subtle);text-transform:uppercase}
+  .frow{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+  .frow>label{flex:1;min-width:120px;margin-bottom:0}
+  .modal.wide>label{margin-bottom:12px}
+  .modal-err{color:var(--rust);font-size:.82rem;font-weight:600;margin-top:8px;min-height:1em}
+  .bl-pending-panel{border:1.5px solid var(--gold);background:#fffdf4;border-radius:12px;margin-bottom:18px;overflow:hidden}
+  .bl-pending-head{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;padding:12px 16px;cursor:pointer;font:inherit;text-align:left}
+  .bl-pending-head .count{background:var(--gold);color:#4a3a10;font-size:.7rem;font-weight:700;padding:1px 8px;border-radius:9px}
+  .bl-pending-list{padding:0 16px 12px}
+  .bl-pending-item{display:flex;gap:14px;align-items:flex-start;border-top:1px solid var(--border);padding:12px 0}
+  .bl-prev{margin:6px 0;padding-left:18px;font-size:.82rem;color:var(--text)}
 </style>
 </head>
 <body>
@@ -730,10 +741,14 @@ window.editAlert=editAlert; window.retireAlert=retireAlert;
 
 // ---- Editors page (superadmin only) ---------------------------------
 // =====================================================================
-//  BASELINE PAGE (PROMPT 5) — increment 1: read-only merged view
-//  Lists seed + applied patches merged the same way the hiker app's
-//  tdApplyOverlay does, classified into five tabs. No writes yet
-//  (drafting/approval land in increment 2). Safe against production.
+//  BASELINE PAGE (PROMPT 5)
+//  Increment 1: read-only merged view (seed + published patches).
+//  Increment 2: waypoint-family write loop — New/Edit/Retire draft a
+//    trail_data_revisions row (design A: no patch until approval), a
+//    Pending panel lists drafts, a 2nd editor Approves & Publishes
+//    (td_baseline_approve inserts the patch → manifest bump → live) or
+//    Rejects. Trek-segment writes + diff view land in increment 3.
+//  Merge logic mirrors tdApplyOverlay in index.html.
 // =====================================================================
 const BL_TABS = [
   ['shelter',       'Shelters'],
@@ -742,17 +757,21 @@ const BL_TABS = [
   ['road_crossing', 'Road Crossings'],
   ['trek_segment',  'Trek Segments'],
 ];
+const BL_SINGULAR = { shelter:'Shelter', waypoint:'Waypoint', water_source:'Water Source', road_crossing:'Road Crossing' };
 let blTab     = 'shelter';
-let blSeed    = null;     // the whole baseline_seed.json (all trails), fetched once
-let blPatches = [];       // patch rows for the active trail
+let blSeed    = null;     // whole baseline_seed.json (all trails), fetched once
+let blPatches = [];       // published patch rows for the active trail
 let blMerged  = null;     // { waypoints:[{raw,origin,et,key}], treks:{nobo:[{seg,origin}],sobo:[...]} }
+let blRevs    = [];       // pending baseline drafts (trail_data_revisions) for active trail
 let blSearch  = '';
 let blSort    = 'mile';   // 'mile' | 'name'
+let blVisible = [];       // rows currently painted (waypoint tabs) — index target for row actions
+let blPendingOpen = false;
 
 // Heuristic classification — the seed has no type field (all waypoint-family
-// rows live in one flat array), so we bucket by name. Patch rows carry an
-// explicit entity_type and use that instead. Order matters: shelter wins over
-// the "Gap"/"Pond" tokens that also appear in shelter names.
+// rows share one flat array), so we bucket by name. Patch rows carry an
+// explicit entity_type and use that. Order matters: shelter before the
+// "Gap"/"Pond" tokens that also appear in shelter names.
 function blClassify(name){
   const s = String(name||'');
   if (/shelter|lean-?to|\bhut\b|cabin|campsite|tent\s?site|campground|wayside|lodge|the birches/i.test(s)) return 'shelter';
@@ -769,7 +788,7 @@ async function blLoadSeed(){
   return blSeed;
 }
 
-// Merge patches over the seed — mirrors tdApplyOverlay in index.html.
+// ---- merge (mirror of tdApplyOverlay) -------------------------------
 function blMatch(list, key, matcher){
   if (key){ const i = list.findIndex(x=>x.key===key); if (i>=0) return i; }
   if (Array.isArray(matcher) && matcher.length>=2)
@@ -789,8 +808,7 @@ function blMergeTrail(seedTrail, patches){
     if (et==='waypoint'||et==='shelter'||et==='water_source'||et==='road_crossing'){
       if (op==='add' && pay){ wp.push({ raw:pay, origin:'patch', et, key }); }
       else if (op==='update' && pay){
-        const i=blMatch(wp,key,prior||pay);
-        const row={ raw:pay, origin:'patch', et, key };
+        const i=blMatch(wp,key,prior||pay); const row={ raw:pay, origin:'patch', et, key };
         if (i>=0) wp[i]=row; else wp.push(row);
       } else if (op==='retire'){ const i=blMatch(wp,key,prior); if (i>=0) wp.splice(i,1); }
     } else if (et==='trek_segment'){
@@ -807,16 +825,19 @@ function blMergeTrail(seedTrail, patches){
   return { waypoints:wp, treks };
 }
 
+// ---- render ---------------------------------------------------------
 async function renderBaseline(main){
   const { trail } = activeConsv();
+  const canNew = blTab!=='trek_segment';
   main.innerHTML = `
     <div class="page-head">
       <div class="grow">
         <h2>Baseline</h2>
-        <div class="page-sub">Seed waypoints, shelters, water, road crossings, and trek segments for the ${esc(trail||'—')}, merged with any published patches.</div>
+        <div class="page-sub">Seed waypoints, shelters, water, road crossings, and trek segments for the ${esc(trail||'—')}, merged with published patches. Edits draft a revision; a second editor publishes.</div>
       </div>
+      ${canNew?`<button class="btn" id="bl-new">+ New ${esc(BL_SINGULAR[blTab])}</button>`:''}
     </div>
-    <div class="bl-banner"><b>Read-only preview.</b> This is the merged state hikers see (seed + published patches). Drafting, editing, retiring, and the trek-reroute editor arrive in the next build pass.</div>
+    <div id="bl-pending"></div>
     <div class="tabs">${BL_TABS.map(([k,label])=>
       `<button class="tab" data-tab="${k}">${label} <span class="count" id="blc-${k}">·</span></button>`).join('')}</div>
     <div class="bl-toolbar">
@@ -826,7 +847,9 @@ async function renderBaseline(main){
         <option value="name"${blSort==='name'?' selected':''}>Sort: Name</option>
       </select>
     </div>
+    ${blTab==='trek_segment'?'<div class="bl-banner">Trek-segment editing (the reroute cascade) arrives in the next build pass. This tab is read-only for now.</div>':''}
     <div id="bl-body">Loading…</div>`;
+  if (canNew) $('#bl-new').onclick = ()=>openBaselineModal(null, blTab);
   document.querySelectorAll('.tab').forEach(t=>{
     t.classList.toggle('active', t.dataset.tab===blTab);
     t.onclick = ()=>{ blTab=t.dataset.tab; renderBaseline(main); };
@@ -839,10 +862,9 @@ async function renderBaseline(main){
 async function blLoad(){
   const { trail } = activeConsv();
   const body = $('#bl-body');
-  try {
-    await blLoadSeed();
-  } catch (e){
-    if (body) body.innerHTML = `<div class="empty">Couldn't load <code>baseline_seed.json</code> — ${esc(e.message)}.<br>Make sure it's committed alongside this page at <code>admin/trail-data/baseline_seed.json</code>.</div>`;
+  try { await blLoadSeed(); }
+  catch (e){
+    if (body) body.innerHTML = `<div class="empty">Couldn't load <code>baseline_seed.json</code> — ${esc(e.message)}.<br>It must sit beside this page at <code>admin/trail-data/baseline_seed.json</code>.</div>`;
     return;
   }
   if (!blSeed.trails || !blSeed.trails[trail]){
@@ -850,37 +872,78 @@ async function blLoad(){
     return;
   }
   await withAuth(async ()=>{
-    const { data, error } = await sb.from('trail_data_patches')
-      .select('*').eq('trail', trail).order('revision',{ascending:true});
-    if (error) throw error;
-    blPatches = data || [];
+    const [{ data:patches, error:pe }, { data:revs, error:re }] = await Promise.all([
+      sb.from('trail_data_patches').select('*').eq('trail', trail).order('revision',{ascending:true}),
+      sb.from('trail_data_revisions').select('*').eq('trail', trail)
+        .in('kind',['baseline_add','baseline_update','baseline_retire'])
+        .is('published_at', null).is('rejected_at', null).order('drafted_at',{ascending:false}),
+    ]);
+    if (pe) throw pe; if (re) throw re;
+    blPatches = patches || [];
+    blRevs    = revs || [];
     blMerged  = blMergeTrail(blSeed.trails[trail], blPatches);
-    // tab counts
-    const wpCounts = { shelter:0, waypoint:0, water_source:0, road_crossing:0 };
-    blMerged.waypoints.forEach(w=>{ wpCounts[w.et] = (wpCounts[w.et]||0)+1; });
+    const wpC = { shelter:0, waypoint:0, water_source:0, road_crossing:0 };
+    blMerged.waypoints.forEach(w=>{ wpC[w.et]=(wpC[w.et]||0)+1; });
     const trekCount = blMerged.treks.nobo.length + blMerged.treks.sobo.length;
-    BL_TABS.forEach(([k])=>{ const el=$('#blc-'+k); if (el) el.textContent = (k==='trek_segment')?trekCount:(wpCounts[k]||0); });
+    BL_TABS.forEach(([k])=>{ const el=$('#blc-'+k); if (el) el.textContent=(k==='trek_segment')?trekCount:(wpC[k]||0); });
+    blRenderPending();
     blPaint();
   });
 }
 
 function blOrigin(o){ return `<span class="origin origin-${o}">${o}</span>`; }
 
+// ---- pending baseline drafts panel ----------------------------------
+function blPatchSummary(p){
+  if (p.operation==='add')    return `add ${esc(p.entity_type)} “${esc((p.payload&&p.payload[1])||p.entity_key)}” at mile ${esc(p.payload?p.payload[0]:'?')}`;
+  if (p.operation==='retire') return `retire ${esc(p.entity_type)} “${esc((p.prior_payload&&p.prior_payload[1])||p.entity_key)}”`;
+  return `update ${esc(p.entity_type)} “${esc((p.payload&&p.payload[1])||p.entity_key)}”`;
+}
+function blRenderPending(){
+  const host = $('#bl-pending');
+  if (!host) return;
+  if (!blRevs.length){ host.innerHTML=''; return; }
+  const head = `<button class="bl-pending-head" id="bl-pending-toggle">
+      <span class="needs-review">Pending baseline changes</span>
+      <span class="count">${blRevs.length}</span>
+      <span class="note">${blPendingOpen?'▲ hide':'▼ review'}</span></button>`;
+  let list='';
+  if (blPendingOpen){
+    list = `<div class="bl-pending-list">${blRevs.map(r=>{
+      const mine = r.drafted_by===me.editor_id;
+      const patches = Array.isArray(r.draft_patches)?r.draft_patches:[];
+      const preview = patches.map(p=>`<li>${blPatchSummary(p)}</li>`).join('');
+      const acts=[];
+      if (canApprove() && !mine){
+        acts.push(`<button class="btn btn-sm" onclick="blApprove('${r.id}')">Approve &amp; Publish</button>`);
+        acts.push(`<button class="btn-ghost btn btn-sm" onclick="blReject('${r.id}')">Reject</button>`);
+      } else if (mine){ acts.push('<span class="note">awaiting another editor</span>'); }
+      else { acts.push('<span class="note">approver review required</span>'); }
+      return `<div class="bl-pending-item">
+        <div class="grow"><b>${esc(r.summary)}</b>
+          <div class="alert-meta">${esc(r.kind)} · drafted ${mine?'by you':'by another editor'} ${fmtDate(r.drafted_at)}</div>
+          <ul class="bl-prev">${preview||'<li class="note">(no patch preview)</li>'}</ul>
+          <div class="alert-meta">${esc(r.reason)}</div></div>
+        <div class="row-actions">${acts.join('')}</div></div>`;
+    }).join('')}</div>`;
+  }
+  host.innerHTML = `<div class="bl-pending-panel">${head}${list}</div>`;
+  const tog = $('#bl-pending-toggle');
+  if (tog) tog.onclick = ()=>{ blPendingOpen=!blPendingOpen; blRenderPending(); };
+}
+
+// ---- list paint -----------------------------------------------------
 function blPaint(){
   const body = $('#bl-body');
   if (!body || !blMerged) return;
   const q = blSearch.trim().toLowerCase();
 
   if (blTab==='trek_segment'){
-    const rowsFor = (dir)=> blMerged.treks[dir]
+    const rowsFor=(dir)=> blMerged.treks[dir]
       .filter(x=> !q || String(x.seg.name||'').toLowerCase().includes(q) || String(x.seg.id).includes(q))
-      .map(x=>{
-        const s=x.seg;
-        return `<tr><td><span class="bl-dir">${dir}</span></td><td>${esc(s.id)}</td>
-          <td><b>${esc(s.name)}</b> <span class="note">${esc(s.state||'')}</span></td>
-          <td>${esc(s.miles)} mi</td><td>${esc(s.cumMileStart)}–${esc(s.cumMileEnd)}</td>
-          <td>${blOrigin(x.origin)}</td></tr>`;
-      });
+      .map(x=>{ const s=x.seg; return `<tr><td><span class="bl-dir">${dir}</span></td><td>${esc(s.id)}</td>
+        <td><b>${esc(s.name)}</b> <span class="note">${esc(s.state||'')}</span></td>
+        <td>${esc(s.miles)} mi</td><td>${esc(s.cumMileStart)}–${esc(s.cumMileEnd)}</td><td>${blOrigin(x.origin)}</td></tr>`; });
     const rows=[...rowsFor('nobo'),...rowsFor('sobo')];
     body.innerHTML = rows.length
       ? `<table><thead><tr><th>Dir</th><th>#</th><th>Segment</th><th>Miles</th><th>Cum mile</th><th>Origin</th></tr></thead><tbody>${rows.join('')}</tbody></table>`
@@ -890,13 +953,170 @@ function blPaint(){
 
   let rows = blMerged.waypoints.filter(w=>w.et===blTab);
   if (q) rows = rows.filter(w=> String(w.raw[1]||'').toLowerCase().includes(q) || String(w.raw[0]).includes(q));
-  rows.sort((a,b)=> blSort==='name'
-    ? String(a.raw[1]||'').localeCompare(String(b.raw[1]||''))
-    : (a.raw[0]-b.raw[0]));
+  rows.sort((a,b)=> blSort==='name' ? String(a.raw[1]||'').localeCompare(String(b.raw[1]||'')) : (a.raw[0]-b.raw[0]));
+  blVisible = rows;
   if (!rows.length){ body.innerHTML = `<div class="empty">Nothing in this category${blSearch?` matching “${esc(blSearch)}”`:''}.</div>`; return; }
-  body.innerHTML = `<table><thead><tr><th>Mile</th><th>Name</th><th>State</th><th>Origin</th></tr></thead><tbody>${
-    rows.map(w=>`<tr><td>${esc(w.raw[0])}</td><td><b>${esc(w.raw[1])}</b></td><td>${esc(w.raw[2]||'')}</td><td>${blOrigin(w.origin)}</td></tr>`).join('')
+  body.innerHTML = `<table><thead><tr><th>Mile</th><th>Name</th><th>State</th><th>Origin</th><th></th></tr></thead><tbody>${
+    rows.map((w,i)=>`<tr>
+      <td>${esc(w.raw[0])}</td><td><b>${esc(w.raw[1])}</b></td><td>${esc(w.raw[2]||'')}</td><td>${blOrigin(w.origin)}</td>
+      <td><div class="row-actions">
+        <button class="btn-ghost btn btn-sm" onclick="blEdit(${i})">Edit</button>
+        <button class="btn-danger btn btn-sm" onclick="blRetireRow(${i})">Retire</button>
+      </div></td></tr>`).join('')
   }</tbody></table>`;
+}
+
+// ---- entity key + array helpers -------------------------------------
+function blSlug(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40); }
+function blKey(et, trail, mile, name){ return `${et}:${trail}:${mile}:${blSlug(name)}`; }
+// Build the 11-field waypoint array, preserving unknown legacy flags [5..7].
+function blBuildRow(fields, base){
+  const f = base && Array.isArray(base) ? base.slice() : [];
+  return [
+    Number(fields.mile),
+    fields.name,
+    fields.state || (f[2]||''),
+    fields.lat===''?null:Number(fields.lat),
+    fields.lon===''?null:Number(fields.lon),
+    (f[5]!==undefined?f[5]:1),   // legacy display flags — preserved on edit,
+    (f[6]!==undefined?f[6]:1),   // default 1 on new (semantics TBD; see FUTURES)
+    (f[7]!==undefined?f[7]:1),
+    fields.capacity!==undefined?fields.capacity:(f[8]||''),
+    fields.distNext!==undefined?fields.distNext:(f[9]||''),
+    fields.location!==undefined?fields.location:(f[10]||''),
+  ];
+}
+
+// ---- New / Edit modal -----------------------------------------------
+let blEditing = null; // { row:[...], et } when editing an existing entity
+function openBaselineModal(existing, et){
+  blEditing = existing ? { row:existing.raw, et } : null;
+  const { trail } = activeConsv();
+  const r = existing ? existing.raw : [];
+  const v = (i,d='')=> (r[i]!==undefined && r[i]!==null) ? r[i] : d;
+  const typeLabel = BL_SINGULAR[et]||et;
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal wide">
+    <h3>${existing?'Edit':'New'} ${esc(typeLabel)} · ${esc(trail)}</h3>
+    <div class="note" style="margin-bottom:14px">Saving drafts a revision. It appears in <b>Pending baseline changes</b> until a second editor approves &amp; publishes — then it merges into what hikers see.</div>
+    <div class="frow"><label>Mile<input id="bl-f-mile" type="number" step="0.1" value="${esc(v(0))}"/></label>
+      <label>State<input id="bl-f-state" value="${esc(v(2))}"/></label></div>
+    <label>Name<input id="bl-f-name" value="${esc(v(1))}"/></label>
+    <div class="frow"><label>Latitude<input id="bl-f-lat" type="number" step="0.00001" value="${esc(v(3))}"/></label>
+      <label>Longitude<input id="bl-f-lon" type="number" step="0.00001" value="${esc(v(4))}"/></label></div>
+    <div class="frow"><label>Capacity / sleeps<input id="bl-f-cap" value="${esc(v(8))}"/></label>
+      <label>Dist. to next<input id="bl-f-dist" value="${esc(v(9))}"/></label>
+      <label>Location vs trail<input id="bl-f-loc" value="${esc(v(10))}" placeholder="e.g. On AT / 0.2 W"/></label></div>
+    <label>Reason for this change (min 20 chars)<textarea id="bl-f-reason" rows="2"></textarea></label>
+    <div class="modal-err" id="bl-modal-err"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">Cancel</button>
+      <button class="btn" id="bl-save">Save as draft</button>
+    </div></div></div>`;
+  $('#bl-save').onclick = ()=>blDraftSubmit(et);
+}
+
+async function blDraftSubmit(et){
+  const { trail } = activeConsv();
+  const errEl = $('#bl-modal-err');
+  const fields = {
+    mile: $('#bl-f-mile').value.trim(), name: $('#bl-f-name').value.trim(),
+    state: $('#bl-f-state').value.trim(), lat: $('#bl-f-lat').value.trim(), lon: $('#bl-f-lon').value.trim(),
+    capacity: $('#bl-f-cap').value, distNext: $('#bl-f-dist').value, location: $('#bl-f-loc').value,
+  };
+  const reason = $('#bl-f-reason').value.trim();
+  errEl.textContent='';
+  if (!fields.name){ errEl.textContent='Name is required.'; return; }
+  if (fields.mile==='' || isNaN(Number(fields.mile))){ errEl.textContent='Mile must be a number.'; return; }
+  if (reason.length<20){ errEl.textContent='Reason must be at least 20 characters.'; return; }
+
+  const base = blEditing ? blEditing.row : null;
+  const row  = blBuildRow(fields, base);
+  const isEdit = !!blEditing;
+  const kind = isEdit ? 'baseline_update' : 'baseline_add';
+  const patch = isEdit
+    ? { entity_type:et, entity_key:blKey(et,trail,row[0],row[1]), operation:'update', payload:row, prior_payload:base }
+    : { entity_type:et, entity_key:blKey(et,trail,row[0],row[1]), operation:'add',    payload:row, prior_payload:null };
+  const summary = `${isEdit?'Update':'Add'} ${BL_SINGULAR[et]||et} “${row[1]}” at mile ${row[0]}`.slice(0,200);
+
+  $('#bl-save').disabled = true;
+  try {
+    await withAuth(async ()=>{
+      const { error } = await sb.rpc('td_baseline_draft', {
+        p_trail:trail, p_kind:kind, p_summary:summary, p_reason:reason, p_patches:[patch]
+      });
+      if (error) throw error;
+    });
+    closeModal();
+    blOfferCompanionAlert(summary, row[0]);
+    blPendingOpen = true;
+    blLoad();
+  } catch (e){ errEl.textContent = e.message || 'Could not save draft.'; $('#bl-save').disabled=false; }
+}
+
+// ---- Retire ---------------------------------------------------------
+function blRetireRow(i){
+  const w = blVisible[i]; if (!w) return;
+  const { trail } = activeConsv();
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal">
+    <h3>Retire ${esc(BL_SINGULAR[w.et]||w.et)}</h3>
+    <div class="note" style="margin-bottom:12px">Drafts a retirement of <b>${esc(w.raw[1])}</b> (mile ${esc(w.raw[0])}). On publish it disappears from the hiker planner and map. A second editor must approve.</div>
+    <label>Reason (min 20 chars)<textarea id="bl-r-reason" rows="2"></textarea></label>
+    <div class="modal-err" id="bl-r-err"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">Cancel</button>
+      <button class="btn-danger btn" id="bl-r-save">Draft retirement</button>
+    </div></div></div>`;
+  $('#bl-r-save').onclick = async ()=>{
+    const reason = $('#bl-r-reason').value.trim();
+    const err = $('#bl-r-err'); err.textContent='';
+    if (reason.length<20){ err.textContent='Reason must be at least 20 characters.'; return; }
+    const patch = { entity_type:w.et, entity_key:blKey(w.et,trail,w.raw[0],w.raw[1]), operation:'retire', payload:null, prior_payload:w.raw };
+    const summary = `Retire ${BL_SINGULAR[w.et]||w.et} “${w.raw[1]}” at mile ${w.raw[0]}`.slice(0,200);
+    $('#bl-r-save').disabled=true;
+    try{
+      await withAuth(async ()=>{ const { error } = await sb.rpc('td_baseline_draft', {
+        p_trail:trail, p_kind:'baseline_retire', p_summary:summary, p_reason:reason, p_patches:[patch] }); if (error) throw error; });
+      closeModal(); blOfferCompanionAlert(summary, w.raw[0]); blPendingOpen=true; blLoad();
+    }catch(e){ err.textContent=e.message||'Could not draft retirement.'; $('#bl-r-save').disabled=false; }
+  };
+}
+function blEdit(i){ const w=blVisible[i]; if (w) openBaselineModal(w, w.et); }
+
+// ---- Approve / Reject (pending panel) -------------------------------
+async function blApprove(revId){
+  await withAuth(async ()=>{ const { error } = await sb.rpc('td_baseline_approve', { p_revision_id:revId }); if (error) throw error; });
+  blLoad();
+}
+function blReject(revId){
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal">
+    <h3>Reject baseline draft</h3>
+    <label>Reason (min 20 chars)<textarea id="bl-rj-reason" rows="2"></textarea></label>
+    <div class="modal-err" id="bl-rj-err"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">Cancel</button>
+      <button class="btn-danger btn" id="bl-rj-save">Reject</button>
+    </div></div></div>`;
+  $('#bl-rj-save').onclick = async ()=>{
+    const reason=$('#bl-rj-reason').value.trim(); const err=$('#bl-rj-err'); err.textContent='';
+    if (reason.length<20){ err.textContent='Reason must be at least 20 characters.'; return; }
+    $('#bl-rj-save').disabled=true;
+    try{ await withAuth(async ()=>{ const { error } = await sb.rpc('td_baseline_reject', { p_revision_id:revId, p_reason:reason }); if (error) throw error; });
+      closeModal(); blLoad();
+    }catch(e){ err.textContent=e.message||'Could not reject.'; $('#bl-rj-save').disabled=false; }
+  };
+}
+
+// ---- companion alert offer (suggest, don't force) -------------------
+function blOfferCompanionAlert(summary, mile){
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal">
+    <h3>Tell hikers?</h3>
+    <div class="note" style="margin-bottom:14px">Draft saved. Want to also post a trail alert so hikers see this change? Optional — the baseline edit stands on its own.</div>
+    <div class="alert-meta" style="margin-bottom:14px">${esc(summary)} · mile ${esc(mile)}</div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">No thanks</button>
+      <button class="btn" id="bl-ca-yes">Draft an alert</button>
+    </div></div></div>`;
+  $('#bl-ca-yes').onclick = ()=>{ closeModal(); openAlertModal(null); };
 }
 
 async function renderEditors(main){
