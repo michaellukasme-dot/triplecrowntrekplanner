@@ -94,6 +94,13 @@
   .tag-super{background:var(--gold);color:#4a3a10}
   .tag-revoked{background:#f3dcd2;color:var(--rust)}
   .tag-pending{background:#fff3d6;color:#8a6800}
+  .tag-live{background:#dceede;color:var(--pine)}
+  .tag-reverted{background:var(--mist);color:var(--forest)}
+  .rev-row{cursor:pointer}
+  .rev-row:hover{background:var(--mist)}
+  .rev-meta{margin:10px 0;font-size:.85rem;line-height:1.7}
+  .rev-reason{margin:10px 0;font-size:.88rem}
+  .rev-diff-h{margin-top:16px;font-weight:700;font-size:.9rem}
 
   .panel{background:var(--white);border:1px solid var(--border);border-radius:12px;
     padding:22px 24px;box-shadow:var(--shadow)}
@@ -392,13 +399,8 @@ function go(page){
   if (page==='editors'){ renderEditors(main); return; }
   if (page==='alerts'){ renderAlerts(main); return; }
   if (page==='baseline'){ renderBaseline(main); return; }
-  const stubs = {
-    revisions:['Revisions','Full published history with one-click revert.','PROMPT 6'],
-  };
-  const [title,desc,prompt] = stubs[page];
-  main.innerHTML = `<h2>${title}</h2><div class="page-sub">${desc}</div>
-    <div class="panel stub"><b>Arriving in ${prompt}.</b><div class="note" style="margin-top:6px">
-    This tab is part of the build sequence; the auth, shell, and editor management you're using now are PROMPT 3.</div></div>`;
+  if (page==='revisions'){ renderRevisions(main); return; }
+  main.innerHTML = `<h2>${esc(page)}</h2><div class="page-sub">Unknown page.</div>`;
 }
 
 // =====================================================================
@@ -1231,6 +1233,126 @@ function blOfferCompanionAlert(info){
     const b=$('#al-body');  if (b){ b.value=String(info.body||'').slice(0,600); b.dispatchEvent(new Event('input')); }
     const m=$('#al-mile');  if (m && info.mile!=null) m.value=info.mile;
   };
+}
+
+// =====================================================================
+//  REVISIONS PAGE (PROMPT 6)
+//  Inc 2a: read-only reverse-chron table + click-to-diff. No write paths
+//  yet (Revert lands in 2b; filters + CSV in 2c; alert-revert in 2d).
+//  Diff reuses blPatchDiffLine over each revision's stored draft_patches.
+// =====================================================================
+let revCache   = [];   // last-loaded revisions for the active trail (sorted)
+let revEditors = {};   // editor id -> display_name (best-effort; needs editor read)
+let revById    = {};   // revision id -> row (for revert/original cross-links)
+
+// newest-first anchor: published time if published, else when it was drafted.
+function revWhen(r){ return r.published_at || r.drafted_at; }
+
+function revStatus(r){
+  if (r.rejected_at)             return { key:'rejected', html:'<span class="tag tag-revoked">rejected</span>' };
+  if (r.reverted_by_revision_id) return { key:'reverted', html:'<span class="tag tag-reverted">reverted</span>' };
+  if (r.published_at && r.approved_by)  return { key:'published', html:'<span class="tag tag-live">published</span>' };
+  if (r.published_at && !r.approved_by) return { key:'published', html:'<span class="tag tag-live">published</span> <span class="needs-review">· emergency</span>' };
+  return { key:'pending', html:'<span class="tag tag-pending">pending</span>' };
+}
+
+// Editor display name (escaped). Falls back to "you" / "—" when the name
+// isn't readable (conservancy_editors read is gated; superadmin sees all).
+function revName(id){
+  if (!id) return '—';
+  if (id===me.editor_id) return revEditors[id] ? esc(revEditors[id])+' (you)' : 'you';
+  return revEditors[id] ? esc(revEditors[id]) : '—';
+}
+
+async function renderRevisions(main){
+  const { trail } = activeConsv();
+  main.innerHTML = `
+    <div class="page-head">
+      <div class="grow">
+        <h2>Revisions</h2>
+        <div class="page-sub">Every drafted, published, and reverted change to the ${esc(trail||'—')} — newest first. Click a row for the full diff.</div>
+      </div>
+    </div>
+    <div id="rev-body">Loading…</div>`;
+  revLoad();
+}
+
+async function revLoad(){
+  const { trail } = activeConsv();
+  const body = $('#rev-body');
+  await withAuth(async ()=>{
+    const [{ data:revs, error:re }, { data:eds }] = await Promise.all([
+      sb.from('trail_data_revisions').select('*').eq('trail', trail),
+      sb.from('conservancy_editors').select('id,display_name'),  // best-effort name map
+    ]);
+    if (re) throw re;
+    revEditors = {};
+    (eds||[]).forEach(e=>{ revEditors[e.id]=e.display_name; });
+    revCache = (revs||[]).slice().sort((a,b)=> new Date(revWhen(b)) - new Date(revWhen(a)));
+    revById = {};
+    revCache.forEach(r=>{ revById[r.id]=r; });
+    revPaint();
+  });
+}
+
+function revPaint(){
+  const body = $('#rev-body');
+  if (!body) return;
+  if (!revCache.length){ body.innerHTML = `<div class="empty">No revisions recorded on this trail yet.</div>`; return; }
+  const rows = revCache.map(r=>{
+    const n  = Array.isArray(r.draft_patches) ? r.draft_patches.length : 0;
+    const st = revStatus(r);
+    return `<tr class="rev-row" onclick="revOpen('${r.id}')">
+      <td>${fmtDate(r.published_at)}</td>
+      <td><span class="tag tag-role">${esc(r.kind)}</span></td>
+      <td><b>${esc(r.summary)}</b>${n?`<div class="alert-meta">${n} patch${n===1?'':'es'}</div>`:''}</td>
+      <td>${revName(r.drafted_by)}</td>
+      <td>${revName(r.approved_by)}</td>
+      <td>${st.html}</td>
+    </tr>`;
+  }).join('');
+  body.innerHTML = `<table><thead><tr>
+      <th>Published</th><th>Kind</th><th>Summary</th><th>Drafted by</th><th>Approved by</th><th>Status</th>
+    </tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function revOpen(id){
+  const r = revById[id];
+  if (!r) return;
+  const st = revStatus(r);
+  const patches = Array.isArray(r.draft_patches) ? r.draft_patches : [];
+
+  let diff;
+  if (patches.length){
+    diff = `<ul class="bl-prev">${patches.map(p=>`<li>${blPatchDiffLine(p)}</li>`).join('')}</ul>`;
+  } else if (String(r.kind||'').indexOf('alert')===0){
+    diff = `<div class="note">This is an alert change — see the Alerts page for the full before/after. (In-place alert diffs arrive with alert-revert support.)</div>`;
+  } else {
+    diff = `<div class="note">No stored patch detail for this revision.</div>`;
+  }
+
+  let links='';
+  if (r.reverts_revision_id && revById[r.reverts_revision_id])
+    links += `<div class="alert-meta">↩ Reverts: “${esc(revById[r.reverts_revision_id].summary)}”</div>`;
+  if (r.reverted_by_revision_id && revById[r.reverted_by_revision_id])
+    links += `<div class="alert-meta">⟲ Reverted by: “${esc(revById[r.reverted_by_revision_id].summary)}”</div>`;
+
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal wide">
+    <h3>${esc(r.summary)}</h3>
+    <div class="alert-meta">${esc(r.kind)} · ${st.html}</div>
+    <div class="rev-meta">
+      <div><span class="note">Drafted</span> · ${revName(r.drafted_by)} · ${fmtDate(r.drafted_at)}</div>
+      <div><span class="note">Approved</span> · ${revName(r.approved_by)} · ${fmtDate(r.approved_at)}</div>
+      <div><span class="note">Published</span> · ${fmtDate(r.published_at)}</div>
+      ${r.rejected_at?`<div><span class="note">Rejected</span> · ${revName(r.rejected_by)} · ${fmtDate(r.rejected_at)}</div>`:''}
+    </div>
+    ${r.reason?`<div class="rev-reason"><span class="note">Reason</span><br>${esc(r.reason)}</div>`:''}
+    ${r.rejection_reason?`<div class="rev-reason"><span class="note">Rejection reason</span><br>${esc(r.rejection_reason)}</div>`:''}
+    ${links}
+    <div class="rev-diff-h">Change detail</div>
+    ${diff}
+    <div class="modal-actions"><button class="btn-ghost btn" onclick="closeModal()">Close</button></div>
+  </div></div>`;
 }
 
 async function renderEditors(main){
