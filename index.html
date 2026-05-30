@@ -368,9 +368,8 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .hl-dot.active{background:var(--pine)}
 #hlCardTitle{display:flex;align-items:center;gap:5px;min-width:0;flex:1}
 .hl-emoji{flex:none}
-.hl-names{display:flex;flex-wrap:nowrap;align-items:center;gap:0 1px;min-width:0;position:relative;overflow-x:auto;scrollbar-width:thin}
-.hl-names::-webkit-scrollbar{height:3px}
-.hl-names::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.hl-names{display:flex;flex-wrap:nowrap;align-items:center;gap:0 1px;min-width:0;position:relative;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.hl-names::-webkit-scrollbar{display:none;height:0;width:0}
 .hl-name{flex:none;display:inline-block;white-space:nowrap;cursor:pointer;color:var(--subtle);font-weight:600;font-size:.7rem;padding:0 3px;border-radius:6px;transform-origin:center;transition:transform .12s,color .12s,box-shadow .12s}
 .hl-name:hover{color:var(--forest);transform:scale(1.3)}
 .hl-name.active{color:var(--pine);font-weight:800;box-shadow:inset 0 -2px 0 var(--pine)}
