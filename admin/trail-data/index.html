@@ -1252,6 +1252,7 @@ let revEditors = {};   // editor id -> display_name (best-effort; needs editor r
 let revById    = {};   // revision id -> row (for revert/original cross-links)
 let revFilters = { from:'', to:'', editor:'', kind:'' };  // date range / editor / kind
 let revFiltered= [];   // rows currently shown (what CSV exports)
+let revAlertByRev = {}; // alert_create revision id -> trail_alerts row (for alert-revert)
 
 // newest-first anchor: published time if published, else when it was drafted.
 function revWhen(r){ return r.published_at || r.drafted_at; }
@@ -1292,13 +1293,16 @@ async function revLoad(){
   const { trail } = activeConsv();
   const body = $('#rev-body');
   await withAuth(async ()=>{
-    const [{ data:revs, error:re }, { data:eds }] = await Promise.all([
+    const [{ data:revs, error:re }, { data:eds }, { data:alerts }] = await Promise.all([
       sb.from('trail_data_revisions').select('*').eq('trail', trail),
       sb.from('conservancy_editors').select('id,display_name'),  // best-effort name map
+      sb.from('trail_alerts').select('id,severity,retired_at,approved_by,revision_id,title').eq('trail', trail),
     ]);
     if (re) throw re;
     revEditors = {};
     (eds||[]).forEach(e=>{ revEditors[e.id]=e.display_name; });
+    revAlertByRev = {};
+    (alerts||[]).forEach(a=>{ if (a.revision_id) revAlertByRev[a.revision_id]=a; });
     revCache = (revs||[]).slice().sort((a,b)=> new Date(revWhen(b)) - new Date(revWhen(a)));
     revById = {};
     revCache.forEach(r=>{ revById[r.id]=r; });
@@ -1423,6 +1427,19 @@ function revInterveningEdits(r){
     && Array.isArray(s.draft_patches)
     && s.draft_patches.some(p=> p && keys.has(p.entity_key)));
 }
+// Alert-revert eligibility: a published alert_create whose alert is still mapped
+// (by revision_id) and not yet retired. update/retire reverts are deferred (2d).
+function revAlertCanRevert(r){
+  if (!(r.published_at && !r.rejected_at && !r.reverted_by_revision_id && r.kind==='alert_create')) return false;
+  const a = revAlertByRev[r.id];
+  return !!(a && !a.retired_at);
+}
+// Emergency one-step gate (mirrors td_alert_revert_now): superadmin + HAZARD +
+// emergency-published-unreviewed (approved_by null).
+function revAlertEmergencyEligible(r){
+  const a = revAlertByRev[r.id];
+  return !!(revAlertCanRevert(r) && me.is_super && a && a.severity==='HAZARD' && !a.approved_by);
+}
 
 function revOpen(id){
   const r = revById[id];
@@ -1435,6 +1452,9 @@ function revOpen(id){
     diff = `<ul class="bl-prev">${patches.map(p=>`<li>${blPatchDiffLine(p)}</li>`).join('')}</ul>`;
   } else if (String(r.kind||'').indexOf('alert')===0){
     diff = `<div class="note">This is an alert change — see the Alerts page for the full before/after. (In-place alert diffs arrive with alert-revert support.)</div>`;
+  } else if (r.kind==='revert' && r.reverts_revision_id){
+    const o = revById[r.reverts_revision_id];
+    diff = `<div class="note">Alert revert — retires the alert${o?` created by “${esc(o.summary)}”`:''}.</div>`;
   } else {
     diff = `<div class="note">No stored patch detail for this revision.</div>`;
   }
@@ -1483,6 +1503,27 @@ function revOpen(id){
           <button class="btn-danger btn" id="rev-revert-go">Draft revert</button>
         </div>`;
     }
+  } else if (revAlertCanRevert(r)){
+    const pend = revPendingRevertFor(r.id);
+    if (pend){
+      footer = `<div class="rev-reason note">A revert of this alert is already pending review.</div>
+        <div class="modal-actions"><button class="btn-ghost btn" onclick="closeModal()">Close</button></div>`;
+    } else {
+      const emer = revAlertEmergencyEligible(r);
+      const note = emer
+        ? `<div class="rev-iv"><b>Emergency HAZARD.</b> As superadmin you can retire this emergency-published HAZARD immediately — no second editor. Use this only when it's known wrong.</div>`
+        : `<div class="rev-reason note">This drafts a retirement of the alert; another editor publishes it.</div>`;
+      footer = `${note}
+        <div class="rev-revert-box">
+          <label class="rev-reason">Reason for the revert <span class="counter" id="rev-rv-ct">0/20 min</span>
+            <textarea id="rev-revert-reason" rows="2" placeholder="Why is this being reverted? Goes into the permanent audit log (min 20 chars)."></textarea></label>
+          <div class="modal-err" id="rev-revert-err"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-ghost btn" onclick="closeModal()">Close</button>
+          <button class="btn-danger btn" id="rev-arevert-go">${emer?'Retire now (emergency)':'Draft retire-revert'}</button>
+        </div>`;
+    }
   } else {
     footer = `<div class="modal-actions"><button class="btn-ghost btn" onclick="closeModal()">Close</button></div>`;
   }
@@ -1508,6 +1549,7 @@ function revOpen(id){
   const ag=$('#rev-approve');     if (ag) ag.onclick=()=>revApprove(r.id);
   const rj=$('#rev-reject');      if (rj) rj.onclick=()=>revReject(r.id);
   const rg=$('#rev-revert-go');   if (rg) rg.onclick=()=>revDoRevert(r.id);
+  const ar=$('#rev-arevert-go');  if (ar) ar.onclick=()=>revDoAlertRevert(r.id, revAlertEmergencyEligible(r));
   const rt=$('#rev-revert-reason'), ct=$('#rev-rv-ct');
   if (rt && ct) rt.oninput=()=>{ ct.textContent = rt.value.trim().length+'/20 min'; };
 }
@@ -1526,14 +1568,29 @@ async function revDoRevert(id){
 }
 async function revApprove(id){
   const err=$('#rev-act-err');
+  const row = revById[id];
+  const isAlertRevert = row && (!Array.isArray(row.draft_patches) || row.draft_patches.length===0);
+  const rpc = isAlertRevert ? 'td_alert_revert_approve' : 'td_revert_approve';
   document.querySelectorAll('.modal-actions button').forEach(b=>b.disabled=true);
   try{
-    await withAuth(async ()=>{ const { error } = await sb.rpc('td_revert_approve', { p_revision_id:id }); if (error) throw error; });
+    await withAuth(async ()=>{ const { error } = await sb.rpc(rpc, { p_revision_id:id }); if (error) throw error; });
     closeModal(); revLoad();
   }catch(e){
     if (err) err.textContent=e.message||'Could not approve the revert.';
     document.querySelectorAll('.modal-actions button').forEach(b=>b.disabled=false);
   }
+}
+async function revDoAlertRevert(id, emergency){
+  const ta=$('#rev-revert-reason'), err=$('#rev-revert-err'), go=$('#rev-arevert-go');
+  const reason = ta ? ta.value.trim() : '';
+  if (err) err.textContent='';
+  if (reason.length<20){ if (err) err.textContent='Please give a reason of at least 20 characters for the audit log.'; return; }
+  if (go) go.disabled=true;
+  try{
+    const fn = emergency ? 'td_alert_revert_now' : 'td_alert_revert_draft';
+    await withAuth(async ()=>{ const { error } = await sb.rpc(fn, { p_revision_id:id, p_reason:reason }); if (error) throw error; });
+    closeModal(); revLoad();
+  }catch(e){ if (err) err.textContent=e.message||'Could not revert the alert.'; if (go) go.disabled=false; }
 }
 function revReject(id){
   $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal">
