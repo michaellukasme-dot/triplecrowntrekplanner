@@ -6287,7 +6287,7 @@ async function tmSubmitAngel(){
   if (services.includes('water_cache') && trail === 'AT') {
     note.textContent = 'Water Cache is PCT/CDT only on this app.'; return;
   }
-  if (!lnt_ack) { note.textContent = 'Please acknowledge the Leave No Trace commitment.'; return; }
+  if (!lnt_ack) { note.textContent = 'Please acknowledge the Leave No Trace commitment.'; tmToast('🌿 Please check the Leave No Trace box to continue.'); return; }
 
   btn.disabled = true; btn.textContent = '…';
 
