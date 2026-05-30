@@ -4730,7 +4730,7 @@ function getSupaClient() {
 function initSocialModal() {
   initSlackPack(); // keep existing planner working
   prefillPostForm();
-  spTab('board', document.querySelector('.sp-modal-tab'));
+  spTab('board', document.querySelector('#modal-sp .sp-modal-tab'));
   fetchPosts();
 }
 
@@ -5638,7 +5638,7 @@ async function submitPost() {
 
     // Switch to board to see it
     setTimeout(() => {
-      spTab('board', document.querySelectorAll('.sp-modal-tab')[0]);
+      spTab('board', document.querySelector('#modal-sp .sp-modal-tab'));
       fetchPosts();
     }, 1200);
 
