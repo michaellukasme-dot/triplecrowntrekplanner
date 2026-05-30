@@ -103,6 +103,10 @@
   .rev-diff-h{margin-top:16px;font-weight:700;font-size:.9rem}
   .rev-iv{margin:12px 0;padding:10px 12px;border-radius:8px;background:#fff3d6;color:#6b4e00;font-size:.85rem}
   .rev-revert-box{margin-top:14px}
+  .rev-toolbar{flex-wrap:wrap;align-items:center;gap:10px}
+  .rev-fl{font-size:.8rem;color:var(--subtle);display:inline-flex;align-items:center;gap:6px}
+  .rev-fl input{font:inherit;padding:6px 8px;border:1px solid var(--border);border-radius:8px}
+  .rev-count{margin:4px 0 10px}
 
   .panel{background:var(--white);border:1px solid var(--border);border-radius:12px;
     padding:22px 24px;box-shadow:var(--shadow)}
@@ -1246,6 +1250,8 @@ function blOfferCompanionAlert(info){
 let revCache   = [];   // last-loaded revisions for the active trail (sorted)
 let revEditors = {};   // editor id -> display_name (best-effort; needs editor read)
 let revById    = {};   // revision id -> row (for revert/original cross-links)
+let revFilters = { from:'', to:'', editor:'', kind:'' };  // date range / editor / kind
+let revFiltered= [];   // rows currently shown (what CSV exports)
 
 // newest-first anchor: published time if published, else when it was drafted.
 function revWhen(r){ return r.published_at || r.drafted_at; }
@@ -1274,8 +1280,11 @@ async function renderRevisions(main){
         <h2>Revisions</h2>
         <div class="page-sub">Every drafted, published, and reverted change to the ${esc(trail||'—')} — newest first. Click a row for the full diff.</div>
       </div>
+      <button class="btn" id="rev-csv">Download CSV</button>
     </div>
+    <div id="rev-toolbar"></div>
     <div id="rev-body">Loading…</div>`;
+  $('#rev-csv').onclick = revDownloadCSV;
   revLoad();
 }
 
@@ -1293,15 +1302,57 @@ async function revLoad(){
     revCache = (revs||[]).slice().sort((a,b)=> new Date(revWhen(b)) - new Date(revWhen(a)));
     revById = {};
     revCache.forEach(r=>{ revById[r.id]=r; });
+    revRenderToolbar();
     revPaint();
   });
+}
+
+// local YYYY-MM-DD (matches the date the table shows via fmtDate)
+function ymdLocal(s){ if(!s) return ''; const d=new Date(s);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+function revMatchesFilters(r){
+  const f = revFilters;
+  if (f.kind && r.kind !== f.kind) return false;
+  if (f.editor && r.drafted_by !== f.editor && r.approved_by !== f.editor) return false;
+  const d = ymdLocal(revWhen(r));
+  if (f.from && d && d < f.from) return false;
+  if (f.to   && d && d > f.to)   return false;
+  return true;
+}
+
+function revRenderToolbar(){
+  const host = $('#rev-toolbar');
+  if (!host) return;
+  // editor + kind option sets, drawn from what's actually present
+  const edIds = new Set();
+  const kinds = new Set();
+  revCache.forEach(r=>{ if (r.drafted_by) edIds.add(r.drafted_by); if (r.approved_by) edIds.add(r.approved_by); if (r.kind) kinds.add(r.kind); });
+  const edOpts = ['<option value="">All editors</option>'].concat(
+    [...edIds].map(id=>`<option value="${esc(id)}"${revFilters.editor===id?' selected':''}>${revName(id).replace(/ \(you\)$/,' (you)')}</option>`)).join('');
+  const kOpts = ['<option value="">All kinds</option>'].concat(
+    [...kinds].sort().map(k=>`<option value="${esc(k)}"${revFilters.kind===k?' selected':''}>${esc(k)}</option>`)).join('');
+  host.innerHTML = `<div class="bl-toolbar rev-toolbar">
+    <label class="rev-fl">From <input type="date" id="rev-from" value="${esc(revFilters.from)}"></label>
+    <label class="rev-fl">To <input type="date" id="rev-to" value="${esc(revFilters.to)}"></label>
+    <select id="rev-editor" class="bl-sort">${edOpts}</select>
+    <select id="rev-kind" class="bl-sort">${kOpts}</select>
+    <button class="btn-ghost btn btn-sm" id="rev-clear">Clear</button>
+  </div>`;
+  $('#rev-from').onchange   = (e)=>{ revFilters.from=e.target.value; revPaint(); };
+  $('#rev-to').onchange     = (e)=>{ revFilters.to=e.target.value;   revPaint(); };
+  $('#rev-editor').onchange = (e)=>{ revFilters.editor=e.target.value; revPaint(); };
+  $('#rev-kind').onchange   = (e)=>{ revFilters.kind=e.target.value;  revPaint(); };
+  $('#rev-clear').onclick   = ()=>{ revFilters={from:'',to:'',editor:'',kind:''}; revRenderToolbar(); revPaint(); };
 }
 
 function revPaint(){
   const body = $('#rev-body');
   if (!body) return;
   if (!revCache.length){ body.innerHTML = `<div class="empty">No revisions recorded on this trail yet.</div>`; return; }
-  const rows = revCache.map(r=>{
+  revFiltered = revCache.filter(revMatchesFilters);
+  if (!revFiltered.length){ body.innerHTML = `<div class="empty">No revisions match the current filters.</div>`; return; }
+  const rows = revFiltered.map(r=>{
     const n  = Array.isArray(r.draft_patches) ? r.draft_patches.length : 0;
     const st = revStatus(r);
     return `<tr class="rev-row" onclick="revOpen('${r.id}')">
@@ -1313,9 +1364,40 @@ function revPaint(){
       <td>${st.html}</td>
     </tr>`;
   }).join('');
-  body.innerHTML = `<table><thead><tr>
+  body.innerHTML = `<div class="rev-count note">${revFiltered.length} of ${revCache.length} revision${revCache.length===1?'':'s'}</div>
+    <table><thead><tr>
       <th>Published</th><th>Kind</th><th>Summary</th><th>Drafted by</th><th>Approved by</th><th>Status</th>
     </tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// ---- CSV audit export (exports the currently-filtered set) ----------
+function revCsvCell(v){ return '"' + (v==null?'':String(v)).replace(/"/g,'""') + '"'; }
+function revDownloadCSV(){
+  const { trail } = activeConsv();
+  const rows = (revFiltered && revFiltered.length) ? revFiltered : revCache;
+  if (!rows.length){ return; }
+  const header = ['published_at','drafted_at','approved_at','rejected_at','trail','kind','status',
+                  'summary','reason','rejection_reason','drafted_by','approved_by','patches',
+                  'id','reverts_revision_id','reverted_by_revision_id'];
+  const nameOf = (id)=> id ? (revEditors[id]||id) : '';
+  const lines = [ header.map(revCsvCell).join(',') ];
+  rows.forEach(r=>{
+    lines.push([
+      r.published_at||'', r.drafted_at||'', r.approved_at||'', r.rejected_at||'',
+      r.trail||trail, r.kind||'', revStatus(r).key,
+      r.summary||'', r.reason||'', r.rejection_reason||'',
+      nameOf(r.drafted_by), nameOf(r.approved_by),
+      Array.isArray(r.draft_patches)?r.draft_patches.length:0,
+      r.id||'', r.reverts_revision_id||'', r.reverted_by_revision_id||''
+    ].map(revCsvCell).join(','));
+  });
+  const csv  = '\ufeff' + lines.join('\r\n');   // BOM + CRLF so Excel opens cleanly
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `revisions_${trail||'trail'}_${ymdLocal(new Date().toISOString())}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
 }
 
 // A published baseline revision is revertable: not rejected, not already
