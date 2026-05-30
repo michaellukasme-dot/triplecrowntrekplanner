@@ -5960,6 +5960,9 @@ async function tmInit(){
 
   tmRenderConservancyFooter();
   tmRenderAwardBanner();
+  // Water Cache is PCT/CDT-only — hide the chip entirely on AT (was showing with a * and rejecting on tap)
+  const _wcChip = document.querySelector('.tm-svc-chip[data-svc="water_cache"]');
+  if (_wcChip) _wcChip.style.display = (trail === 'AT') ? 'none' : '';
   tmBuildCrossingDropdown();
   await tmRefreshDirectory(false);
   await tmLoadMyListing();
@@ -6215,6 +6218,15 @@ function tmFillFromGps(){
   });
   if (best) {
     document.getElementById('tm-nearest-mile').value = best[0].toFixed(1);
+    // Also point the Road Crossing dropdown at the snapped waypoint, so the saved
+    // road_crossing_label is the waypoint name — not the "— Pick a waypoint —" placeholder.
+    const cs = document.getElementById('tm-crossing-select');
+    if (cs) {
+      const m = Array.from(cs.options).find(o => o.dataset.lat === String(best[3]) && o.dataset.lon === String(best[4]));
+      if (m) cs.value = m.value;
+      const customEl = document.getElementById('tm-crossing-custom');
+      if (customEl) customEl.style.display = 'none';
+    }
     tmToast(`Snapped to mile ${best[0].toFixed(1)} · ${best[1]}`);
   }
 }
@@ -6274,20 +6286,21 @@ async function tmSubmitAngel(){
   const wAck = document.getElementById('tm-water-ack');
   const water_cache_arid_ack = !!(wAck && wAck.checked);
 
-  // Validation
-  if (!trail_name) { note.textContent = 'Trail name is required.'; return; }
-  if (!road_crossing_label) { note.textContent = 'Pick a road crossing.'; return; }
-  if (isNaN(nearest_mile)) { note.textContent = 'Nearest mile is required.'; return; }
-  if (lat === null || isNaN(lat)) { note.textContent = 'Need coordinates — pick a waypoint or enable GPS.'; return; }
-  if (services.length < 1) { note.textContent = 'Pick at least one service.'; return; }
-  if (services.length > 4) { note.textContent = 'Pick at most four services.'; return; }
+  // Validation — set the inline note AND fire a toast so a block is never missed
+  const block = (inline, toast) => { note.textContent = inline; tmToast(toast || inline); };
+  if (!trail_name) { block('Trail name is required.'); return; }
+  if (!road_crossing_label) { block('Pick a road crossing.'); return; }
+  if (isNaN(nearest_mile)) { block('Nearest mile is required.'); return; }
+  if (lat === null || isNaN(lat)) { block('Need coordinates — pick a waypoint or enable GPS.'); return; }
+  if (services.length < 1) { block('Pick at least one service.'); return; }
+  if (services.length > 4) { block('Pick at most four services.'); return; }
   if (services.includes('water_cache') && trail !== 'AT' && !water_cache_arid_ack) {
-    note.textContent = 'Please acknowledge the water-cache guidance.'; return;
+    block('Please acknowledge the water-cache guidance.'); return;
   }
   if (services.includes('water_cache') && trail === 'AT') {
-    note.textContent = 'Water Cache is PCT/CDT only on this app.'; return;
+    block('Water Cache is PCT/CDT only on this app.'); return;
   }
-  if (!lnt_ack) { note.textContent = 'Please acknowledge the Leave No Trace commitment.'; tmToast('🌿 Please check the Leave No Trace box to continue.'); return; }
+  if (!lnt_ack) { block('Please acknowledge the Leave No Trace commitment.', '🌿 Please check the Leave No Trace box to continue.'); return; }
 
   btn.disabled = true; btn.textContent = '…';
 
