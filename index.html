@@ -5631,7 +5631,9 @@ async function submitPost() {
 
     btn.textContent = '✓ Posted!';
     showToast('🥾 You are on the board, ' + name + '!');
-    resetPhotos();
+    // Keep the just-posted photos in the slots so the form mirrors your live card.
+    // (Blanking them here made photos look unsaved — text stayed but photos vanished.)
+    // To post a different trip, tap the ✕ on a photo to clear it.
     localStorage.setItem('at_last_trail_name', name);
 
     // Switch to board to see it
