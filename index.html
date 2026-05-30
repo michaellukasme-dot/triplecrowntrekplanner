@@ -366,6 +366,11 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .hl-dot-row{display:flex;gap:4px;justify-content:center;padding:4px 0 8px}
 .hl-dot{width:6px;height:6px;border-radius:50%;background:var(--border);cursor:pointer;transition:background .15s}
 .hl-dot.active{background:var(--pine)}
+.hl-names{display:inline-flex;flex-wrap:wrap;align-items:center;gap:0 2px}
+.hl-name{cursor:pointer;color:var(--subtle);font-weight:600;padding:1px 5px;border-radius:7px;transition:color .12s,background .12s,box-shadow .12s}
+.hl-name:hover{color:var(--forest);background:var(--stone)}
+.hl-name.active{color:var(--pine);font-weight:800;background:var(--stone);box-shadow:inset 0 -2px 0 var(--pine)}
+.hl-name-sep{color:var(--leaf);user-select:none}
 
 /* ── ITINERARY TABLE ── */
 .trek-header-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border)}
@@ -2116,9 +2121,12 @@ function renderHighlights() {
   const dots = document.getElementById('hlDots');
   dots.innerHTML = hlStateList.map((s,i)=>`<div class="hl-dot${i===hlIndex?' active':''}" onclick="hlGoTo(${i})"></div>`).join('');
 
-  // Update card title
-  const titleStates = hlStateList.map(s=>((window.ACTIVE_TRAIL||AT).stateInfo[s]||{}).name||s).join(' · ');
-  document.getElementById('hlCardTitle').textContent = '🏔 '+titleStates;
+  // Update card title — clickable state-name row (each jumps the carousel; active highlighted)
+  const names = hlStateList.map((s,i)=>{
+    const nm = ((window.ACTIVE_TRAIL||AT).stateInfo[s]||{}).name||s;
+    return `<span class="hl-name${i===hlIndex?' active':''}" onclick="hlGoTo(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();hlGoTo(${i})}" role="button" tabindex="0" aria-label="Show ${nm} highlights"${i===hlIndex?' aria-current="true"':''}>${nm}</span>`;
+  }).join('<span class="hl-name-sep"> · </span>');
+  document.getElementById('hlCardTitle').innerHTML = '🏔 <span class="hl-names">'+names+'</span>';
 }
 
 function hlNav(dir) { hlIndex = Math.max(0,Math.min(hlStateList.length-1, hlIndex+dir)); renderHighlights(); }
@@ -5985,6 +5993,7 @@ let _angelSelectedSvcs = new Set();
 let _angelActiveFilter = 'all';
 let _angelNearMe = false;
 let _angelMode = 'find';
+const ANGEL_LEGEND_MIN = 150;     // Trail Legend tier threshold (raised from 50) — single source of truth
 window._angelDirByName = {};      // trail_name lower → angel row, for renderPosts pill
 const TM_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const TM_PEPPER = 'tctp_v1_magic_pepper_2026'; // privacy-by-obscurity for hash; not a secret
@@ -6118,7 +6127,7 @@ function tmRenderDirectory(){
 
   // Apply filter
   let rows = list.slice();
-  if (_angelActiveFilter === 'legacy') rows = rows.filter(r => (r.confirmation_count||0) >= 50);
+  if (_angelActiveFilter === 'legacy') rows = rows.filter(r => (r.confirmation_count||0) >= ANGEL_LEGEND_MIN);
   else if (_angelActiveFilter !== 'all') rows = rows.filter(r => (r.services||[]).includes(_angelActiveFilter));
 
   // Near Me filter (requires GPS)
@@ -6151,9 +6160,9 @@ function tmRenderCacheStamp(){
 }
 
 function tmAngelCardHtml(r){
-  const isLegacy = (r.confirmation_count||0) >= 50;
+  const isLegacy = (r.confirmation_count||0) >= ANGEL_LEGEND_MIN;
   const badge = isLegacy
-    ? '<span class="angel-badge legacy">✨ LEGACY ANGEL</span>'
+    ? '<span class="angel-badge legacy">✨ TRAIL LEGEND</span>'
     : '<span class="angel-badge">🌿 Trail Angel</span>';
   const svcChips = (r.services||[]).map(s =>
     `<span class="pc-badge pc-trad" aria-label="${tmEsc(s)}">${tmEsc(tmServiceLabel(s))}</span>`).join(' ');
@@ -6617,9 +6626,9 @@ function tmAngelPillFor(name){
   if (!name) return '';
   const a = (window._angelDirByName || {})[(name||'').toLowerCase()];
   if (!a) return '';
-  const legacy = (a.confirmation_count||0) >= 50;
+  const legacy = (a.confirmation_count||0) >= ANGEL_LEGEND_MIN;
   return legacy
-    ? '<span class="angel-badge legacy" title="Legacy Angel — 50+ confirmations">✨ LEGACY</span>'
+    ? '<span class="angel-badge legacy" title="Trail Legend — 150+ confirmations">✨ LEGEND</span>'
     : '<span class="angel-badge" title="Trail Angel">🌿</span>';
 }
 
@@ -7525,7 +7534,7 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
           <button class="board-filter"        data-svc="water_cache"    onclick="tmFilter(this)">💧 Water</button>
           <button class="board-filter"        data-svc="resupply_hold"  onclick="tmFilter(this)">📦 Resupply</button>
           <button class="board-filter"        data-svc="gear_fix"       onclick="tmFilter(this)">🔧 Gear</button>
-          <button class="board-filter"        data-svc="legacy"         onclick="tmFilter(this)">✨ Legacy</button>
+          <button class="board-filter"        data-svc="legacy"         onclick="tmFilter(this)">✨ Legend</button>
           <button class="board-filter" id="tm-near-me-btn" onclick="tmToggleNearMe(this)" title="Angels within 50 trail miles of you">📍 Near Me</button>
         </div>
 
