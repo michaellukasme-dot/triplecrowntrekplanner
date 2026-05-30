@@ -154,6 +154,14 @@
   .sev-opt .hint{font-size:.72rem;color:var(--subtle);margin-top:2px;line-height:1.35}
   .emergency-note{background:#f6d4c9;border:1px solid #e0a596;color:#8a2a12;
     padding:9px 12px;border-radius:8px;font-size:.8rem;margin-top:6px}
+  .bl-banner{background:var(--stone);border:1px dashed var(--border);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:.84rem;color:var(--subtle)}
+  .bl-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .bl-search{flex:1;min-width:180px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font:inherit;background:var(--white)}
+  .bl-sort{padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font:inherit;background:var(--white)}
+  .origin{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:6px}
+  .origin-seed{background:var(--mist);color:var(--pine)}
+  .origin-patch{background:var(--gold);color:#4a3a10}
+  .bl-dir{font-size:.64rem;font-weight:700;color:var(--subtle);text-transform:uppercase}
 </style>
 </head>
 <body>
@@ -360,8 +368,8 @@ function go(page){
   const main = $('#main');
   if (page==='editors'){ renderEditors(main); return; }
   if (page==='alerts'){ renderAlerts(main); return; }
+  if (page==='baseline'){ renderBaseline(main); return; }
   const stubs = {
-    baseline: ['Baseline','Publish waypoint / shelter / water / road-crossing / trek edits as deltas over the embedded seed.','PROMPT 5'],
     revisions:['Revisions','Full published history with one-click revert.','PROMPT 6'],
   };
   const [title,desc,prompt] = stubs[page];
@@ -721,6 +729,176 @@ window.approveAlert=approveAlert; window.rejectAlert=rejectAlert;
 window.editAlert=editAlert; window.retireAlert=retireAlert;
 
 // ---- Editors page (superadmin only) ---------------------------------
+// =====================================================================
+//  BASELINE PAGE (PROMPT 5) — increment 1: read-only merged view
+//  Lists seed + applied patches merged the same way the hiker app's
+//  tdApplyOverlay does, classified into five tabs. No writes yet
+//  (drafting/approval land in increment 2). Safe against production.
+// =====================================================================
+const BL_TABS = [
+  ['shelter',       'Shelters'],
+  ['waypoint',      'Waypoints'],
+  ['water_source',  'Water Sources'],
+  ['road_crossing', 'Road Crossings'],
+  ['trek_segment',  'Trek Segments'],
+];
+let blTab     = 'shelter';
+let blSeed    = null;     // the whole baseline_seed.json (all trails), fetched once
+let blPatches = [];       // patch rows for the active trail
+let blMerged  = null;     // { waypoints:[{raw,origin,et,key}], treks:{nobo:[{seg,origin}],sobo:[...]} }
+let blSearch  = '';
+let blSort    = 'mile';   // 'mile' | 'name'
+
+// Heuristic classification — the seed has no type field (all waypoint-family
+// rows live in one flat array), so we bucket by name. Patch rows carry an
+// explicit entity_type and use that instead. Order matters: shelter wins over
+// the "Gap"/"Pond" tokens that also appear in shelter names.
+function blClassify(name){
+  const s = String(name||'');
+  if (/shelter|lean-?to|\bhut\b|cabin|campsite|tent\s?site|campground|wayside|lodge|the birches/i.test(s)) return 'shelter';
+  if (/spring|creek|stream|\bwater\b|\btank\b|windmill|\bwell\b|river|\blake\b|\bpond\b|falls|faucet|cache|brook|reservoir/i.test(s)) return 'water_source';
+  if (/\broad\b|\bgap\b|\bpass\b|hwy|highway|crossing|trailhead|\bnotch\b|\brd\b|parkway|pkwy|terminus|border/i.test(s)) return 'road_crossing';
+  return 'waypoint';
+}
+
+async function blLoadSeed(){
+  if (blSeed) return blSeed;
+  const res = await fetch('./baseline_seed.json', { cache:'no-store' });
+  if (!res.ok) throw new Error('baseline_seed.json ('+res.status+')');
+  blSeed = await res.json();
+  return blSeed;
+}
+
+// Merge patches over the seed — mirrors tdApplyOverlay in index.html.
+function blMatch(list, key, matcher){
+  if (key){ const i = list.findIndex(x=>x.key===key); if (i>=0) return i; }
+  if (Array.isArray(matcher) && matcher.length>=2)
+    return list.findIndex(x=>x.raw[0]===matcher[0] && x.raw[1]===matcher[1]);
+  if (matcher && typeof matcher==='object' && !Array.isArray(matcher))
+    return list.findIndex(x=>x.raw[0]===matcher.mile && x.raw[1]===matcher.name);
+  return -1;
+}
+function blMergeTrail(seedTrail, patches){
+  const wp = (seedTrail.waypoints||[]).map(r=>({ raw:r, origin:'seed', et:blClassify(r[1]), key:null }));
+  const treks = {
+    nobo: (seedTrail.treks?.nobo||[]).map(s=>({ seg:s, origin:'seed' })),
+    sobo: (seedTrail.treks?.sobo||[]).map(s=>({ seg:s, origin:'seed' })),
+  };
+  [...patches].sort((a,b)=>(a.revision||0)-(b.revision||0)).forEach(p=>{
+    const et=p.entity_type, op=p.operation, key=p.entity_key, pay=p.payload, prior=p.prior_payload;
+    if (et==='waypoint'||et==='shelter'||et==='water_source'||et==='road_crossing'){
+      if (op==='add' && pay){ wp.push({ raw:pay, origin:'patch', et, key }); }
+      else if (op==='update' && pay){
+        const i=blMatch(wp,key,prior||pay);
+        const row={ raw:pay, origin:'patch', et, key };
+        if (i>=0) wp[i]=row; else wp.push(row);
+      } else if (op==='retire'){ const i=blMatch(wp,key,prior); if (i>=0) wp.splice(i,1); }
+    } else if (et==='trek_segment'){
+      const dir=(pay&&pay.direction)||(prior&&prior.direction);
+      const seg=(pay&&pay.segment)||pay, priorSeg=(prior&&prior.segment)||prior;
+      if (dir!=='nobo' && dir!=='sobo') return;
+      const arr=treks[dir];
+      if (op==='add' && seg){ arr.push({ seg, origin:'patch' }); arr.sort((a,b)=>(a.seg.cumMileStart||0)-(b.seg.cumMileStart||0)); }
+      else if (op==='update' && seg){ const i=arr.findIndex(x=>x.seg.id===(priorSeg||seg).id); const o={seg,origin:'patch'}; if (i>=0) arr[i]=o; else arr.push(o); }
+      else if (op==='retire'){ const i=arr.findIndex(x=>x.seg.id===(priorSeg||seg).id); if (i>=0) arr.splice(i,1); }
+    }
+  });
+  wp.sort((a,b)=>a.raw[0]-b.raw[0]);
+  return { waypoints:wp, treks };
+}
+
+async function renderBaseline(main){
+  const { trail } = activeConsv();
+  main.innerHTML = `
+    <div class="page-head">
+      <div class="grow">
+        <h2>Baseline</h2>
+        <div class="page-sub">Seed waypoints, shelters, water, road crossings, and trek segments for the ${esc(trail||'—')}, merged with any published patches.</div>
+      </div>
+    </div>
+    <div class="bl-banner"><b>Read-only preview.</b> This is the merged state hikers see (seed + published patches). Drafting, editing, retiring, and the trek-reroute editor arrive in the next build pass.</div>
+    <div class="tabs">${BL_TABS.map(([k,label])=>
+      `<button class="tab" data-tab="${k}">${label} <span class="count" id="blc-${k}">·</span></button>`).join('')}</div>
+    <div class="bl-toolbar">
+      <input class="bl-search" id="bl-search" placeholder="Search by name or mile…" value="${esc(blSearch)}"/>
+      <select class="bl-sort" id="bl-sort">
+        <option value="mile"${blSort==='mile'?' selected':''}>Sort: Mile</option>
+        <option value="name"${blSort==='name'?' selected':''}>Sort: Name</option>
+      </select>
+    </div>
+    <div id="bl-body">Loading…</div>`;
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.classList.toggle('active', t.dataset.tab===blTab);
+    t.onclick = ()=>{ blTab=t.dataset.tab; renderBaseline(main); };
+  });
+  $('#bl-search').oninput = (e)=>{ blSearch=e.target.value; blPaint(); };
+  $('#bl-sort').onchange  = (e)=>{ blSort=e.target.value;  blPaint(); };
+  blLoad();
+}
+
+async function blLoad(){
+  const { trail } = activeConsv();
+  const body = $('#bl-body');
+  try {
+    await blLoadSeed();
+  } catch (e){
+    if (body) body.innerHTML = `<div class="empty">Couldn't load <code>baseline_seed.json</code> — ${esc(e.message)}.<br>Make sure it's committed alongside this page at <code>admin/trail-data/baseline_seed.json</code>.</div>`;
+    return;
+  }
+  if (!blSeed.trails || !blSeed.trails[trail]){
+    if (body) body.innerHTML = `<div class="empty">No seed snapshot for ${esc(trail)} in baseline_seed.json.</div>`;
+    return;
+  }
+  await withAuth(async ()=>{
+    const { data, error } = await sb.from('trail_data_patches')
+      .select('*').eq('trail', trail).order('revision',{ascending:true});
+    if (error) throw error;
+    blPatches = data || [];
+    blMerged  = blMergeTrail(blSeed.trails[trail], blPatches);
+    // tab counts
+    const wpCounts = { shelter:0, waypoint:0, water_source:0, road_crossing:0 };
+    blMerged.waypoints.forEach(w=>{ wpCounts[w.et] = (wpCounts[w.et]||0)+1; });
+    const trekCount = blMerged.treks.nobo.length + blMerged.treks.sobo.length;
+    BL_TABS.forEach(([k])=>{ const el=$('#blc-'+k); if (el) el.textContent = (k==='trek_segment')?trekCount:(wpCounts[k]||0); });
+    blPaint();
+  });
+}
+
+function blOrigin(o){ return `<span class="origin origin-${o}">${o}</span>`; }
+
+function blPaint(){
+  const body = $('#bl-body');
+  if (!body || !blMerged) return;
+  const q = blSearch.trim().toLowerCase();
+
+  if (blTab==='trek_segment'){
+    const rowsFor = (dir)=> blMerged.treks[dir]
+      .filter(x=> !q || String(x.seg.name||'').toLowerCase().includes(q) || String(x.seg.id).includes(q))
+      .map(x=>{
+        const s=x.seg;
+        return `<tr><td><span class="bl-dir">${dir}</span></td><td>${esc(s.id)}</td>
+          <td><b>${esc(s.name)}</b> <span class="note">${esc(s.state||'')}</span></td>
+          <td>${esc(s.miles)} mi</td><td>${esc(s.cumMileStart)}–${esc(s.cumMileEnd)}</td>
+          <td>${blOrigin(x.origin)}</td></tr>`;
+      });
+    const rows=[...rowsFor('nobo'),...rowsFor('sobo')];
+    body.innerHTML = rows.length
+      ? `<table><thead><tr><th>Dir</th><th>#</th><th>Segment</th><th>Miles</th><th>Cum mile</th><th>Origin</th></tr></thead><tbody>${rows.join('')}</tbody></table>`
+      : `<div class="empty">No trek segments match “${esc(blSearch)}”.</div>`;
+    return;
+  }
+
+  let rows = blMerged.waypoints.filter(w=>w.et===blTab);
+  if (q) rows = rows.filter(w=> String(w.raw[1]||'').toLowerCase().includes(q) || String(w.raw[0]).includes(q));
+  rows.sort((a,b)=> blSort==='name'
+    ? String(a.raw[1]||'').localeCompare(String(b.raw[1]||''))
+    : (a.raw[0]-b.raw[0]));
+  if (!rows.length){ body.innerHTML = `<div class="empty">Nothing in this category${blSearch?` matching “${esc(blSearch)}”`:''}.</div>`; return; }
+  body.innerHTML = `<table><thead><tr><th>Mile</th><th>Name</th><th>State</th><th>Origin</th></tr></thead><tbody>${
+    rows.map(w=>`<tr><td>${esc(w.raw[0])}</td><td><b>${esc(w.raw[1])}</b></td><td>${esc(w.raw[2]||'')}</td><td>${blOrigin(w.origin)}</td></tr>`).join('')
+  }</tbody></table>`;
+}
+
 async function renderEditors(main){
   main.innerHTML = `<h2>Editors</h2>
     <div class="page-sub">Named humans authorized to draft and approve trail-data changes. Access is per-conservancy; revoke is a soft-revoke that preserves the audit trail.</div>
