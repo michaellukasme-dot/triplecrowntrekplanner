@@ -6292,6 +6292,13 @@ async function tmSubmitAngel(){
   // Validation — set the inline note AND fire a toast so a block is never missed
   const block = (inline, toast) => { note.textContent = inline; tmToast(toast || inline); };
   if (!trail_name) { block('Trail name is required.'); return; }
+  // Already listed on this trail under this name? Don't fire an insert the DB will reject:
+  // the unique (trail, trail_name) constraint returns 409. Tell the user instead of round-tripping.
+  if (_angelMyListing && _angelMyListing.trail === trail
+      && (_angelMyListing.trail_name || '').toLowerCase() === trail_name.toLowerCase()) {
+    block(`You're already listed on the ${trail}. Hide your existing listing first.`);
+    return;
+  }
   if (!road_crossing_label) { block('Pick a road crossing.'); return; }
   if (isNaN(nearest_mile)) { block('Nearest mile is required.'); return; }
   if (lat === null || isNaN(lat)) { block('Need coordinates — pick a waypoint or enable GPS.'); return; }
