@@ -355,7 +355,7 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .hl-arrow{background:none;border:1px solid var(--border);border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:1rem;color:var(--subtle);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
 .hl-arrow:hover{background:var(--mist);border-color:var(--pine);color:var(--pine)}
 .hl-arrow:disabled{opacity:.3;cursor:default}
-.hl-card{flex:1;display:grid;grid-template-columns:80px 1fr;gap:12px;align-items:start;background:var(--stone);border-radius:8px;padding:10px 12px;border:1px solid var(--border)}
+.hl-card{flex:1;display:grid;grid-template-columns:80px 1fr;gap:12px;align-items:start;background:var(--stone);border-radius:8px;padding:10px 12px;border:1px solid var(--border);min-height:144px}
 .hl-img{width:80px;height:80px;border-radius:6px;object-fit:cover;background:var(--mist);display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden;flex-shrink:0}
 .hl-state-name{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--forest);line-height:1.1}
 .hl-meta{font-size:.7rem;color:var(--pine);font-weight:600;margin-top:1px}
@@ -1409,7 +1409,7 @@ let currentItinerary = [];
 let pendingDirectionChange = null;
 
 // State emoji map
-const STATE_EMOJI = {GA:'🌲',NC:'⛰',TN:'🎸','NC/TN':'⛰',VA:'🦌',WV:'🏛',MD:'⚓',PA:'🪨',NJ:'🌅',NY:'🗽',CT:'🍂',MA:'🎓',VT:'🍁',NH:'🏔',ME:'🦌'};
+const STATE_EMOJI = {GA:'🌲',NC:'⛰',TN:'🎸','NC/TN':'⛰',VA:'🦌',WV:'🏛',MD:'⚓',PA:'🗿',NJ:'🌅',NY:'🗽',CT:'🍂',MA:'🎓',VT:'🍁',NH:'🏔',ME:'🦌'};
 
 // ═══════════════════════════════════════════
 // INIT
@@ -3130,7 +3130,7 @@ function renderTracker(){
   });
 
   const STATE_EM={'GA':'🌲','NC':'⛰️','TN':'🌄','VA':'🦅','WV':'🌉','MD':'🏛️',
-    'PA':'🪨','NJ':'🌊','NY':'🗽','CT':'🍂','MA':'🦃','VT':'🍁','NH':'🏔️','ME':'🐻',
+    'PA':'🗿','NJ':'🌊','NY':'🗽','CT':'🍂','MA':'🦃','VT':'🍁','NH':'🏔️','ME':'🐻',
     'NC/TN':'🌄','AT':'🥾'};
 
   let html='';
