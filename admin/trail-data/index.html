@@ -252,6 +252,36 @@
 .tm-tag{margin-left:auto;font-size:.6rem;letter-spacing:.05em;text-transform:uppercase;font-weight:700;padding:3px 8px;border-radius:20px}
 .tm-tag.live{background:#e6f3ea;color:#2c7a43;border:1px solid #bfe0c9}
 .tm-tag.sample{background:#fdf3e3;color:#9a6a1c;border:1px solid #f0dcb4}
+.tm-tag.soon{background:#eef1f4;color:#5b6b7b;border:1px solid #d4ddd4;cursor:pointer}
+/* From/To segment picker */
+.tm-fromto{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--stone);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:12px}
+.tm-ft{display:flex;align-items:center;gap:7px}
+.tm-ft-lbl{font-size:.6rem;letter-spacing:.06em;font-weight:800;padding:3px 7px;border-radius:6px;color:#fff}
+.tm-ft-lbl.from{background:var(--tm-pine)}
+.tm-ft-lbl.to{background:var(--rust,#b5451b)}
+.tm-ft-sel{font:inherit;font-size:.78rem;font-weight:600;color:var(--tm-forest);background:#fff;border:1px solid var(--border);border-radius:7px;padding:5px 8px;max-width:230px}
+.tm-ft-arrow{color:var(--tm-sage);font-weight:800}
+.tm-ft-all{font-size:.7rem;color:var(--subtle);display:flex;align-items:center;gap:5px;cursor:pointer}
+.tm-segcount{margin-left:auto;font-size:.82rem;color:var(--tm-forest)}
+.tm-segcount .u{font-size:.7rem;color:var(--subtle)}
+.tm-segcount em{font-size:.66rem;color:var(--subtle);font-style:italic}
+.tm-segcount .tm-klt{font-weight:800;color:var(--subtle)}
+/* State accordion */
+.tm-states{padding:4px}
+.tm-stitem{border-bottom:1px solid var(--border)}
+.tm-stitem:last-child{border-bottom:0}
+.tm-strow{width:100%;display:flex;align-items:center;gap:9px;background:none;border:0;font:inherit;padding:9px 8px;cursor:pointer;text-align:left}
+.tm-strow:hover{background:var(--tm-mist)}
+.tm-strow.open{background:var(--tm-mist)}
+.tm-stchev{color:var(--tm-sage);font-size:.7rem;width:12px}
+.tm-stname{font-weight:700;color:var(--tm-forest);font-size:.82rem;flex:1}
+.tm-stmi{font-size:.7rem;color:var(--subtle);font-weight:600}
+.tm-stbody{padding:6px 10px 12px}
+.tm-stscope{font-size:.7rem;color:var(--tm-pine);font-weight:600;margin-bottom:6px}
+.tm-elev{width:100%;height:auto;display:block;background:#fbfcfb;border:1px solid var(--border);border-radius:8px}
+.tm-elev-fill{fill:var(--tm-mist);opacity:.7}
+.tm-elev-line{fill:none;stroke:var(--tm-pine);stroke-width:2}
+.tm-elev-meta{display:flex;justify-content:space-between;font-size:.68rem;color:var(--subtle);margin-top:5px}
 .tm-tag.soon{background:#eef0ef;color:#6b7b6b;border:1px solid var(--border);cursor:pointer}
 .tm-mapwrap{position:relative;background:#f2f5f1}
 .tm-svg{display:block;width:100%;height:auto}
@@ -550,8 +580,13 @@ const TM_DATA = {
     {c:'MT',n:'Montana',mi:595,e:'\u26F0',d:'Glacier finish \u2014 the Bob, the Chinese Wall, the Canadian line.',k:['Bob Marshall','Chinese Wall','Glacier NP'],now:14,day:21}
   ]
 };
-let tmMain=null, tmTrail='AT', tmIdx=0, tmIntro=false;
+let tmMain=null, tmTrail='AT', tmIntro=false;
 const TM_NAME={AT:'Appalachian Trail',PCT:'Pacific Crest Trail',CDT:'Continental Divide Trail'};
+// Unified filter: one "segment in view" drives the count + the elevation card.
+// from/to are waypoint indices into the active trail's flattened waypoint list.
+let tmSeg={from:0,to:0,dir:'All',win:'Now'};
+let tmOpenState=null;     // which state row is expanded (accordion)
+let tmShowAll=false;      // From/To picker: major-default vs all waypoints
 
 function tmToast(msg){
   let t=document.getElementById('tm-toast');
@@ -560,20 +595,80 @@ function tmToast(msg){
   clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2600);
 }
 
+// --- Waypoints (derived). The console is self-contained + sample, so we build the
+// From/To list from each state's notable landmarks (k[]) — these ARE the major
+// waypoints (towns/passes/trailheads). Each gets a synthesized mile from its state's
+// mile band. "Major" = all of these; the "show all" toggle adds interpolated mid-points.
+// When this view is folded into the unified app, swap tmWaypoints() to read the real
+// {trail}_WAYPOINTS (mile,name,…) + blClassify, and tmElevSvg()->drawElevation().
+function tmStates(){ return TM_DATA[tmTrail]||[]; }
+function tmWaypoints(){
+  const list=tmStates(); const wp=[]; let cum=0;
+  for(const s of list){
+    const ks=(s.k&&s.k.length)?s.k:[s.n];
+    const span=s.mi/ks.length;
+    ks.forEach((name,j)=>{
+      const mile=Math.round(cum + span*(j+0.5));
+      wp.push({mile,name,state:s.c,stateName:s.n,major:true});
+      if(tmShowAll && j<ks.length-1){
+        wp.push({mile:Math.round(cum+span*(j+1)),name:'· mi '+Math.round(cum+span*(j+1)),state:s.c,stateName:s.n,major:false});
+      }
+    });
+    cum+=s.mi;
+  }
+  return wp;
+}
+function tmTotal(){ return tmStates().reduce((a,x)=>a+x.mi,0); }
+
+// Deterministic SAMPLE density by mile (until the telemetry pipeline ships).
+// Anonymous + aggregate by design. Sums hikers across a segment's mile bins.
+const TM_K=5; // k-anonymity floor: below this, suppress the number
+function tmDensityAt(mile){
+  const list=tmStates(); let cum=0;
+  for(const s of list){ if(mile>=cum && mile<cum+s.mi){ const perMi=s.now/Math.max(1,s.mi); return perMi; } cum+=s.mi; }
+  return 0;
+}
+function tmSegCount(fromMile,toMile){
+  let lo=Math.min(fromMile,toMile), hi=Math.max(fromMile,toMile), n=0;
+  for(let m=lo;m<=hi;m++) n+=tmDensityAt(m);
+  let c=Math.round(n);
+  if(tmSeg.dir!=='All') c=Math.round(c*0.5);   // NOBO/SOBO split (sample)
+  if(tmSeg.win==='24h') c=Math.round(c*1.25);  // wider window (sample)
+  return c;
+}
+
 function renderTrailMap(main){
   tmMain=main;
   let tr=(activeConsv().trail||'AT').toUpperCase(); if(!TM_DATA[tr]) tr='AT';
-  tmTrail=tr; if(tmIdx>=TM_DATA[tr].length) tmIdx=0;
+  if(tr!==tmTrail){ tmTrail=tr; tmResetSeg(); }
+  if(!tmSeg) tmResetSeg();
   tmPaint();
   if(!tmIntro){ tmIntro=true; setTimeout(()=>tmToast('Trail Map is in development \u2014 the state filter is live; hiker counts are sample data.'),420); }
 }
+function tmResetSeg(){ const wp=tmWaypoints(); tmSeg={from:0,to:Math.max(0,wp.length-1),dir:'All',win:'Now'}; tmOpenState=null; }
 
-function tmMapSvg(list, idx){
+// Inline elevation strip for a mile range — same (fromMile,toMile) contract as the
+// hiker app's drawElevation(); swap to that shared fn when unified.
+function tmElevSvg(fromMile,toMile){
+  const W=520,H=120,PAD=8; let lo=Math.min(fromMile,toMile),hi=Math.max(fromMile,toMile);
+  if(hi-lo<2) hi=lo+2;
+  const N=64, pts=[];
+  for(let i=0;i<=N;i++){ const m=lo+(hi-lo)*i/N;
+    const e=0.5+0.5*Math.sin(m*0.018)+0.18*Math.sin(m*0.07); pts.push([m,e]); }
+  const x=i=>PAD+(W-2*PAD)*i/N, y=v=>H-PAD-(H-2*PAD)*v;
+  let d='M'+x(0).toFixed(1)+','+y(pts[0][1]).toFixed(1);
+  for(let i=1;i<=N;i++) d+=' L'+x(i).toFixed(1)+','+y(pts[i][1]).toFixed(1);
+  const area=d+' L'+x(N).toFixed(1)+','+(H-PAD)+' L'+x(0).toFixed(1)+','+(H-PAD)+' Z';
+  return '<svg viewBox="0 0 '+W+' '+H+'" class="tm-elev" role="img" aria-label="Elevation profile">'
+    +'<path d="'+area+'" class="tm-elev-fill"/><path d="'+d+'" class="tm-elev-line"/></svg>';
+}
+
+function tmMapSvg(list, hiIdx){
   const W=560,H=470,top=26,bot=26,N=list.length,bh=(H-top-bot)/N,cx=W/2;
   let bands='',labels='',pts=[];
   for(let i=0;i<N;i++){
     const yB=H-bot-i*bh, yT=yB-bh;
-    if(i===idx) bands+='<rect x="0" y="'+yT.toFixed(0)+'" width="'+W+'" height="'+bh.toFixed(0)+'" class="tm-band"/>';
+    if(i===hiIdx) bands+='<rect x="0" y="'+yT.toFixed(0)+'" width="'+W+'" height="'+bh.toFixed(0)+'" class="tm-band"/>';
     bands+='<line x1="0" y1="'+yT.toFixed(0)+'" x2="'+W+'" y2="'+yT.toFixed(0)+'" stroke="#d7e0d6"/>';
     labels+='<text x="13" y="'+(yB-bh/2+4).toFixed(0)+'" font-size="11" fill="#9aa89a" font-weight="600">'+esc(list[i].n)+'</text>';
     let x=cx+(i%2?56:-52)*Math.sin(i*0.8+0.6)+(i%3-1)*16;
@@ -583,24 +678,51 @@ function tmMapSvg(list, idx){
   let d='M'+pts[0][0].toFixed(0)+','+(H-bot)+' ';
   for(let i=0;i<N;i++) d+='L'+pts[i][0].toFixed(0)+','+pts[i][1].toFixed(0)+' ';
   d+='L'+pts[N-1][0].toFixed(0)+','+top;
-  // hiker density: cluster near selected band + a few sparse elsewhere
   let dots='';
-  const sx=pts[idx][0], sy=pts[idx][1];
+  const si=(hiIdx>=0?hiIdx:0), sx=pts[si][0], sy=pts[si][1];
   for(let j=0;j<11;j++){ const a=j/11*6.2832, r=9+(j%3)*10; dots+='<circle cx="'+(sx+Math.cos(a)*r*1.5).toFixed(0)+'" cy="'+(sy+Math.sin(a)*r).toFixed(0)+'" r="'+(4+(j%2))+'" fill="#5b8fa8" opacity="'+(0.45+(j%3)*0.18).toFixed(2)+'"/>'; }
-  for(let i=0;i<N;i++){ if(i===idx) continue; dots+='<circle cx="'+(pts[i][0]+8).toFixed(0)+'" cy="'+pts[i][1].toFixed(0)+'" r="3.4" fill="#5b8fa8" opacity="0.4"/>'; }
-  const pulse='<circle cx="'+sx.toFixed(0)+'" cy="'+sy.toFixed(0)+'" r="6" fill="#5b8fa8"><animate attributeName="r" values="6;14;6" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.7;0;0.7" dur="2.4s" repeatCount="indefinite"/></circle>';
+  for(let i=0;i<N;i++){ if(i===hiIdx) continue; dots+='<circle cx="'+(pts[i][0]+8).toFixed(0)+'" cy="'+pts[i][1].toFixed(0)+'" r="3.4" fill="#5b8fa8" opacity="0.4"/>'; }
+  const pulse=hiIdx<0?'':'<circle cx="'+sx.toFixed(0)+'" cy="'+sy.toFixed(0)+'" r="6" fill="#5b8fa8"><animate attributeName="r" values="6;14;6" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.7;0;0.7" dur="2.4s" repeatCount="indefinite"/></circle>';
   return '<svg viewBox="0 0 '+W+' '+H+'" class="tm-svg" role="img" aria-label="Trail map preview"><rect width="'+W+'" height="'+H+'" fill="#eef3ec"/>'+bands+labels+'<path d="'+d+'" class="tm-line"/>'+dots+pulse+'</svg>';
 }
 
 function tmPaint(){
-  const list=TM_DATA[tmTrail], s=list[tmIdx];
-  const total=list.reduce((a,x)=>a+x.mi,0);
-  const names=list.map((x,i)=>'<span class="tm-s'+(i===tmIdx?' active':'')+'" data-i="'+i+'">'+esc(x.n)+'</span>').join('<span class="tm-sep">\u00B7</span>');
-  const chips=(s.k||[]).map(c=>'<span class="tm-chip">'+esc(c)+'</span>').join('');
-  const dots=list.map((x,i)=>'<i class="'+(i===tmIdx?'on':'')+'" data-i="'+i+'"></i>').join('');
+  const list=tmStates(), wp=tmWaypoints(), total=tmTotal();
+  if(tmSeg.from>=wp.length) tmSeg.from=0;
+  if(tmSeg.to>=wp.length) tmSeg.to=wp.length-1;
+  const fromWp=wp[tmSeg.from]||wp[0], toWp=wp[tmSeg.to]||wp[wp.length-1];
+  const fromMile=fromWp?fromWp.mile:0, toMile=toWp?toWp.mile:total;
+
+  // segment count (aggregate + k-anon)
+  const segN=tmSegCount(fromMile,toMile);
+  const segLabel=(segN<TM_K)?'<span class="tm-klt">&lt;'+TM_K+'</span>':('<b>'+segN.toLocaleString()+'</b>');
+
+  // From/To option lists
+  const opt=(sel)=>wp.map((w,i)=>'<option value="'+i+'"'+(i===sel?' selected':'')+'>'+esc(w.name)+' \u00B7 mi '+w.mile+'</option>').join('');
+
+  // State accordion rows
+  const hiIdx = tmOpenState!=null ? tmOpenState : -1;
+  const rows=list.map((s,i)=>{
+    const open=(i===tmOpenState);
+    // state mile band
+    let cum=0; for(let j=0;j<i;j++) cum+=list[j].mi; const sFrom=cum, sTo=cum+s.mi;
+    const head='<button class="tm-strow'+(open?' open':'')+'" data-si="'+i+'">'
+      +'<span class="tm-stchev">'+(open?'\u25BE':'\u25B8')+'</span>'
+      +'<span class="tm-stname">'+esc(s.n)+'</span>'
+      +'<span class="tm-stmi">'+s.mi+' mi</span></button>';
+    const body=open?('<div class="tm-stbody">'
+      +'<div class="tm-stscope">Viewing <b>'+esc(s.n)+'</b> \u00B7 mi '+sFrom+'\u2013'+sTo+' \u00B7 '+tmSeg.win+'</div>'
+      +tmElevSvg(sFrom,sTo)
+      +'<div class="tm-elev-meta"><span>'+esc((s.k&&s.k[0])||s.n)+'</span><span>Hikers here: '
+        +((tmSegCount(sFrom,sTo)<TM_K)?'&lt;'+TM_K:tmSegCount(sFrom,sTo).toLocaleString())+'</span></div></div>'):'';
+    return '<div class="tm-stitem'+(open?' open':'')+'">'+head+body+'</div>';
+  }).join('');
+
   const maxDay=Math.max.apply(null,list.map(x=>x.day));
-  const bars=list.map((x,i)=>'<div class="tm-bar'+(i===tmIdx?' me':'')+'" data-i="'+i+'"><span class="lab">'+esc(x.n)+'</span><span class="tr"><span class="fl" style="width:'+Math.round(x.day/maxDay*100)+'%"></span></span><span class="v">'+x.day+'</span></div>').join('');
+  const bars=list.map((x,i)=>'<div class="tm-bar'+(i===tmOpenState?' me':'')+'" data-i="'+i+'"><span class="lab">'+esc(x.n)+'</span><span class="tr"><span class="fl" style="width:'+Math.round(x.day/maxDay*100)+'%"></span></span><span class="v">'+x.day+'</span></div>').join('');
   const trailbtns=['AT','PCT','CDT','All'].map(t=>'<button data-t="'+t+'" class="'+(t===tmTrail?'on':'')+'">'+t+'</button>').join('');
+  const dirbtns=['All','NOBO','SOBO'].map(t=>'<button data-dir="'+t+'" class="'+(t===tmSeg.dir?'on':'')+'">'+t+'</button>').join('');
+  const winbtns=['Now','24h'].map(t=>'<button data-win="'+t+'" class="'+(t===tmSeg.win?'on':'')+'">'+t+'</button>').join('');
 
   tmMain.innerHTML =
   '<div class="tm-wrap" data-trail="'+tmTrail+'">'
@@ -610,35 +732,33 @@ function tmPaint(){
 
   + '<div class="tm-controls">'
   +   '<div class="tm-seg tm-trailsw">'+trailbtns+'</div>'
-  +   '<span class="tm-lbl">Direction</span><div class="tm-seg tm-dir"><button class="on">All</button><button>NOBO</button><button>SOBO</button></div>'
-  +   '<span class="tm-lbl">Window</span><div class="tm-seg tm-win"><button class="on">Now</button><button>24h</button></div>'
+  +   '<span class="tm-lbl">Direction</span><div class="tm-seg tm-dir">'+dirbtns+'</div>'
+  +   '<span class="tm-lbl">Window</span><div class="tm-seg tm-win">'+winbtns+'</div>'
   +   '<span class="tm-note">click-to-act disabled \u00B7 counts &amp; trends only</span></div>'
 
-  + '<div class="tm-filterhint"><span class="d"></span> Filter by state \u2014 tap a state to scope the map &amp; panels</div>'
-  + '<div class="tm-names">'+names+'</div>'
-  + '<div class="tm-hlrow"><button class="tm-arrow" data-d="-1">\u2039</button>'
-  +   '<div class="tm-card"><div class="tm-img">'+s.e+'</div><div>'
-  +     '<div class="tm-name">'+esc(s.n)+'</div>'
-  +     '<div class="tm-meta">NOBO \u00B7 '+s.mi+' miles \u00B7 '+esc(s.c)+'</div>'
-  +     '<div class="tm-desc">'+esc(s.d)+'</div><div class="tm-chips">'+chips+'</div></div></div>'
-  +   '<button class="tm-arrow" data-d="1">\u203A</button></div>'
-  + '<div class="tm-dots">'+dots+'</div>'
+  // From / To waypoint segment picker
+  + '<div class="tm-fromto">'
+  +   '<div class="tm-ft"><span class="tm-ft-lbl from">FROM</span><select class="tm-ft-sel" id="tm-from">'+opt(tmSeg.from)+'</select></div>'
+  +   '<span class="tm-ft-arrow">\u2192</span>'
+  +   '<div class="tm-ft"><span class="tm-ft-lbl to">TO</span><select class="tm-ft-sel" id="tm-to">'+opt(tmSeg.to)+'</select></div>'
+  +   '<label class="tm-ft-all"><input type="checkbox" id="tm-showall"'+(tmShowAll?' checked':'')+'> show all waypoints</label>'
+  +   '<div class="tm-segcount">Between these points: '+segLabel+' <span class="u">hikers</span> <em>(anon \u00B7 aggregate)</em></div>'
+  + '</div>'
 
-  + '<div class="tm-note2"><b>What\u2019s live today:</b> the state filter. Hiker counts are <b>sample</b> \u2014 they light up when the telemetry pipeline ships, and stay anonymous &amp; aggregate by design.</div>'
+  + '<div class="tm-note2"><b>What\u2019s live today:</b> the segment filter + state drill-down. Hiker counts are <b>sample</b> \u2014 they light up when the telemetry pipeline ships, and stay anonymous &amp; aggregate by design.</div>'
 
   + '<div class="tm-grid">'
   +   '<div class="tm-cardbox"><div class="tm-hd"><h3>'+esc(TM_NAME[tmTrail])+' \u00B7 '+total.toLocaleString()+' mi</h3><span class="tm-tag live">live map</span></div>'
-  +     '<div class="tm-mapwrap">'+tmMapSvg(list,tmIdx)
-  +       '<div class="tm-scope">Viewing <b>'+esc(s.n)+'</b> \u00B7 '+s.mi+' mi \u00B7 Now</div>'
+  +     '<div class="tm-mapwrap">'+tmMapSvg(list,hiIdx)
+  +       '<div class="tm-scope">Segment \u00B7 mi '+fromMile+'\u2013'+toMile+' \u00B7 '+tmSeg.win+'</div>'
   +       '<div class="tm-legend"><div><span class="ln"></span>Trail centerline</div><div><span class="sw blue"></span>Hiker density <em>(anon \u00B7 aggregate)</em></div></div>'
   +     '</div></div>'
   +   '<div class="tm-rail">'
-  +     '<div class="tm-cardbox tm-stat"><div class="tm-hd"><h3>Hikers \u00B7 '+esc(s.n)+'</h3><span class="tm-tag sample">sample</span></div>'
-  +       '<div class="row"><div class="big"><div class="num">'+s.now+' <span class="u">now</span></div><div class="kk">active \u00B7 last 30 min</div></div>'
-  +       '<div class="dv"></div><div class="big"><div class="num">'+s.day+' <span class="u">/24h</span></div><div class="kk">distinct \u00B7 past day</div></div></div></div>'
+  +     '<div class="tm-cardbox"><div class="tm-hd"><h3>States</h3><span class="tm-tag soon" data-soon="Elevation card uses the shared app component when unified">tap to open</span></div>'
+  +       '<div class="tm-states">'+rows+'</div></div>'
   +     '<div class="tm-cardbox"><div class="tm-hd"><h3>Hikers by state</h3><span class="tm-tag sample">sample</span></div><div class="tm-bars">'+bars+'</div></div>'
   +     '<div class="tm-cardbox"><div class="tm-hd"><h3>Active alerts</h3><span class="tm-tag soon" data-soon="Live alerts on the map \u2014 coming soon">preview</span></div>'
-  +       '<div class="tm-list"><div class="tm-item" data-soon="Live alerts on the map \u2014 coming soon"><span class="tm-badge haz">Hazard</span><div><div class="tt">Footbridge out \u2014 ford only</div><div class="mt">'+esc(s.n)+' \u00B7 sample \u00B7 6h ago</div></div></div></div></div>'
+  +       '<div class="tm-list"><div class="tm-item" data-soon="Live alerts on the map \u2014 coming soon"><span class="tm-badge haz">Hazard</span><div><div class="tt">Footbridge out \u2014 ford only</div><div class="mt">sample \u00B7 6h ago</div></div></div></div></div>'
   +   '</div>'
   + '</div></div>';
   tmAttach();
@@ -646,15 +766,30 @@ function tmPaint(){
 
 function tmAttach(){
   const q=(sel)=>Array.prototype.slice.call(tmMain.querySelectorAll(sel));
-  q('.tm-s').forEach(el=>el.onclick=()=>{ tmIdx=+el.dataset.i; tmPaint(); });
-  q('.tm-dots i').forEach(el=>el.onclick=()=>{ tmIdx=+el.dataset.i; tmPaint(); });
-  q('.tm-bar').forEach(el=>el.onclick=()=>{ tmIdx=+el.dataset.i; tmPaint(); });
-  q('.tm-arrow').forEach(el=>el.onclick=()=>{ const N=TM_DATA[tmTrail].length; tmIdx=(tmIdx+(+el.dataset.d)+N)%N; tmPaint(); });
-  q('.tm-trailsw button').forEach(el=>el.onclick=()=>{ const t=el.dataset.t; if(t==='All'){ tmToast('Combined all-trails view \u2014 coming soon'); return; } tmTrail=t; tmIdx=0; tmPaint(); });
-  q('.tm-dir button, .tm-win button').forEach(el=>el.onclick=()=>{ const sibs=el.parentNode.querySelectorAll('button'); for(const b of sibs) b.classList.remove('on'); el.classList.add('on'); });
+  const from=tmMain.querySelector('#tm-from'), to=tmMain.querySelector('#tm-to');
+  if(from) from.onchange=()=>{ tmSeg.from=+from.value; tmPaint(); };
+  if(to) to.onchange=()=>{ tmSeg.to=+to.value; tmPaint(); };
+  const sa=tmMain.querySelector('#tm-showall');
+  if(sa) sa.onchange=()=>{ tmShowAll=sa.checked; tmResetSeg(); tmPaint(); };
+  // state accordion: opening a state sets From/To to that state's endpoints
+  q('.tm-strow').forEach(el=>el.onclick=()=>{
+    const i=+el.dataset.si;
+    tmOpenState=(tmOpenState===i)?null:i;
+    if(tmOpenState!=null){
+      const wp=tmWaypoints(), sc=tmStates()[i].c;
+      let f=wp.findIndex(w=>w.state===sc), t=-1; for(let j=wp.length-1;j>=0;j--){ if(wp[j].state===sc){ t=j; break; } }
+      if(f>=0&&t>=0){ tmSeg.from=f; tmSeg.to=t; }
+    }
+    tmPaint();
+  });
+  q('.tm-bar').forEach(el=>el.onclick=()=>{ const i=+el.dataset.i; tmOpenState=(tmOpenState===i)?null:i;
+    if(tmOpenState!=null){ const wp=tmWaypoints(), sc=tmStates()[i].c; let f=wp.findIndex(w=>w.state===sc),t=-1; for(let j=wp.length-1;j>=0;j--){ if(wp[j].state===sc){t=j;break;} } if(f>=0&&t>=0){tmSeg.from=f;tmSeg.to=t;} }
+    tmPaint(); });
+  q('.tm-trailsw button').forEach(el=>el.onclick=()=>{ const t=el.dataset.t; if(t==='All'){ tmToast('Combined all-trails view \u2014 coming soon'); return; } tmTrail=t; tmResetSeg(); tmPaint(); });
+  q('.tm-dir button').forEach(el=>el.onclick=()=>{ tmSeg.dir=el.dataset.dir; tmPaint(); });
+  q('.tm-win button').forEach(el=>el.onclick=()=>{ tmSeg.win=el.dataset.win; tmPaint(); });
   q('[data-soon]').forEach(el=>el.onclick=()=>tmToast(el.dataset.soon||'Coming soon'));
 }
-
 // =====================================================================
 //  ALERTS PAGE (PROMPT 4)
 // =====================================================================
