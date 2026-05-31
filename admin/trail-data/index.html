@@ -209,6 +209,85 @@
   body[data-trail="CDT"]{ --forest:#3b2010; --pine:#6b3c1a; --sage:#b8773c; --leaf:#b8773c; --mist:#f6ede3; }
   .trail-chip{display:inline-block;background:var(--forest);color:var(--white);font-size:.62rem;font-weight:800;
     text-transform:uppercase;letter-spacing:.07em;padding:3px 9px;border-radius:7px;vertical-align:middle;margin-left:8px}
+
+/* ===== Trail Map (preview page) ===== */
+.tm-wrap{--tm-forest:#1e3a1e;--tm-pine:#2d5a27;--tm-sage:#4a7c59;--tm-leaf:#6ba368;--tm-mist:#e8f0e8}
+.tm-wrap[data-trail="PCT"]{--tm-forest:#1b2f45;--tm-pine:#1e4d72;--tm-sage:#2e6e96;--tm-leaf:#4a90b8;--tm-mist:#e6eef5}
+.tm-wrap[data-trail="CDT"]{--tm-forest:#3b2010;--tm-pine:#6b3c1a;--tm-sage:#8c5228;--tm-leaf:#b8773c;--tm-mist:#f3e9df}
+.tm-fresh{display:flex;align-items:center;gap:7px;font-size:.72rem;color:var(--subtle);background:var(--mist);border:1px solid var(--border);border-radius:20px;padding:5px 11px;white-space:nowrap}
+.tm-pulse{width:8px;height:8px;border-radius:50%;background:#3fae5a;box-shadow:0 0 0 0 rgba(63,174,90,.6);animation:tmpulse 1.8s infinite}
+@keyframes tmpulse{70%{box-shadow:0 0 0 7px rgba(63,174,90,0)}100%{box-shadow:0 0 0 0 rgba(63,174,90,0)}}
+.tm-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 16px}
+.tm-seg{display:inline-flex;background:var(--stone);border:1px solid var(--border);border-radius:9px;padding:3px;gap:2px}
+.tm-seg button{border:0;background:none;font:inherit;font-size:.78rem;font-weight:600;color:var(--subtle);padding:5px 12px;border-radius:7px;cursor:pointer}
+.tm-seg button.on{background:#fff;color:var(--tm-forest);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.tm-lbl{font-size:.66rem;letter-spacing:.05em;text-transform:uppercase;color:var(--subtle);margin-left:6px}
+.tm-note{margin-left:auto;font-size:.72rem;color:var(--subtle);font-style:italic}
+.tm-filterhint{font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;color:var(--tm-sage);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.tm-filterhint .d{width:6px;height:6px;border-radius:50%;background:var(--tm-leaf)}
+.tm-names{display:flex;gap:0 2px;align-items:center;flex-wrap:wrap;color:var(--subtle);font-size:.78rem;font-weight:600;margin-bottom:9px}
+.tm-names .tm-s{white-space:nowrap;padding:1px 5px;border-radius:6px;cursor:pointer;transition:.12s}
+.tm-names .tm-s:hover{color:var(--tm-forest);background:var(--tm-mist)}
+.tm-names .tm-s.active{color:var(--tm-pine);font-weight:800;box-shadow:inset 0 -2px 0 var(--tm-pine)}
+.tm-names .tm-sep{color:var(--tm-leaf)}
+.tm-hlrow{display:flex;align-items:center;gap:10px}
+.tm-arrow{width:30px;height:30px;flex:none;border:1px solid var(--border);background:#fff;border-radius:50%;color:var(--subtle);font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.tm-arrow:hover{border-color:var(--tm-pine);color:var(--tm-pine)}
+.tm-card{flex:1;display:grid;grid-template-columns:74px 1fr;gap:13px;align-items:start;background:var(--stone);border:1px solid var(--border);border-radius:10px;padding:11px 13px;min-height:128px}
+.tm-img{width:74px;height:74px;border-radius:8px;background:var(--tm-mist);display:flex;align-items:center;justify-content:center;font-size:30px}
+.tm-name{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;color:var(--tm-forest);line-height:1.05}
+.tm-meta{font-size:.72rem;color:var(--tm-pine);font-weight:700;margin-top:2px}
+.tm-desc{font-size:.74rem;color:var(--subtle);margin-top:5px;line-height:1.4}
+.tm-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.tm-chip{background:var(--tm-mist);border:1px solid var(--border);border-radius:12px;padding:2px 9px;font-size:.66rem;color:var(--tm-pine);white-space:nowrap}
+.tm-chip::before{content:'📍 ';font-size:.6rem}
+.tm-dots{display:flex;gap:5px;justify-content:center;padding:9px 0 4px}
+.tm-dots i{width:6px;height:6px;border-radius:50%;background:var(--border);cursor:pointer}
+.tm-dots i.on{background:var(--tm-pine)}
+.tm-note2{background:#fdf6ea;border:1px solid #f0dcb4;color:#7c5a18;border-radius:10px;padding:9px 13px;font-size:.74rem;margin:8px 0 16px}
+.tm-grid{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+.tm-cardbox{background:#fbfcfb;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.tm-hd{padding:10px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.tm-hd h3{font-family:'Playfair Display',serif;font-size:.95rem;color:var(--tm-forest);font-weight:700}
+.tm-tag{margin-left:auto;font-size:.6rem;letter-spacing:.05em;text-transform:uppercase;font-weight:700;padding:3px 8px;border-radius:20px}
+.tm-tag.live{background:#e6f3ea;color:#2c7a43;border:1px solid #bfe0c9}
+.tm-tag.sample{background:#fdf3e3;color:#9a6a1c;border:1px solid #f0dcb4}
+.tm-tag.soon{background:#eef0ef;color:#6b7b6b;border:1px solid var(--border);cursor:pointer}
+.tm-mapwrap{position:relative;background:#f2f5f1}
+.tm-svg{display:block;width:100%;height:auto}
+.tm-band{fill:var(--tm-leaf);opacity:.16}
+.tm-line{fill:none;stroke:#b5451b;stroke-width:3.2;stroke-linecap:round;opacity:.9}
+.tm-scope{position:absolute;right:10px;top:10px;background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:9px;padding:6px 10px;font-size:.72rem}
+.tm-scope b{color:var(--tm-forest)}
+.tm-legend{position:absolute;left:10px;bottom:10px;background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:9px;padding:8px 10px;font-size:.7rem;line-height:1.7}
+.tm-legend .ln{display:inline-block;width:16px;height:3px;border-radius:2px;background:#b5451b;vertical-align:middle;margin-right:6px}
+.tm-legend .sw{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:6px}
+.tm-legend .sw.blue{background:#5b8fa8}
+.tm-legend em{color:#9aa89a;font-style:normal}
+.tm-rail{display:flex;flex-direction:column;gap:14px}
+.tm-stat .row{display:flex;gap:12px;padding:12px 13px}
+.tm-stat .big{flex:1}.tm-stat .dv{width:1px;background:var(--border)}
+.tm-stat .num{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--tm-forest);line-height:1}
+.tm-stat .num .u{font-size:12px;color:var(--subtle);font-weight:600;font-family:inherit}
+.tm-stat .kk{font-size:.62rem;letter-spacing:.04em;text-transform:uppercase;color:var(--subtle);margin-top:4px}
+.tm-bars{padding:10px 13px;display:flex;flex-direction:column;gap:8px}
+.tm-bar{display:grid;grid-template-columns:64px 1fr 28px;align-items:center;gap:9px;font-size:.74rem;cursor:pointer}
+.tm-bar .lab{font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tm-bar .tr{height:8px;background:var(--tm-mist);border-radius:6px;overflow:hidden}
+.tm-bar .fl{height:100%;background:linear-gradient(90deg,var(--tm-leaf),var(--tm-pine));border-radius:6px}
+.tm-bar .v{color:var(--subtle);text-align:right}
+.tm-bar.me .fl{background:linear-gradient(90deg,#c8a84b,#d98a2b)}
+.tm-bar:hover .lab{color:var(--tm-pine)}
+.tm-list{padding:4px 13px 10px}
+.tm-item{display:flex;gap:9px;padding:8px 0;cursor:pointer}
+.tm-badge{flex:none;font-size:.58rem;font-weight:800;letter-spacing:.04em;padding:3px 7px;border-radius:5px;height:fit-content;text-transform:uppercase}
+.tm-badge.haz{background:#fde7e1;color:#b5451b}
+.tm-item .tt{font-size:.76rem;font-weight:600;color:var(--text);line-height:1.25}
+.tm-item .mt{font-size:.66rem;color:var(--subtle);margin-top:2px}
+@media(max-width:860px){.tm-grid{grid-template-columns:1fr}}
+/* toast */
+.tm-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(8px);background:#2a2a2a;color:#fff;padding:10px 16px;border-radius:10px;font-size:.82rem;box-shadow:0 6px 24px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:.25s;z-index:99999;max-width:90vw;text-align:center}
+.tm-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
@@ -259,6 +338,7 @@
       <button class="navlink" data-page="baseline">Baseline</button>
       <button class="navlink" data-page="revisions">Revisions</button>
       <button class="navlink hidden" id="nav-editors" data-page="editors">Editors</button>
+      <button class="navlink" data-page="map">Trail Map</button>
       <div class="nav-sep"></div>
       <a class="nav-guide" id="nav-console-guide" href="https://triplecrowntrekplanner.com/console-guide-at.pdf" target="_blank" rel="noopener" title="How to operate this console">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Console Guide</a>
@@ -429,7 +509,150 @@ function go(page){
   if (page==='alerts'){ renderAlerts(main); return; }
   if (page==='baseline'){ renderBaseline(main); return; }
   if (page==='revisions'){ renderRevisions(main); return; }
+  if (page==='map'){ renderTrailMap(main); return; }
   main.innerHTML = `<h2>${esc(page)}</h2><div class="page-sub">Unknown page.</div>`;
+}
+
+
+// =====================================================================
+//  TRAIL MAP (preview page) — state filter is LIVE; counts are sample.
+//  Self-contained: no Supabase calls. Trail switcher + state filter work;
+//  non-ready affordances fire a "coming soon" toast.
+// =====================================================================
+const TM_DATA = {
+  AT:[
+    {c:'GA',n:'Georgia',mi:78,e:'\uD83C\uDF32',d:'Steep Southern start — Springer Mtn to the North Carolina line.',k:['Springer Mtn','Neels Gap','Blood Mountain'],now:31,day:34},
+    {c:'NC',n:'North Carolina',mi:96,e:'\u26F0',d:'Nantahalas and the Smokies high country, shared with Tennessee.',k:['Standing Indian','Nantahala','Fontana Dam'],now:28,day:30},
+    {c:'TN',n:'Tennessee',mi:88,e:'\uD83C\uDFB8',d:'Roan Highlands balds and the Great Smoky Mountains ridge.',k:['Roan Highlands','Hot Springs','Max Patch'],now:26,day:29},
+    {c:'VA',n:'Virginia',mi:550,e:'\uD83E\uDD8C',d:'A quarter of the trail — Grayson Highlands to the Shenandoahs.',k:['Grayson Highlands','Shenandoah NP','McAfee Knob'],now:88,day:96},
+    {c:'MD',n:'Maryland',mi:41,e:'\u2693',d:'Short ridgeline walk along the Mason\u2013Dixon line.',k:['Mason Dixon Line','Maryland / Pennsylvania Border','Penn Mar Park'],now:12,day:13},
+    {c:'PA',n:'Pennsylvania',mi:229,e:'\uD83D\uDDFF',d:'Rocky underfoot \u2014 affectionately "Rocksylvania."',k:['Boiling Springs','Lehigh Gap','Delaware Water Gap'],now:41,day:45},
+    {c:'NJ',n:'New Jersey',mi:72,e:'\uD83C\uDF05',d:'Glacial lakes and the Sunrise Mountain ridge.',k:['High Point','Sunrise Mtn','Delaware Water Gap'],now:14,day:16},
+    {c:'NY',n:'New York',mi:90,e:'\uD83D\uDDFD',d:'Low miles, big rocks, and the Bear Mountain zoo.',k:['Bear Mountain','Harriman','RPH Shelter'],now:17,day:19},
+    {c:'CT',n:'Connecticut',mi:52,e:'\uD83C\uDF42',d:'River walking along the Housatonic.',k:['Housatonic River','Falls Village','Salisbury'],now:11,day:12},
+    {c:'MA',n:'Massachusetts',mi:90,e:'\uD83C\uDF93',d:'The Berkshires \u2014 Mt Greylock is the high point.',k:['Mt Greylock','Upper Goose Pond','Dalton'],now:15,day:16},
+    {c:'VT',n:'Vermont',mi:150,e:'\uD83C\uDF41',d:'The Long Trail joins \u2014 green, muddy, beautiful.',k:['Stratton Mtn','Killington','Long Trail jct'],now:22,day:25},
+    {c:'NH',n:'New Hampshire',mi:161,e:'\uD83C\uDFD4',d:'The Whites \u2014 Presidentials, huts, miles above treeline.',k:['Mt Washington','Franconia Ridge','Pinkham Notch'],now:33,day:37},
+    {c:'ME',n:'Maine',mi:281,e:'\uD83E\uDD8C',d:'282 miles; very rugged, Mt. Katahdin (5,268 ft) and Mahoosuc Notch (hardest mile)',k:['Approach Trail','Baxter State Park and Katahdin','Rainbow Ledges','Whitecap Mountain','Wilderness','Monson, Maine'],now:18,day:64}
+  ],
+  PCT:[
+    {c:'CA',n:'Southern California',mi:702,e:'\uD83C\uDF35',d:'Desert and the San Jacintos, north from the Campo border.',k:['Campo Border','San Jacinto','Big Bear'],now:40,day:55},
+    {c:'CA',n:'Sierra Nevada',mi:508,e:'\uD83C\uDFD4',d:'The High Sierra \u2014 Whitney, Forester, the great passes.',k:['Kennedy Meadows','Mt Whitney','Forester Pass'],now:60,day:90},
+    {c:'CA',n:'Northern California',mi:558,e:'\uD83C\uDF32',d:'Lassen, Hat Creek Rim, into the Trinity Alps.',k:['Lake Tahoe','Lassen','Burney Falls'],now:35,day:48},
+    {c:'OR',n:'Oregon',mi:455,e:'\uD83C\uDF32',d:'Volcanoes and lava \u2014 Crater Lake to the Bridge of the Gods.',k:['Crater Lake','Three Sisters','Timberline'],now:30,day:42},
+    {c:'WA',n:'Washington',mi:506,e:'\uD83C\uDFD4',d:'The Cascades \u2014 Goat Rocks to Manning Park, Canada.',k:['Goat Rocks','Glacier Peak','Manning Park'],now:28,day:39}
+  ],
+  CDT:[
+    {c:'NM',n:'New Mexico',mi:785,e:'\uD83C\uDF35',d:'Bootheel desert, the Gila, up into the San Juans.',k:['Crazy Cook','Gila River','Ghost Ranch'],now:22,day:31},
+    {c:'CO',n:'Colorado',mi:800,e:'\u26F0',d:'The high San Juans and the Collegiate peaks.',k:['Spring Creek Pass','Creede','Grays Peak'],now:30,day:44},
+    {c:'WY',n:'Wyoming',mi:550,e:'\uD83C\uDF32',d:'The Great Divide Basin and the Wind River Range.',k:['Great Divide Basin','Wind River Range','South Pass'],now:18,day:26},
+    {c:'ID',n:'Idaho',mi:250,e:'\uD83C\uDF32',d:'The Idaho\u2013Montana border ridge.',k:['Leadore','Lemhi Pass','Chief Joseph'],now:12,day:17},
+    {c:'MT',n:'Montana',mi:595,e:'\u26F0',d:'Glacier finish \u2014 the Bob, the Chinese Wall, the Canadian line.',k:['Bob Marshall','Chinese Wall','Glacier NP'],now:14,day:21}
+  ]
+};
+let tmMain=null, tmTrail='AT', tmIdx=0, tmIntro=false;
+const TM_NAME={AT:'Appalachian Trail',PCT:'Pacific Crest Trail',CDT:'Continental Divide Trail'};
+
+function tmToast(msg){
+  let t=document.getElementById('tm-toast');
+  if(!t){ t=document.createElement('div'); t.id='tm-toast'; t.className='tm-toast'; document.body.appendChild(t); }
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+function renderTrailMap(main){
+  tmMain=main;
+  let tr=(activeConsv().trail||'AT').toUpperCase(); if(!TM_DATA[tr]) tr='AT';
+  tmTrail=tr; if(tmIdx>=TM_DATA[tr].length) tmIdx=0;
+  tmPaint();
+  if(!tmIntro){ tmIntro=true; setTimeout(()=>tmToast('Trail Map is in development \u2014 the state filter is live; hiker counts are sample data.'),420); }
+}
+
+function tmMapSvg(list, idx){
+  const W=560,H=470,top=26,bot=26,N=list.length,bh=(H-top-bot)/N,cx=W/2;
+  let bands='',labels='',pts=[];
+  for(let i=0;i<N;i++){
+    const yB=H-bot-i*bh, yT=yB-bh;
+    if(i===idx) bands+='<rect x="0" y="'+yT.toFixed(0)+'" width="'+W+'" height="'+bh.toFixed(0)+'" class="tm-band"/>';
+    bands+='<line x1="0" y1="'+yT.toFixed(0)+'" x2="'+W+'" y2="'+yT.toFixed(0)+'" stroke="#d7e0d6"/>';
+    labels+='<text x="13" y="'+(yB-bh/2+4).toFixed(0)+'" font-size="11" fill="#9aa89a" font-weight="600">'+esc(list[i].n)+'</text>';
+    let x=cx+(i%2?56:-52)*Math.sin(i*0.8+0.6)+(i%3-1)*16;
+    x=Math.max(150,Math.min(W-70,x));
+    pts.push([x, H-bot-(i+0.5)*bh]);
+  }
+  let d='M'+pts[0][0].toFixed(0)+','+(H-bot)+' ';
+  for(let i=0;i<N;i++) d+='L'+pts[i][0].toFixed(0)+','+pts[i][1].toFixed(0)+' ';
+  d+='L'+pts[N-1][0].toFixed(0)+','+top;
+  // hiker density: cluster near selected band + a few sparse elsewhere
+  let dots='';
+  const sx=pts[idx][0], sy=pts[idx][1];
+  for(let j=0;j<11;j++){ const a=j/11*6.2832, r=9+(j%3)*10; dots+='<circle cx="'+(sx+Math.cos(a)*r*1.5).toFixed(0)+'" cy="'+(sy+Math.sin(a)*r).toFixed(0)+'" r="'+(4+(j%2))+'" fill="#5b8fa8" opacity="'+(0.45+(j%3)*0.18).toFixed(2)+'"/>'; }
+  for(let i=0;i<N;i++){ if(i===idx) continue; dots+='<circle cx="'+(pts[i][0]+8).toFixed(0)+'" cy="'+pts[i][1].toFixed(0)+'" r="3.4" fill="#5b8fa8" opacity="0.4"/>'; }
+  const pulse='<circle cx="'+sx.toFixed(0)+'" cy="'+sy.toFixed(0)+'" r="6" fill="#5b8fa8"><animate attributeName="r" values="6;14;6" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.7;0;0.7" dur="2.4s" repeatCount="indefinite"/></circle>';
+  return '<svg viewBox="0 0 '+W+' '+H+'" class="tm-svg" role="img" aria-label="Trail map preview"><rect width="'+W+'" height="'+H+'" fill="#eef3ec"/>'+bands+labels+'<path d="'+d+'" class="tm-line"/>'+dots+pulse+'</svg>';
+}
+
+function tmPaint(){
+  const list=TM_DATA[tmTrail], s=list[tmIdx];
+  const total=list.reduce((a,x)=>a+x.mi,0);
+  const names=list.map((x,i)=>'<span class="tm-s'+(i===tmIdx?' active':'')+'" data-i="'+i+'">'+esc(x.n)+'</span>').join('<span class="tm-sep">\u00B7</span>');
+  const chips=(s.k||[]).map(c=>'<span class="tm-chip">'+esc(c)+'</span>').join('');
+  const dots=list.map((x,i)=>'<i class="'+(i===tmIdx?'on':'')+'" data-i="'+i+'"></i>').join('');
+  const maxDay=Math.max.apply(null,list.map(x=>x.day));
+  const bars=list.map((x,i)=>'<div class="tm-bar'+(i===tmIdx?' me':'')+'" data-i="'+i+'"><span class="lab">'+esc(x.n)+'</span><span class="tr"><span class="fl" style="width:'+Math.round(x.day/maxDay*100)+'%"></span></span><span class="v">'+x.day+'</span></div>').join('');
+  const trailbtns=['AT','PCT','CDT','All'].map(t=>'<button data-t="'+t+'" class="'+(t===tmTrail?'on':'')+'">'+t+'</button>').join('');
+
+  tmMain.innerHTML =
+  '<div class="tm-wrap" data-trail="'+tmTrail+'">'
+  + '<div class="page-head"><div class="grow"><h2>Trail Map</h2>'
+  +   '<div class="page-sub">A pane of glass on the trail \u2014 situational view, not actionable.</div></div>'
+  +   '<div class="tm-fresh"><span class="tm-pulse"></span> near real-time \u00B7 updated 14s ago</div></div>'
+
+  + '<div class="tm-controls">'
+  +   '<div class="tm-seg tm-trailsw">'+trailbtns+'</div>'
+  +   '<span class="tm-lbl">Direction</span><div class="tm-seg tm-dir"><button class="on">All</button><button>NOBO</button><button>SOBO</button></div>'
+  +   '<span class="tm-lbl">Window</span><div class="tm-seg tm-win"><button class="on">Now</button><button>24h</button></div>'
+  +   '<span class="tm-note">click-to-act disabled \u00B7 counts &amp; trends only</span></div>'
+
+  + '<div class="tm-filterhint"><span class="d"></span> Filter by state \u2014 tap a state to scope the map &amp; panels</div>'
+  + '<div class="tm-names">'+names+'</div>'
+  + '<div class="tm-hlrow"><button class="tm-arrow" data-d="-1">\u2039</button>'
+  +   '<div class="tm-card"><div class="tm-img">'+s.e+'</div><div>'
+  +     '<div class="tm-name">'+esc(s.n)+'</div>'
+  +     '<div class="tm-meta">NOBO \u00B7 '+s.mi+' miles \u00B7 '+esc(s.c)+'</div>'
+  +     '<div class="tm-desc">'+esc(s.d)+'</div><div class="tm-chips">'+chips+'</div></div></div>'
+  +   '<button class="tm-arrow" data-d="1">\u203A</button></div>'
+  + '<div class="tm-dots">'+dots+'</div>'
+
+  + '<div class="tm-note2"><b>What\u2019s live today:</b> the state filter. Hiker counts are <b>sample</b> \u2014 they light up when the telemetry pipeline ships, and stay anonymous &amp; aggregate by design.</div>'
+
+  + '<div class="tm-grid">'
+  +   '<div class="tm-cardbox"><div class="tm-hd"><h3>'+esc(TM_NAME[tmTrail])+' \u00B7 '+total.toLocaleString()+' mi</h3><span class="tm-tag live">live map</span></div>'
+  +     '<div class="tm-mapwrap">'+tmMapSvg(list,tmIdx)
+  +       '<div class="tm-scope">Viewing <b>'+esc(s.n)+'</b> \u00B7 '+s.mi+' mi \u00B7 Now</div>'
+  +       '<div class="tm-legend"><div><span class="ln"></span>Trail centerline</div><div><span class="sw blue"></span>Hiker density <em>(anon \u00B7 aggregate)</em></div></div>'
+  +     '</div></div>'
+  +   '<div class="tm-rail">'
+  +     '<div class="tm-cardbox tm-stat"><div class="tm-hd"><h3>Hikers \u00B7 '+esc(s.n)+'</h3><span class="tm-tag sample">sample</span></div>'
+  +       '<div class="row"><div class="big"><div class="num">'+s.now+' <span class="u">now</span></div><div class="kk">active \u00B7 last 30 min</div></div>'
+  +       '<div class="dv"></div><div class="big"><div class="num">'+s.day+' <span class="u">/24h</span></div><div class="kk">distinct \u00B7 past day</div></div></div></div>'
+  +     '<div class="tm-cardbox"><div class="tm-hd"><h3>Hikers by state</h3><span class="tm-tag sample">sample</span></div><div class="tm-bars">'+bars+'</div></div>'
+  +     '<div class="tm-cardbox"><div class="tm-hd"><h3>Active alerts</h3><span class="tm-tag soon" data-soon="Live alerts on the map \u2014 coming soon">preview</span></div>'
+  +       '<div class="tm-list"><div class="tm-item" data-soon="Live alerts on the map \u2014 coming soon"><span class="tm-badge haz">Hazard</span><div><div class="tt">Footbridge out \u2014 ford only</div><div class="mt">'+esc(s.n)+' \u00B7 sample \u00B7 6h ago</div></div></div></div></div>'
+  +   '</div>'
+  + '</div></div>';
+  tmAttach();
+}
+
+function tmAttach(){
+  const q=(sel)=>Array.prototype.slice.call(tmMain.querySelectorAll(sel));
+  q('.tm-s').forEach(el=>el.onclick=()=>{ tmIdx=+el.dataset.i; tmPaint(); });
+  q('.tm-dots i').forEach(el=>el.onclick=()=>{ tmIdx=+el.dataset.i; tmPaint(); });
+  q('.tm-bar').forEach(el=>el.onclick=()=>{ tmIdx=+el.dataset.i; tmPaint(); });
+  q('.tm-arrow').forEach(el=>el.onclick=()=>{ const N=TM_DATA[tmTrail].length; tmIdx=(tmIdx+(+el.dataset.d)+N)%N; tmPaint(); });
+  q('.tm-trailsw button').forEach(el=>el.onclick=()=>{ const t=el.dataset.t; if(t==='All'){ tmToast('Combined all-trails view \u2014 coming soon'); return; } tmTrail=t; tmIdx=0; tmPaint(); });
+  q('.tm-dir button, .tm-win button').forEach(el=>el.onclick=()=>{ const sibs=el.parentNode.querySelectorAll('button'); for(const b of sibs) b.classList.remove('on'); el.classList.add('on'); });
+  q('[data-soon]').forEach(el=>el.onclick=()=>tmToast(el.dataset.soon||'Coming soon'));
 }
 
 // =====================================================================
