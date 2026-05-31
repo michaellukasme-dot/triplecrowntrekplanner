@@ -262,21 +262,24 @@
 .tm-segcount .tm-klt{font-weight:800;color:var(--subtle)}
 /* (retired: .tm-states / .tm-st* accordion + .tm-elev* strip — the map is the accordion now, Farrah is the elevation card) */
 .tm-tag.soon{background:#eef0ef;color:#6b7b6b;border:1px solid var(--border);cursor:pointer}
-.tm-mapwrap{position:relative;background:#f2f5f1}
-.tm-svg{display:block;width:100%;height:auto}
 .tm-band{fill:var(--tm-leaf);opacity:.16}
 .tm-line{fill:none;stroke:#b5451b;stroke-width:3.2;stroke-linecap:round;opacity:.9}
-.tm-scope{position:absolute;right:10px;top:10px;background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:9px;padding:6px 10px;font-size:.72rem}
-.tm-scope b{color:var(--tm-forest)}
-.tm-legend{position:absolute;left:10px;bottom:10px;background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:9px;padding:8px 10px;font-size:.7rem;line-height:1.7}
-.tm-legend .ln{display:inline-block;width:16px;height:3px;border-radius:2px;background:#b5451b;vertical-align:middle;margin-right:6px}
-.tm-legend .sw{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:6px}
-.tm-legend .sw.blue{background:#5b8fa8}
-.tm-legend em{color:#9aa89a;font-style:normal}
 .tm-maphint{margin-left:auto;font-size:.66rem;color:var(--subtle);font-style:italic}
-/* clickable map bands — "the curtain" */
-.tm-hit{fill:transparent;cursor:pointer}
-.tm-hit:hover{fill:var(--tm-leaf);opacity:.12}
+/* the map IS the accordion — one row per state; the card drops in beneath the tapped row */
+.tm-scopebar{padding:7px 13px;border-bottom:1px solid var(--border);font-size:.72rem;color:var(--tm-pine);font-weight:600;background:#f2f5f1}
+.tm-rows{position:relative}
+.tm-row{position:relative;display:block;width:100%;height:46px;border:0;border-bottom:1px solid #d7e0d6;background:#eef3ec;cursor:pointer;text-align:left;padding:0;font:inherit;overflow:hidden}
+.tm-row:hover{background:#e6efe4}
+.tm-row.open{background:var(--tm-mist);border-bottom:0}
+.tm-rowsvg{position:absolute;inset:0;width:100%;height:100%}
+.tm-rowname{position:relative;z-index:1;display:inline-block;padding-left:15px;line-height:46px;font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:#8a988a}
+.tm-row.open .tm-rowname,.tm-row:hover .tm-rowname{color:var(--tm-forest)}
+.tm-rowmi{position:relative;z-index:1;float:right;line-height:46px;padding-right:15px;font-size:.72rem;color:var(--subtle);font-weight:600}
+.tm-legend2{display:flex;gap:18px;padding:9px 13px;font-size:.7rem;color:var(--subtle)}
+.tm-legend2 .ln{display:inline-block;width:16px;height:3px;border-radius:2px;background:#b5451b;vertical-align:middle;margin-right:6px}
+.tm-legend2 .sw{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:6px}
+.tm-legend2 .sw.blue{background:#5b8fa8}
+.tm-legend2 em{color:#9aa89a;font-style:italic}
 /* Farrah — the elevation card slot (drops in below the map). Profile + axes only;
    the hiker app's personal GPS / "You" marker are intentionally omitted (aggregate view). */
 .tm-stage .tm-farrah{border-top:1px solid var(--border);animation:tmDrop .22s ease}
@@ -732,29 +735,30 @@ function tmFarrah(s,sFrom,sTo){
     +panel+'</div>';
 }
 
-function tmMapSvg(list, hiIdx){
-  const W=560,H=470,top=26,bot=26,N=list.length,bh=(H-top-bot)/N,cx=W/2;
-  let bands='',labels='',hits='',pts=[];
-  for(let i=0;i<N;i++){
-    const yB=H-bot-i*bh, yT=yB-bh;
-    if(i===hiIdx) bands+='<rect x="0" y="'+yT.toFixed(0)+'" width="'+W+'" height="'+bh.toFixed(0)+'" class="tm-band"/>';
-    bands+='<line x1="0" y1="'+yT.toFixed(0)+'" x2="'+W+'" y2="'+yT.toFixed(0)+'" stroke="#d7e0d6"/>';
-    labels+='<text x="13" y="'+(yB-bh/2+4).toFixed(0)+'" font-size="11" fill="#9aa89a" font-weight="600">'+esc(list[i].n)+'</text>';
-    // transparent click target for this band (rendered last so it sits on top)
-    hits+='<rect x="0" y="'+yT.toFixed(0)+'" width="'+W+'" height="'+bh.toFixed(0)+'" class="tm-hit" data-si="'+i+'"><title>'+esc(list[i].n)+'</title></rect>';
-    let x=cx+(i%2?56:-52)*Math.sin(i*0.8+0.6)+(i%3-1)*16;
-    x=Math.max(150,Math.min(W-70,x));
-    pts.push([x, H-bot-(i+0.5)*bh]);
+// The map IS the accordion: one row per state, with the winding centerline drawn
+// per-row (segments meet at row edges so it reads continuous). The open state's card
+// (Farrah) is inserted immediately BENEATH its row, so it appears at the selection.
+function tmMapRows(list, openIdx, farrahHtml){
+  const W=560, RH=46, cx=W/2, N=list.length;
+  const nx=[]; for(let i=0;i<N;i++){ let x=cx+(i%2?56:-52)*Math.sin(i*0.8+0.6)+(i%3-1)*16; nx.push(Math.max(150,Math.min(W-70,x))); }
+  const jit=v=>{ const s=Math.sin(v*51.17)*4711.13; return s-Math.floor(s); };
+  let html='';
+  for(let i=N-1;i>=0;i--){            // first state (e.g. Georgia) at the bottom, like the old map
+    const s=list[i], open=(i===openIdx);
+    const topX=(i===N-1)?nx[i]:(nx[i]+nx[i+1])/2, botX=(i===0)?nx[i]:(nx[i]+nx[i-1])/2;
+    const path='M'+topX.toFixed(0)+',0 L'+nx[i].toFixed(0)+','+(RH/2)+' L'+botX.toFixed(0)+','+RH;
+    let dots=''; const dn=Math.max(2,Math.min(7,Math.round(s.now/7)));
+    for(let k=0;k<dn;k++){ const a=jit(i*9+k*2)*6.2832, r=7+jit(i*5+k)*15;
+      dots+='<circle cx="'+(nx[i]+Math.cos(a)*r).toFixed(0)+'" cy="'+(RH/2+Math.sin(a)*r*0.42).toFixed(0)+'" r="'+(2.4+(k%2)).toFixed(1)+'" fill="#5b8fa8" opacity="'+(0.28+(k%3)*0.13).toFixed(2)+'"/>'; }
+    const pulse=open?'<circle cx="'+nx[i].toFixed(0)+'" cy="'+(RH/2)+'" r="5" fill="#5b8fa8"><animate attributeName="r" values="5;12;5" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.7;0;0.7" dur="2.4s" repeatCount="indefinite"/></circle>':'';
+    html+='<button class="tm-row'+(open?' open':'')+'" data-si="'+i+'" aria-expanded="'+(open?'true':'false')+'">'
+      +'<svg class="tm-rowsvg" viewBox="0 0 '+W+' '+RH+'" preserveAspectRatio="none" aria-hidden="true">'
+      +(open?'<rect width="'+W+'" height="'+RH+'" class="tm-band"/>':'')
+      +'<path d="'+path+'" class="tm-line" vector-effect="non-scaling-stroke"/>'+dots+pulse+'</svg>'
+      +'<span class="tm-rowname">'+esc(s.n)+'</span><span class="tm-rowmi">'+s.mi+' mi</span></button>';
+    if(open && farrahHtml) html+=farrahHtml;
   }
-  let d='M'+pts[0][0].toFixed(0)+','+(H-bot)+' ';
-  for(let i=0;i<N;i++) d+='L'+pts[i][0].toFixed(0)+','+pts[i][1].toFixed(0)+' ';
-  d+='L'+pts[N-1][0].toFixed(0)+','+top;
-  let dots='';
-  const si=(hiIdx>=0?hiIdx:0), sx=pts[si][0], sy=pts[si][1];
-  for(let j=0;j<11;j++){ const a=j/11*6.2832, r=9+(j%3)*10; dots+='<circle cx="'+(sx+Math.cos(a)*r*1.5).toFixed(0)+'" cy="'+(sy+Math.sin(a)*r).toFixed(0)+'" r="'+(4+(j%2))+'" fill="#5b8fa8" opacity="'+(0.45+(j%3)*0.18).toFixed(2)+'"/>'; }
-  for(let i=0;i<N;i++){ if(i===hiIdx) continue; dots+='<circle cx="'+(pts[i][0]+8).toFixed(0)+'" cy="'+pts[i][1].toFixed(0)+'" r="3.4" fill="#5b8fa8" opacity="0.4"/>'; }
-  const pulse=hiIdx<0?'':'<circle cx="'+sx.toFixed(0)+'" cy="'+sy.toFixed(0)+'" r="6" fill="#5b8fa8"><animate attributeName="r" values="6;14;6" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.7;0;0.7" dur="2.4s" repeatCount="indefinite"/></circle>';
-  return '<svg viewBox="0 0 '+W+' '+H+'" class="tm-svg" role="img" aria-label="Trail map preview"><rect width="'+W+'" height="'+H+'" fill="#eef3ec"/>'+bands+labels+'<path d="'+d+'" class="tm-line"/>'+dots+pulse+hits+'</svg>';
+  return html;
 }
 
 function tmPaint(){
@@ -811,10 +815,10 @@ function tmPaint(){
 
   + '<div class="tm-grid">'
   +   '<div class="tm-cardbox tm-stage"><div class="tm-hd"><h3>'+esc(TM_NAME[tmTrail])+' \u00B7 '+total.toLocaleString()+' mi</h3><span class="tm-maphint">tap a state for its elevation card</span><span class="tm-tag sample">sample density</span></div>'
-  +     '<div class="tm-mapwrap">'+tmMapSvg(list,hiIdx)
-  +       '<div class="tm-scope">Segment \u00B7 mi '+fromMile+'\u2013'+toMile+' \u00B7 '+tmSeg.win+'</div>'
-  +       '<div class="tm-legend"><div><span class="ln"></span>Trail centerline</div><div><span class="sw blue"></span>Hiker density <em>(anon \u00B7 aggregate)</em></div></div>'
-  +     '</div>'+farrah+'</div>'
+  +     '<div class="tm-scopebar">Segment \u00B7 mi '+fromMile+'\u2013'+toMile+' \u00B7 '+tmSeg.win+'</div>'
+  +     '<div class="tm-rows">'+tmMapRows(list,hiIdx,farrah)+'</div>'
+  +     '<div class="tm-legend2"><span><span class="ln"></span>Trail centerline</span><span><span class="sw blue"></span>Hiker density <em>(anon \u00B7 aggregate)</em></span></div>'
+  +   '</div>'
   +   '<div class="tm-rail">'
   +     '<div class="tm-cardbox"><div class="tm-hd"><h3>Hikers by state</h3><span class="tm-tag sample">sample</span></div><div class="tm-bars">'+bars+'</div></div>'
   +     '<div class="tm-cardbox"><div class="tm-hd"><h3>Active alerts</h3><span class="tm-tag soon" data-soon="Live alerts on the map \u2014 coming soon">preview</span></div>'
@@ -831,8 +835,8 @@ function tmAttach(){
   if(to) to.onchange=()=>{ tmSeg.to=+to.value; tmPaint(); };
   const sa=tmMain.querySelector('#tm-showall');
   if(sa) sa.onchange=()=>{ tmShowAll=sa.checked; tmResetSeg(); tmPaint(); };
-  // the curtain: clicking a state band on the map opens its elevation card + syncs From/To
-  q('.tm-hit').forEach(el=>el.onclick=()=>{
+  // the curtain: clicking a state row opens its elevation card beneath it + syncs From/To
+  q('.tm-row').forEach(el=>el.onclick=()=>{
     const i=+el.dataset.si;
     tmOpenState=(tmOpenState===i)?null:i;
     if(tmOpenState!=null){
