@@ -260,22 +260,7 @@
 .tm-segcount .u{font-size:.7rem;color:var(--subtle)}
 .tm-segcount em{font-size:.66rem;color:var(--subtle);font-style:italic}
 .tm-segcount .tm-klt{font-weight:800;color:var(--subtle)}
-/* State accordion */
-.tm-states{padding:4px}
-.tm-stitem{border-bottom:1px solid var(--border)}
-.tm-stitem:last-child{border-bottom:0}
-.tm-strow{width:100%;display:flex;align-items:center;gap:9px;background:none;border:0;font:inherit;padding:9px 8px;cursor:pointer;text-align:left}
-.tm-strow:hover{background:var(--tm-mist)}
-.tm-strow.open{background:var(--tm-mist)}
-.tm-stchev{color:var(--tm-sage);font-size:.7rem;width:12px}
-.tm-stname{font-weight:700;color:var(--tm-forest);font-size:.82rem;flex:1}
-.tm-stmi{font-size:.7rem;color:var(--subtle);font-weight:600}
-.tm-stbody{padding:6px 10px 12px}
-.tm-stscope{font-size:.7rem;color:var(--tm-pine);font-weight:600;margin-bottom:6px}
-.tm-elev{width:100%;height:auto;display:block;background:#fbfcfb;border:1px solid var(--border);border-radius:8px}
-.tm-elev-fill{fill:var(--tm-mist);opacity:.7}
-.tm-elev-line{fill:none;stroke:var(--tm-pine);stroke-width:2}
-.tm-elev-meta{display:flex;justify-content:space-between;font-size:.68rem;color:var(--subtle);margin-top:5px}
+/* (retired: .tm-states / .tm-st* accordion + .tm-elev* strip — the map is the accordion now, Farrah is the elevation card) */
 .tm-tag.soon{background:#eef0ef;color:#6b7b6b;border:1px solid var(--border);cursor:pointer}
 .tm-mapwrap{position:relative;background:#f2f5f1}
 .tm-svg{display:block;width:100%;height:auto}
@@ -288,6 +273,30 @@
 .tm-legend .sw{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:6px}
 .tm-legend .sw.blue{background:#5b8fa8}
 .tm-legend em{color:#9aa89a;font-style:normal}
+.tm-maphint{margin-left:auto;font-size:.66rem;color:var(--subtle);font-style:italic}
+/* clickable map bands — "the curtain" */
+.tm-hit{fill:transparent;cursor:pointer}
+.tm-hit:hover{fill:var(--tm-leaf);opacity:.12}
+/* Farrah — the elevation card slot (drops in below the map). Profile + axes only;
+   the hiker app's personal GPS / "You" marker are intentionally omitted (aggregate view). */
+.tm-stage .tm-farrah{border-top:1px solid var(--border);animation:tmDrop .22s ease}
+@keyframes tmDrop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.tm-farrah{padding:10px 13px 14px;background:#fbfcfb}
+.tm-ftabs{display:flex;align-items:center;gap:4px;border-bottom:1px solid var(--border);margin-bottom:8px;flex-wrap:wrap}
+.tm-ftab{border:0;background:none;font:inherit;font-size:.76rem;font-weight:700;color:var(--subtle);padding:6px 9px;border-bottom:2px solid transparent;cursor:pointer}
+.tm-ftab.on{color:var(--tm-forest);border-bottom-color:var(--tm-pine)}
+.tm-ftab:hover{color:var(--tm-pine)}
+.tm-fbadge{margin-left:auto;font-size:.6rem;letter-spacing:.05em;text-transform:uppercase;font-weight:700;padding:3px 8px;border-radius:20px;background:#fdf3e3;color:#9a6a1c;border:1px solid #f0dcb4}
+.tm-fmeta{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.tm-floc{font-size:.78rem;font-weight:700;color:var(--tm-forest)}
+.tm-fhik{font-size:.72rem;color:var(--subtle)}
+.tm-fhik b{color:var(--tm-forest)}
+.tm-fhik em{font-style:italic;font-size:.66rem}
+.tm-fsvg{display:block;width:100%;height:auto;background:#fff;border:1px solid var(--border);border-radius:8px}
+.tm-fline{fill:none;stroke:var(--tm-pine);stroke-width:1.4}
+.tm-fwp{stroke:#c8a84b;stroke-width:1.6}
+.tm-fmile{stroke:#c2cdc1;stroke-width:1}
+.tm-fax{font-size:11px;fill:var(--subtle);font-weight:600}
 .tm-rail{display:flex;flex-direction:column;gap:14px}
 .tm-stat .row{display:flex;gap:12px;padding:12px 13px}
 .tm-stat .big{flex:1}.tm-stat .dv{width:1px;background:var(--border)}
@@ -581,6 +590,7 @@ const TM_NAME={AT:'Appalachian Trail',PCT:'Pacific Crest Trail',CDT:'Continental
 let tmSeg={from:0,to:0,dir:'All',win:'Now'};
 let tmOpenState=null;     // which state row is expanded (accordion)
 let tmShowAll=false;      // From/To picker: major-default vs all waypoints
+let tmFarrahTab='elev';   // which tab is active in the open state's card: 'elev' | 'map'
 
 function tmToast(msg){
   let t=document.getElementById('tm-toast');
@@ -594,7 +604,7 @@ function tmToast(msg){
 // waypoints (towns/passes/trailheads). Each gets a synthesized mile from its state's
 // mile band. "Major" = all of these; the "show all" toggle adds interpolated mid-points.
 // When this view is folded into the unified app, swap tmWaypoints() to read the real
-// {trail}_WAYPOINTS (mile,name,…) + blClassify, and tmElevSvg()->drawElevation().
+// {trail}_WAYPOINTS (mile,name,…) + blClassify, and tmElevProfile()->drawElevation().
 function tmStates(){ return TM_DATA[tmTrail]||[]; }
 function tmWaypoints(){
   const list=tmStates(); const wp=[]; let cum=0;
@@ -644,30 +654,94 @@ function renderTrailMap(main){
 }
 function tmResetSeg(){ const wp=tmWaypoints(); tmSeg={from:0,to:Math.max(0,wp.length-1),dir:'All',win:'Now'}; tmOpenState=null; }
 
-// Inline elevation strip for a mile range — same (fromMile,toMile) contract as the
-// hiker app's drawElevation(); swap to that shared fn when unified.
-function tmElevSvg(fromMile,toMile){
-  const W=520,H=120,PAD=8; let lo=Math.min(fromMile,toMile),hi=Math.max(fromMile,toMile);
-  if(hi-lo<2) hi=lo+2;
-  const N=64, pts=[];
+// Farrah — the elevation card. This renders the PROFILE for a mile range (the reusable
+// drawElevation(from,to,…) slot). The hiker app's personal chrome — GPS Live, the "You ·
+// MI" marker, off-trail distance — is intentionally left out: this is the aggregate
+// operator view, which never locates an individual. Swap tmElevProfile -> drawElevation
+// when the codebases unify.
+// Shared deterministic terrain for a mile range (stable per mile). Drives both the
+// elevation render and the segment stats so they always agree.
+function tmTerrain(lo,hi,N){
+  const jit=m=>{ const s=Math.sin(m*12.9898)*43758.5453; return s-Math.floor(s); };
+  const pts=[];
   for(let i=0;i<=N;i++){ const m=lo+(hi-lo)*i/N;
-    const e=0.5+0.5*Math.sin(m*0.018)+0.18*Math.sin(m*0.07); pts.push([m,e]); }
-  const x=i=>PAD+(W-2*PAD)*i/N, y=v=>H-PAD-(H-2*PAD)*v;
-  let d='M'+x(0).toFixed(1)+','+y(pts[0][1]).toFixed(1);
-  for(let i=1;i<=N;i++) d+=' L'+x(i).toFixed(1)+','+y(pts[i][1]).toFixed(1);
-  const area=d+' L'+x(N).toFixed(1)+','+(H-PAD)+' L'+x(0).toFixed(1)+','+(H-PAD)+' Z';
-  return '<svg viewBox="0 0 '+W+' '+H+'" class="tm-elev" role="img" aria-label="Elevation profile">'
-    +'<path d="'+area+'" class="tm-elev-fill"/><path d="'+d+'" class="tm-elev-line"/></svg>';
+    let e=0.45+0.22*Math.sin(m*0.021)+0.14*Math.sin(m*0.071+1.3)+0.12*Math.sin(m*0.23+0.6)+0.10*Math.sin(m*0.61+2.1)+0.09*(jit(m*1.7)-0.5);
+    pts.push(Math.max(0.04,Math.min(0.99,e))); }
+  return pts;
+}
+// Aggregate segment stats (sample): length, elevation gain, high/low point.
+function tmSegStats(fromMile,toMile){
+  let lo=Math.min(fromMile,toMile),hi=Math.max(fromMile,toMile); if(hi-lo<2) hi=lo+2;
+  const pts=tmTerrain(lo,hi,Math.max(80,Math.min(600,Math.round(hi-lo)))); let emin=1,emax=0,gain=0;
+  for(let i=0;i<pts.length;i++){ emin=Math.min(emin,pts[i]); emax=Math.max(emax,pts[i]); if(i) gain+=Math.max(0,pts[i]-pts[i-1]); }
+  return {len:Math.round(hi-lo), high:Math.round(900+emax*5200), low:Math.round(40+emin*900), gain:Math.round(gain*5200)};
+}
+function tmElevProfile(fromMile,toMile){
+  const W=1040,H=210,L=10,R=56,T=22,B=20;
+  let lo=Math.min(fromMile,toMile),hi=Math.max(fromMile,toMile); if(hi-lo<2) hi=lo+2;
+  const N=240, pts=tmTerrain(lo,hi,N); let emin=1,emax=0;
+  for(const e of pts){ if(e<emin)emin=e; if(e>emax)emax=e; }
+  const jit=m=>{ const s=Math.sin(m*12.9898)*43758.5453; return s-Math.floor(s); };
+  const x=i=>L+(W-L-R)*i/N, y=v=>T+(H-T-B)*(1-v);
+  let line='M'+x(0).toFixed(1)+','+y(pts[0]).toFixed(1);
+  for(let i=1;i<=N;i++) line+=' L'+x(i).toFixed(1)+','+y(pts[i]).toFixed(1);
+  const area=line+' L'+x(N).toFixed(1)+','+(H-B)+' L'+x(0).toFixed(1)+','+(H-B)+' Z';
+  let gold=''; const nW=Math.max(6,Math.round((hi-lo)/18));
+  for(let k=0;k<nW;k++){ const fx=L+(W-L-R)*((k+0.5)/nW+(jit(k*3.1+lo)-0.5)*0.02); gold+='<line x1="'+fx.toFixed(1)+'" y1="'+T+'" x2="'+fx.toFixed(1)+'" y2="'+(T+9)+'" class="tm-fwp"/>'; }
+  let mile=''; const nM=110;
+  for(let k=0;k<=nM;k++){ const fx=L+(W-L-R)*k/nM, tall=(k%10===0); mile+='<line x1="'+fx.toFixed(1)+'" y1="'+(H-B)+'" x2="'+fx.toFixed(1)+'" y2="'+(H-B+(tall?6:3))+'" class="tm-fmile"/>'; }
+  const ftMax=Math.round(900+emax*5200), ftMin=Math.round(40+emin*900);
+  return '<svg viewBox="0 0 '+W+' '+H+'" class="tm-fsvg" role="img" aria-label="Elevation profile (sample)">'
+    +'<defs><linearGradient id="tmFgrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--tm-leaf)" stop-opacity="0.55"/><stop offset="1" stop-color="var(--tm-leaf)" stop-opacity="0.04"/></linearGradient></defs>'
+    +'<path d="'+area+'" fill="url(#tmFgrad)"/><path d="'+line+'" class="tm-fline"/>'+gold+mile
+    +'<text x="'+(W-R+6)+'" y="'+(T+8)+'" class="tm-fax">'+ftMax.toLocaleString()+' ft</text>'
+    +'<text x="'+(W-R+6)+'" y="'+(H-B)+'" class="tm-fax">'+ftMin+' ft</text></svg>';
+}
+// Segment map (the card's Trail Map tab) — centerline + AGGREGATE density band only.
+// No individual markers: density is the anon/aggregate read, never per-hiker positions.
+function tmSegMapSvg(fromMile,toMile){
+  const W=1040,H=200,L=12,R=56,T=20,B=26;
+  let lo=Math.min(fromMile,toMile),hi=Math.max(fromMile,toMile); if(hi-lo<2) hi=lo+2;
+  const N=120, midY=T+(H-T-B)*0.5; const jit=m=>{ const s=Math.sin(m*7.13)*9871.23; return s-Math.floor(s); };
+  const x=i=>L+(W-L-R)*i/N; let dmax=1e-6, dv=[];
+  for(let i=0;i<=N;i++){ const d=tmDensityAt(lo+(hi-lo)*i/N); dv.push(d); if(d>dmax)dmax=d; }
+  let cl='M'+x(0).toFixed(1)+','+midY.toFixed(1);
+  for(let i=1;i<=N;i++){ const m=lo+(hi-lo)*i/N; cl+=' L'+x(i).toFixed(1)+','+(midY+Math.sin(m*0.05)*9+(jit(m)-0.5)*5).toFixed(1); }
+  let top=''; for(let i=0;i<=N;i++){ const dy=midY-(dv[i]/dmax)*48; top+=(i?'L':'M')+x(i).toFixed(1)+','+dy.toFixed(1)+' '; }
+  const dband=top+'L'+x(N).toFixed(1)+','+midY.toFixed(1)+' L'+x(0).toFixed(1)+','+midY.toFixed(1)+' Z';
+  let gold=''; const nW=Math.max(5,Math.round((hi-lo)/26));
+  for(let k=0;k<nW;k++){ const fx=L+(W-L-R)*((k+0.5)/nW); gold+='<line x1="'+fx.toFixed(1)+'" y1="'+(midY-7)+'" x2="'+fx.toFixed(1)+'" y2="'+(midY+7)+'" class="tm-fwp"/><circle cx="'+fx.toFixed(1)+'" cy="'+midY.toFixed(1)+'" r="2.6" fill="#c8a84b"/>'; }
+  return '<svg viewBox="0 0 '+W+' '+H+'" class="tm-fsvg" role="img" aria-label="Segment map (aggregate density)">'
+    +'<defs><linearGradient id="tmDgrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b8fa8" stop-opacity="0.42"/><stop offset="1" stop-color="#5b8fa8" stop-opacity="0.05"/></linearGradient></defs>'
+    +'<path d="'+dband+'" fill="url(#tmDgrad)"/><path d="'+cl+'" class="tm-line"/>'+gold
+    +'<text x="'+L+'" y="'+(H-9)+'" class="tm-fax">mi '+lo+'</text>'
+    +'<text x="'+(W-R)+'" y="'+(H-9)+'" class="tm-fax" text-anchor="end">mi '+hi+'</text>'
+    +'<text x="'+(W-R+6)+'" y="'+(T+8)+'" class="tm-fax">density</text></svg>';
+}
+function tmFarrah(s,sFrom,sTo){
+  const cnt=tmSegCount(sFrom,sTo), cntLabel=(cnt<TM_K)?'&lt;'+TM_K:cnt.toLocaleString();
+  const st=tmSegStats(sFrom,sTo), tab=(tmFarrahTab==='map')?'map':'elev';
+  const tabs=[['elev','Elevation','\uD83D\uDCC8'],['map','Trail Map',''],['weather','Weather','\u26C5'],['cal','Calendar','\uD83D\uDCC5']]
+    .map(t=>{ const real=(t[0]==='elev'||t[0]==='map');
+      return '<button class="tm-ftab'+(t[0]===tab?' on':'')+'" '+(real?'data-ftab="'+t[0]+'"':'data-soon="This tab uses the shared hiker-app card once the codebases unify"')+'>'+(t[2]?t[2]+' ':'')+t[1]+'</button>'; }).join('');
+  const panel=(tab==='map')?tmSegMapSvg(sFrom,sTo):tmElevProfile(sFrom,sTo);
+  return '<div class="tm-farrah">'
+    +'<div class="tm-ftabs">'+tabs+'<span class="tm-fbadge">sample profile</span></div>'
+    +'<div class="tm-fmeta"><span class="tm-floc">'+esc(s.n)+' \u00B7 mi '+sFrom+'\u2013'+sTo+' \u00B7 '+st.len+' mi \u00B7 +'+st.gain.toLocaleString()+' ft \u00B7 high '+st.high.toLocaleString()+' ft</span>'
+    +'<span class="tm-fhik">On segment: <b>'+cntLabel+'</b> hikers <em>(anon \u00B7 aggregate)</em></span></div>'
+    +panel+'</div>';
 }
 
 function tmMapSvg(list, hiIdx){
   const W=560,H=470,top=26,bot=26,N=list.length,bh=(H-top-bot)/N,cx=W/2;
-  let bands='',labels='',pts=[];
+  let bands='',labels='',hits='',pts=[];
   for(let i=0;i<N;i++){
     const yB=H-bot-i*bh, yT=yB-bh;
     if(i===hiIdx) bands+='<rect x="0" y="'+yT.toFixed(0)+'" width="'+W+'" height="'+bh.toFixed(0)+'" class="tm-band"/>';
     bands+='<line x1="0" y1="'+yT.toFixed(0)+'" x2="'+W+'" y2="'+yT.toFixed(0)+'" stroke="#d7e0d6"/>';
     labels+='<text x="13" y="'+(yB-bh/2+4).toFixed(0)+'" font-size="11" fill="#9aa89a" font-weight="600">'+esc(list[i].n)+'</text>';
+    // transparent click target for this band (rendered last so it sits on top)
+    hits+='<rect x="0" y="'+yT.toFixed(0)+'" width="'+W+'" height="'+bh.toFixed(0)+'" class="tm-hit" data-si="'+i+'"><title>'+esc(list[i].n)+'</title></rect>';
     let x=cx+(i%2?56:-52)*Math.sin(i*0.8+0.6)+(i%3-1)*16;
     x=Math.max(150,Math.min(W-70,x));
     pts.push([x, H-bot-(i+0.5)*bh]);
@@ -680,7 +754,7 @@ function tmMapSvg(list, hiIdx){
   for(let j=0;j<11;j++){ const a=j/11*6.2832, r=9+(j%3)*10; dots+='<circle cx="'+(sx+Math.cos(a)*r*1.5).toFixed(0)+'" cy="'+(sy+Math.sin(a)*r).toFixed(0)+'" r="'+(4+(j%2))+'" fill="#5b8fa8" opacity="'+(0.45+(j%3)*0.18).toFixed(2)+'"/>'; }
   for(let i=0;i<N;i++){ if(i===hiIdx) continue; dots+='<circle cx="'+(pts[i][0]+8).toFixed(0)+'" cy="'+pts[i][1].toFixed(0)+'" r="3.4" fill="#5b8fa8" opacity="0.4"/>'; }
   const pulse=hiIdx<0?'':'<circle cx="'+sx.toFixed(0)+'" cy="'+sy.toFixed(0)+'" r="6" fill="#5b8fa8"><animate attributeName="r" values="6;14;6" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.7;0;0.7" dur="2.4s" repeatCount="indefinite"/></circle>';
-  return '<svg viewBox="0 0 '+W+' '+H+'" class="tm-svg" role="img" aria-label="Trail map preview"><rect width="'+W+'" height="'+H+'" fill="#eef3ec"/>'+bands+labels+'<path d="'+d+'" class="tm-line"/>'+dots+pulse+'</svg>';
+  return '<svg viewBox="0 0 '+W+' '+H+'" class="tm-svg" role="img" aria-label="Trail map preview"><rect width="'+W+'" height="'+H+'" fill="#eef3ec"/>'+bands+labels+'<path d="'+d+'" class="tm-line"/>'+dots+pulse+hits+'</svg>';
 }
 
 function tmPaint(){
@@ -697,23 +771,14 @@ function tmPaint(){
   // From/To option lists
   const opt=(sel)=>wp.map((w,i)=>'<option value="'+i+'"'+(i===sel?' selected':'')+'>'+esc(w.name)+' \u00B7 mi '+w.mile+'</option>').join('');
 
-  // State accordion rows
+  // State accordion is now the map itself ("the curtain"): the open state's elevation
+  // card ("Farrah") drops in below the map. One open at a time via tmOpenState.
   const hiIdx = tmOpenState!=null ? tmOpenState : -1;
-  const rows=list.map((s,i)=>{
-    const open=(i===tmOpenState);
-    // state mile band
-    let cum=0; for(let j=0;j<i;j++) cum+=list[j].mi; const sFrom=cum, sTo=cum+s.mi;
-    const head='<button class="tm-strow'+(open?' open':'')+'" data-si="'+i+'">'
-      +'<span class="tm-stchev">'+(open?'\u25BE':'\u25B8')+'</span>'
-      +'<span class="tm-stname">'+esc(s.n)+'</span>'
-      +'<span class="tm-stmi">'+s.mi+' mi</span></button>';
-    const body=open?('<div class="tm-stbody">'
-      +'<div class="tm-stscope">Viewing <b>'+esc(s.n)+'</b> \u00B7 mi '+sFrom+'\u2013'+sTo+' \u00B7 '+tmSeg.win+'</div>'
-      +tmElevSvg(sFrom,sTo)
-      +'<div class="tm-elev-meta"><span>'+esc((s.k&&s.k[0])||s.n)+'</span><span>Hikers here: '
-        +((tmSegCount(sFrom,sTo)<TM_K)?'&lt;'+TM_K:tmSegCount(sFrom,sTo).toLocaleString())+'</span></div></div>'):'';
-    return '<div class="tm-stitem'+(open?' open':'')+'">'+head+body+'</div>';
-  }).join('');
+  let farrah='';
+  if(tmOpenState!=null && list[tmOpenState]){
+    const s=list[tmOpenState]; let cum=0; for(let j=0;j<tmOpenState;j++) cum+=list[j].mi;
+    farrah=tmFarrah(s,cum,cum+s.mi);
+  }
 
   const maxDay=Math.max.apply(null,list.map(x=>x.day));
   const bars=list.map((x,i)=>'<div class="tm-bar'+(i===tmOpenState?' me':'')+'" data-i="'+i+'"><span class="lab">'+esc(x.n)+'</span><span class="tr"><span class="fl" style="width:'+Math.round(x.day/maxDay*100)+'%"></span></span><span class="v">'+x.day+'</span></div>').join('');
@@ -745,14 +810,12 @@ function tmPaint(){
   + '<div class="tm-note2"><b>What\u2019s live today:</b> the segment filter + state drill-down. Hiker counts are <b>sample</b> \u2014 they light up when the telemetry pipeline ships, and stay anonymous &amp; aggregate by design.</div>'
 
   + '<div class="tm-grid">'
-  +   '<div class="tm-cardbox"><div class="tm-hd"><h3>'+esc(TM_NAME[tmTrail])+' \u00B7 '+total.toLocaleString()+' mi</h3><span class="tm-tag live">live map</span></div>'
+  +   '<div class="tm-cardbox tm-stage"><div class="tm-hd"><h3>'+esc(TM_NAME[tmTrail])+' \u00B7 '+total.toLocaleString()+' mi</h3><span class="tm-maphint">tap a state for its elevation card</span><span class="tm-tag sample">sample density</span></div>'
   +     '<div class="tm-mapwrap">'+tmMapSvg(list,hiIdx)
   +       '<div class="tm-scope">Segment \u00B7 mi '+fromMile+'\u2013'+toMile+' \u00B7 '+tmSeg.win+'</div>'
   +       '<div class="tm-legend"><div><span class="ln"></span>Trail centerline</div><div><span class="sw blue"></span>Hiker density <em>(anon \u00B7 aggregate)</em></div></div>'
-  +     '</div></div>'
+  +     '</div>'+farrah+'</div>'
   +   '<div class="tm-rail">'
-  +     '<div class="tm-cardbox"><div class="tm-hd"><h3>States</h3><span class="tm-tag soon" data-soon="Elevation card uses the shared app component when unified">tap to open</span></div>'
-  +       '<div class="tm-states">'+rows+'</div></div>'
   +     '<div class="tm-cardbox"><div class="tm-hd"><h3>Hikers by state</h3><span class="tm-tag sample">sample</span></div><div class="tm-bars">'+bars+'</div></div>'
   +     '<div class="tm-cardbox"><div class="tm-hd"><h3>Active alerts</h3><span class="tm-tag soon" data-soon="Live alerts on the map \u2014 coming soon">preview</span></div>'
   +       '<div class="tm-list"><div class="tm-item" data-soon="Live alerts on the map \u2014 coming soon"><span class="tm-badge haz">Hazard</span><div><div class="tt">Footbridge out \u2014 ford only</div><div class="mt">sample \u00B7 6h ago</div></div></div></div></div>'
@@ -768,8 +831,8 @@ function tmAttach(){
   if(to) to.onchange=()=>{ tmSeg.to=+to.value; tmPaint(); };
   const sa=tmMain.querySelector('#tm-showall');
   if(sa) sa.onchange=()=>{ tmShowAll=sa.checked; tmResetSeg(); tmPaint(); };
-  // state accordion: opening a state sets From/To to that state's endpoints
-  q('.tm-strow').forEach(el=>el.onclick=()=>{
+  // the curtain: clicking a state band on the map opens its elevation card + syncs From/To
+  q('.tm-hit').forEach(el=>el.onclick=()=>{
     const i=+el.dataset.si;
     tmOpenState=(tmOpenState===i)?null:i;
     if(tmOpenState!=null){
@@ -785,6 +848,7 @@ function tmAttach(){
   q('.tm-trailsw button').forEach(el=>el.onclick=()=>{ const t=el.dataset.t; if(t==='All'){ tmToast('Combined all-trails view \u2014 coming soon'); return; } tmTrail=t; tmResetSeg(); tmPaint(); });
   q('.tm-dir button').forEach(el=>el.onclick=()=>{ tmSeg.dir=el.dataset.dir; tmPaint(); });
   q('.tm-win button').forEach(el=>el.onclick=()=>{ tmSeg.win=el.dataset.win; tmPaint(); });
+  q('.tm-ftab[data-ftab]').forEach(el=>el.onclick=()=>{ tmFarrahTab=el.dataset.ftab; tmPaint(); });
   q('[data-soon]').forEach(el=>el.onclick=()=>tmToast(el.dataset.soon||'Coming soon'));
 }
 // =====================================================================
