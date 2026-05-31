@@ -744,6 +744,10 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .pf-photo-circle:hover .pf-remove{display:flex}
 .pf-photo-hint{font-size:.72rem;color:var(--subtle);line-height:1.4;flex:1}
 .pf-photo-hint strong{color:var(--pine);display:block;margin-bottom:2px}
+.pf-photo-slots{display:flex;gap:10px;align-items:flex-start}
+.pf-photo-reflect{flex:1;min-width:120px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pf-photo-reflect .pf-reflect-hint{font-size:.72rem;color:var(--subtle);line-height:1.4}
+.pf-photo-reflect img{width:46px;height:46px;border-radius:8px;object-fit:cover;border:1.5px solid var(--border)}
 .pf-photo-circle .pf-ava{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);
   min-width:17px;height:17px;padding:0 5px;border-radius:9px;display:flex;align-items:center;
   justify-content:center;font-size:9px;font-weight:700;line-height:1;white-space:nowrap}
@@ -752,8 +756,7 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .pf-ava.set-ava:hover{background:var(--forest);color:#fff;border-color:var(--forest)}
 /* Partner card photo gallery strip */
 .pc-photos{display:flex;gap:6px;padding:4px 0}
-.pc-photo-thumb{width:52px;height:52px;border-radius:8px;object-fit:cover;cursor:pointer;border:1.5px solid var(--border);transition:border-color .12s}
-.pc-photo-thumb:hover{border-color:var(--pine)}
+.pc-photo-thumb{width:52px;height:52px;border-radius:8px;object-fit:cover;border:1.5px solid var(--border)}
 .pc-photo-thumb.main-avatar{border-radius:50%;width:48px;height:48px}
 /* YOYO badge */
 .badge-yoyo{background:linear-gradient(135deg,#2d5a27,#b5451b);color:#fff;padding:2px 8px;
@@ -4982,7 +4985,7 @@ function renderBoard() {
 
     // Additional photos strip (photos 2 + 3)
     const extraPhotos = photos.slice(1).map(url =>
-      `<img class="pc-photo-thumb" src="${esc(url)}" alt="photo" onclick="window.open(this.src)">`
+      `<img class="pc-photo-thumb" src="${esc(url)}" alt="photo">`
     ).join('');
     const photosHtml = extraPhotos ? `<div class="pc-photos">${extraPhotos}</div>` : '';
 
@@ -5156,6 +5159,14 @@ function renderPhotoSlots() {
       el.style.opacity = i === 0 ? '1' : (_pfPhotos[i-1] ? '1' : '.45');
       el.style.borderStyle = 'dashed';
     }
+  }
+  // Reflect uploaded photos to the right; empty state keeps Hilga's nudge.
+  const reflect = document.getElementById('pfPhotoReflect');
+  if (reflect) {
+    const shots = _pfPhotos.filter(p => p);
+    reflect.innerHTML = shots.length
+      ? shots.map((src, i) => `<img src="${src}" alt="Uploaded photo ${i+1}">`).join('')
+      : `<div class="pf-reflect-hint">Hilga wants to see that handsome face 😄<br><span style="font-size:.65rem;color:var(--subtle)">Max 800KB each</span></div>`;
   }
 }
 
@@ -7415,16 +7426,18 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
       <!-- 3 Photo uploads -->
       <div class="pf-photo-hint" style="margin-bottom:6px"><strong>Photos (up to 3, optional)</strong>Tap the ★ on any photo to make it your avatar.</div>
       <div class="pf-photo-row" id="pfPhotoRow">
-        <div class="pf-photo-circle" id="pfPhoto0" onclick="triggerPhotoUpload(0)" title="Add photo 1">📷
-          <button class="pf-remove" onclick="removePhoto(event,0)">✕</button>
+        <div class="pf-photo-slots">
+          <div class="pf-photo-circle" id="pfPhoto0" onclick="triggerPhotoUpload(0)" title="Add photo 1">📷
+            <button class="pf-remove" onclick="removePhoto(event,0)">✕</button>
+          </div>
+          <div class="pf-photo-circle" id="pfPhoto1" onclick="triggerPhotoUpload(1)" title="Add photo 2" style="opacity:.45">📷
+            <button class="pf-remove" onclick="removePhoto(event,1)">✕</button>
+          </div>
+          <div class="pf-photo-circle" id="pfPhoto2" onclick="triggerPhotoUpload(2)" title="Add photo 3" style="opacity:.45">📷
+            <button class="pf-remove" onclick="removePhoto(event,2)">✕</button>
+          </div>
         </div>
-        <div class="pf-photo-circle" id="pfPhoto1" onclick="triggerPhotoUpload(1)" title="Add photo 2" style="opacity:.45">📷
-          <button class="pf-remove" onclick="removePhoto(event,1)">✕</button>
-        </div>
-        <div class="pf-photo-circle" id="pfPhoto2" onclick="triggerPhotoUpload(2)" title="Add photo 3" style="opacity:.45">📷
-          <button class="pf-remove" onclick="removePhoto(event,2)">✕</button>
-        </div>
-        <div class="pf-photo-hint" style="padding-top:6px">Hilga wants to see that handsome face 😄<br><span style="font-size:.65rem;color:var(--subtle)">Max 800KB each</span></div>
+        <div class="pf-photo-reflect" id="pfPhotoReflect"><div class="pf-reflect-hint">Hilga wants to see that handsome face 😄<br><span style="font-size:.65rem;color:var(--subtle)">Max 800KB each</span></div></div>
         <input type="file" id="pfPhotoInput" accept="image/*" style="display:none" onchange="handlePhotoUpload(event)">
       </div>
       <div class="post-grid">
