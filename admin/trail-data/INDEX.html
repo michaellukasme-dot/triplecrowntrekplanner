@@ -1,0 +1,2141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Trail Data Console · Triple Crown Trek Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --forest:#1e3a1e; --pine:#2d5a27; --sage:#4a7c59; --leaf:#6ba368;
+    --mist:#e8f0e8; --stone:#f4f6f4; --border:#d4ddd4; --subtle:#6b7b6b;
+    --bark:#3d2b1f; --rust:#b5451b; --gold:#c8a84b; --sky:#5b8fa8;
+    --white:#fff; --text:#2a2a2a;
+    --shadow:0 2px 12px rgba(30,58,30,.10);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:'DM Sans',system-ui,sans-serif;color:var(--text);
+    background:var(--stone);font-size:15px;line-height:1.5;
+  }
+  h1,h2,h3{font-family:'Playfair Display',serif;color:var(--forest);margin:0;font-weight:700}
+  a{color:var(--pine)}
+  button{font-family:inherit;cursor:pointer}
+  .hidden{display:none !important}
+
+  /* ---- generic controls ---- */
+  .btn{
+    background:var(--forest);color:var(--white);border:none;border-radius:8px;
+    padding:9px 16px;font-size:.9rem;font-weight:700;transition:filter .15s;
+  }
+  .btn:hover{filter:brightness(1.12)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn-ghost{background:transparent;color:var(--pine);border:1.5px solid var(--border)}
+  .btn-ghost:hover{filter:none;background:var(--mist)}
+  .btn-danger{background:var(--rust)}
+  .btn-sm{padding:5px 11px;font-size:.78rem;border-radius:7px}
+  label{display:block;font-size:.74rem;font-weight:700;color:var(--subtle);
+    text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+  input,select{
+    width:100%;font-family:inherit;font-size:.92rem;padding:9px 11px;
+    border:1.5px solid var(--border);border-radius:8px;background:var(--white);color:var(--text);
+  }
+  input:focus,select:focus{outline:none;border-color:var(--sage);box-shadow:0 0 0 3px rgba(74,124,89,.15)}
+  /* custom dropdown chevron with right-edge breathing room (native arrow is edge-pinned) */
+  select{
+    appearance:none;-webkit-appearance:none;-moz-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='12'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%232a2a2a'%20stroke-width='3'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpolyline%20points='6%209%2012%2015%2018%209'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 12px center;background-size:12px;padding-right:32px;
+  }
+  .field{margin-bottom:14px}
+  .note{font-size:.82rem;color:var(--subtle)}
+  .err{color:var(--rust);font-size:.85rem;margin-top:8px}
+  .ok{color:var(--pine);font-size:.85rem;margin-top:8px}
+
+  /* ---- sign-in ---- */
+  #signin-view{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{background:var(--white);border:1px solid var(--border);border-radius:14px;
+    box-shadow:var(--shadow);padding:34px 32px;width:min(94vw,420px)}
+  .brand{font-size:.72rem;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:.12em}
+  .card h1{font-size:1.7rem;margin:6px 0 4px}
+  .card .sub{color:var(--subtle);font-size:.9rem;margin-bottom:22px}
+
+  /* ---- app shell ---- */
+  #app-view{min-height:100%;display:flex;flex-direction:column}
+  .topbar{background:var(--forest);color:var(--white);display:flex;align-items:center;
+    gap:14px;padding:12px 20px}
+  .topbar .t-brand{font-family:'Playfair Display',serif;font-weight:800;font-size:1.05rem;color:var(--white)}
+  .topbar .t-spacer{flex:1}
+  .topbar select{width:auto;color:var(--white);
+    border-color:rgba(255,255,255,.25);font-size:.82rem;padding:6px 30px 6px 10px;
+    background:rgba(255,255,255,.10) url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='11'%20height='11'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23ffffff'%20stroke-width='3'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpolyline%20points='6%209%2012%2015%2018%209'/%3E%3C/svg%3E") no-repeat right 11px center;background-size:11px}
+  .topbar .who{font-size:.8rem;color:#cfe0cf;text-align:right;line-height:1.3}
+  .topbar .who b{color:var(--white);display:block}
+  .role-pill{display:inline-block;font-size:.64rem;font-weight:700;text-transform:uppercase;
+    letter-spacing:.05em;padding:2px 7px;border-radius:20px;background:var(--gold);color:#4a3a10}
+  .shell{flex:1;display:flex;min-height:0}
+  .sidenav{width:188px;background:var(--white);border-right:1px solid var(--border);padding:14px 10px;flex-shrink:0}
+  .navlink{display:block;width:100%;text-align:left;background:none;border:none;
+    padding:10px 12px;border-radius:8px;font-size:.9rem;font-weight:600;color:var(--subtle)}
+  .navlink:hover{background:var(--stone);color:var(--pine)}
+  .navlink.active{background:var(--mist);color:var(--forest)}
+  .nav-sep{height:1px;background:var(--border);margin:10px 6px}
+  .nav-guide{display:flex;align-items:center;gap:8px;text-decoration:none;
+    padding:10px 12px;border-radius:8px;font-size:.9rem;font-weight:600;color:var(--subtle)}
+  .nav-guide:hover{background:var(--stone);color:var(--pine)}
+  .nav-guide svg{width:16px;height:16px;flex-shrink:0;opacity:.85}
+  .main{flex:1;padding:26px 30px;overflow-y:auto}
+  .main h2{font-size:1.45rem;margin-bottom:4px}
+  .main .page-sub{color:var(--subtle);font-size:.9rem;margin-bottom:22px}
+
+  /* ---- table ---- */
+  table{width:100%;border-collapse:collapse;background:var(--white);
+    border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  th,td{text-align:left;padding:11px 14px;font-size:.86rem;border-bottom:1px solid var(--border)}
+  th{background:var(--stone);font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--subtle)}
+  tr:last-child td{border-bottom:none}
+  td.revoked,tr.revoked td{color:var(--subtle)}
+  .tag{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+    padding:2px 7px;border-radius:20px;display:inline-block}
+  .tag-role{background:var(--mist);color:var(--forest)}
+  .tag-super{background:var(--gold);color:#4a3a10}
+  .tag-revoked{background:#f3dcd2;color:var(--rust)}
+  .tag-pending{background:#fff3d6;color:#8a6800}
+  .tag-live{background:#dceede;color:var(--pine)}
+  .tag-reverted{background:var(--mist);color:var(--forest)}
+  .rev-row{cursor:pointer}
+  .rev-row:hover{background:var(--mist)}
+  .rev-meta{margin:10px 0;font-size:.85rem;line-height:1.7}
+  .rev-reason{margin:10px 0;font-size:.88rem}
+  .rev-diff-h{margin-top:16px;font-weight:700;font-size:.9rem}
+  .rev-iv{margin:12px 0;padding:10px 12px;border-radius:8px;background:#fff3d6;color:#6b4e00;font-size:.85rem}
+  .rev-revert-box{margin-top:14px}
+  .rev-toolbar{flex-wrap:wrap;align-items:center;gap:10px}
+  .rev-fl{font-size:.8rem;color:var(--subtle);display:inline-flex;align-items:center;gap:6px}
+  .rev-fl input{font:inherit;padding:6px 8px;border:1px solid var(--border);border-radius:8px}
+  .rev-count{margin:4px 0 10px}
+
+  .panel{background:var(--white);border:1px solid var(--border);border-radius:12px;
+    padding:22px 24px;box-shadow:var(--shadow)}
+  .panel.stub{border-style:dashed;background:var(--stone);box-shadow:none}
+  .invite-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:640px){.invite-grid{grid-template-columns:1fr}.sidenav{width:64px}.navlink{font-size:.7rem;padding:8px 6px}}
+
+  /* ---- modal ---- */
+  .overlay{position:fixed;inset:0;background:rgba(10,24,12,.6);display:flex;
+    align-items:center;justify-content:center;padding:20px;z-index:50}
+  .modal{background:var(--white);border-radius:14px;padding:26px;width:min(94vw,420px);box-shadow:0 24px 80px rgba(0,0,0,.4)}
+  .modal h3{font-size:1.2rem;margin-bottom:8px}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+  .config-warn{background:#fff3d6;border:1px solid var(--gold);color:#7a5d00;
+    padding:10px 14px;border-radius:8px;font-size:.82rem;margin-bottom:18px}
+
+  /* ---- alerts: header + tabs ---- */
+  .page-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px}
+  .page-head .grow{flex:1}
+  .tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--border);margin-bottom:18px}
+  .tab{background:none;border:none;padding:9px 15px;font-size:.86rem;font-weight:700;
+    color:var(--subtle);border-bottom:2.5px solid transparent;margin-bottom:-1.5px}
+  .tab:hover{color:var(--pine)}
+  .tab.active{color:var(--forest);border-bottom-color:var(--pine)}
+  .tab .count{font-size:.7rem;background:var(--mist);color:var(--pine);
+    padding:1px 7px;border-radius:20px;margin-left:6px;font-weight:700}
+  .empty{padding:30px;text-align:center;color:var(--subtle);
+    background:var(--white);border:1px dashed var(--border);border-radius:12px}
+
+  /* ---- severity badges ---- */
+  .sev{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+    padding:2px 8px;border-radius:20px;display:inline-block;white-space:nowrap}
+  .sev-INFO{background:#dceaf2;color:#2c5d72}
+  .sev-ADVISORY{background:#fdeccb;color:#8a5d00}
+  .sev-HAZARD{background:#f6d4c9;color:#a3331a}
+  .alert-meta{font-size:.78rem;color:var(--subtle);margin-top:3px}
+  .needs-review{color:var(--rust);font-weight:700}
+  .row-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+
+  /* ---- modal: wider for the alert form + scroll ---- */
+  .modal.wide{width:min(96vw,560px);max-height:92vh;overflow-y:auto}
+  .modal .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:560px){.modal .grid2{grid-template-columns:1fr}}
+  .counter{float:right;font-weight:400;text-transform:none;letter-spacing:0;color:var(--subtle)}
+  .counter.over{color:var(--rust)}
+  textarea{width:100%;font-family:inherit;font-size:.92rem;padding:9px 11px;
+    border:1.5px solid var(--border);border-radius:8px;background:var(--white);
+    color:var(--text);resize:vertical;min-height:74px}
+  textarea:focus{outline:none;border-color:var(--sage);box-shadow:0 0 0 3px rgba(74,124,89,.15)}
+  /* severity radio cards */
+  .sev-pick{display:flex;gap:8px}
+  .sev-opt{flex:1;border:1.5px solid var(--border);border-radius:9px;padding:9px 10px;
+    cursor:pointer;background:var(--white);transition:border-color .12s,background .12s}
+  .sev-opt:hover{border-color:var(--sage)}
+  .sev-opt.sel{border-color:var(--pine);background:var(--mist)}
+  .sev-opt input{display:none}
+  .sev-opt .nm{font-weight:700;font-size:.86rem;color:var(--text)}
+  .sev-opt .hint{font-size:.72rem;color:var(--subtle);margin-top:2px;line-height:1.35}
+  .emergency-note{background:#f6d4c9;border:1px solid #e0a596;color:#8a2a12;
+    padding:9px 12px;border-radius:8px;font-size:.8rem;margin-top:6px}
+  /* baseline page (PROMPT 5) */
+  .bl-banner{background:var(--stone);border:1px dashed var(--border);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:.84rem;color:var(--subtle)}
+  .bl-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .bl-search{flex:1;min-width:180px}
+  .bl-sort{width:auto}
+  .origin{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:6px}
+  .origin-seed{background:var(--mist);color:var(--pine)}
+  .origin-patch{background:var(--gold);color:#4a3a10}
+  .bl-dir{font-size:.64rem;font-weight:700;color:var(--subtle);text-transform:uppercase}
+  .frow{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+  .frow>label{flex:1;min-width:120px;margin-bottom:0}
+  .modal.wide>label{margin-bottom:12px}
+  .modal-err{color:var(--rust);font-size:.82rem;font-weight:600;margin-top:8px;min-height:1em}
+  .bl-pending-panel{border:1.5px solid var(--gold);background:#fffdf4;border-radius:12px;margin-bottom:18px;overflow:hidden}
+  .bl-pending-head{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;padding:12px 16px;cursor:pointer;font:inherit;text-align:left}
+  .bl-pending-head .count{background:var(--gold);color:#4a3a10;font-size:.7rem;font-weight:700;padding:1px 8px;border-radius:9px}
+  .bl-pending-list{padding:0 16px 12px}
+  .bl-pending-item{display:flex;gap:14px;align-items:flex-start;border-top:1px solid var(--border);padding:12px 0}
+  .bl-prev{margin:6px 0;padding-left:18px;font-size:.82rem;color:var(--text)}
+  .bl-rr-preview{background:var(--stone);border-radius:8px;padding:10px 12px;margin:4px 0 14px;font-size:.82rem}
+  .bl-rr-list{max-height:200px;overflow:auto;margin-top:6px;line-height:1.55}
+  .rr-ack{display:flex;gap:8px;align-items:center;text-transform:none;font-weight:600;color:var(--text);margin-bottom:12px}
+  .rr-ack input{width:auto}
+  .dadd{color:var(--pine);font-weight:700}
+  .ddel{color:var(--rust);font-weight:700}
+  /* per-trail theming (mirrors the hiker app palette; switches with the selector) */
+  body[data-trail="PCT"]{ --forest:#1b2f45; --pine:#1e4d72; --sage:#4a90b8; --leaf:#4a90b8; --mist:#e3eef6; }
+  body[data-trail="CDT"]{ --forest:#3b2010; --pine:#6b3c1a; --sage:#b8773c; --leaf:#b8773c; --mist:#f6ede3; }
+  .trail-chip{display:inline-block;background:var(--forest);color:var(--white);font-size:.62rem;font-weight:800;
+    text-transform:uppercase;letter-spacing:.07em;padding:3px 9px;border-radius:7px;vertical-align:middle;margin-left:8px}
+
+/* ===== Trail Map (preview page) ===== */
+.tm-wrap{--tm-forest:#1e3a1e;--tm-pine:#2d5a27;--tm-sage:#4a7c59;--tm-leaf:#6ba368;--tm-mist:#e8f0e8}
+.tm-wrap[data-trail="PCT"]{--tm-forest:#1b2f45;--tm-pine:#1e4d72;--tm-sage:#2e6e96;--tm-leaf:#4a90b8;--tm-mist:#e6eef5}
+.tm-wrap[data-trail="CDT"]{--tm-forest:#3b2010;--tm-pine:#6b3c1a;--tm-sage:#8c5228;--tm-leaf:#b8773c;--tm-mist:#f3e9df}
+.tm-fresh{display:flex;align-items:center;gap:7px;font-size:.72rem;color:var(--subtle);background:var(--mist);border:1px solid var(--border);border-radius:20px;padding:5px 11px;white-space:nowrap}
+.tm-pulse{width:8px;height:8px;border-radius:50%;background:#3fae5a;box-shadow:0 0 0 0 rgba(63,174,90,.6);animation:tmpulse 1.8s infinite}
+@keyframes tmpulse{70%{box-shadow:0 0 0 7px rgba(63,174,90,0)}100%{box-shadow:0 0 0 0 rgba(63,174,90,0)}}
+.tm-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 16px}
+.tm-seg{display:inline-flex;background:var(--stone);border:1px solid var(--border);border-radius:9px;padding:3px;gap:2px}
+.tm-seg button{border:0;background:none;font:inherit;font-size:.78rem;font-weight:600;color:var(--subtle);padding:5px 12px;border-radius:7px;cursor:pointer}
+.tm-seg button.on{background:#fff;color:var(--tm-forest);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.tm-lbl{font-size:.66rem;letter-spacing:.05em;text-transform:uppercase;color:var(--subtle);margin-left:6px}
+.tm-note{margin-left:auto;font-size:.72rem;color:var(--subtle);font-style:italic}
+/* (retired: .tm-filterhint and .tm-names — old prev/next state carousel, removed with the single-state card) */
+.tm-hlrow{display:flex;align-items:center;gap:10px}
+.tm-arrow{width:30px;height:30px;flex:none;border:1px solid var(--border);background:#fff;border-radius:50%;color:var(--subtle);font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.tm-arrow:hover{border-color:var(--tm-pine);color:var(--tm-pine)}
+.tm-card{flex:1;display:grid;grid-template-columns:74px 1fr;gap:13px;align-items:start;background:var(--stone);border:1px solid var(--border);border-radius:10px;padding:11px 13px;min-height:128px}
+.tm-img{width:74px;height:74px;border-radius:8px;background:var(--tm-mist);display:flex;align-items:center;justify-content:center;font-size:30px}
+.tm-name{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;color:var(--tm-forest);line-height:1.05}
+.tm-meta{font-size:.72rem;color:var(--tm-pine);font-weight:700;margin-top:2px}
+.tm-desc{font-size:.74rem;color:var(--subtle);margin-top:5px;line-height:1.4}
+.tm-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.tm-chip{background:var(--tm-mist);border:1px solid var(--border);border-radius:12px;padding:2px 9px;font-size:.66rem;color:var(--tm-pine);white-space:nowrap}
+.tm-chip::before{content:'📍 ';font-size:.6rem}
+.tm-dots{display:flex;gap:5px;justify-content:center;padding:9px 0 4px}
+.tm-dots i{width:6px;height:6px;border-radius:50%;background:var(--border);cursor:pointer}
+.tm-dots i.on{background:var(--tm-pine)}
+.tm-note2{background:#fdf6ea;border:1px solid #f0dcb4;color:#7c5a18;border-radius:10px;padding:9px 13px;font-size:.74rem;margin:8px 0 16px}
+.tm-grid{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+.tm-cardbox{background:#fbfcfb;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.tm-hd{padding:10px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.tm-hd h3{font-family:'Playfair Display',serif;font-size:.95rem;color:var(--tm-forest);font-weight:700}
+.tm-tag{margin-left:auto;font-size:.6rem;letter-spacing:.05em;text-transform:uppercase;font-weight:700;padding:3px 8px;border-radius:20px}
+.tm-tag.live{background:#e6f3ea;color:#2c7a43;border:1px solid #bfe0c9}
+.tm-tag.sample{background:#fdf3e3;color:#9a6a1c;border:1px solid #f0dcb4}
+.tm-tag.soon{background:#eef1f4;color:#5b6b7b;border:1px solid #d4ddd4;cursor:pointer}
+/* From/To segment picker */
+.tm-fromto{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--stone);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:12px}
+.tm-ft{display:flex;align-items:center;gap:7px}
+.tm-ft-lbl{font-size:.6rem;letter-spacing:.06em;font-weight:800;padding:3px 7px;border-radius:6px;color:#fff}
+.tm-ft-lbl.from{background:var(--tm-pine)}
+.tm-ft-lbl.to{background:var(--rust,#b5451b)}
+.tm-ft-sel{font:inherit;font-size:.78rem;font-weight:600;color:var(--tm-forest);background:#fff;border:1px solid var(--border);border-radius:7px;padding:5px 8px;max-width:230px}
+.tm-ft-arrow{color:var(--tm-sage);font-weight:800}
+.tm-ft-all{font-size:.7rem;color:var(--subtle);display:flex;align-items:center;gap:5px;cursor:pointer}
+.tm-segcount{margin-left:auto;font-size:.82rem;color:var(--tm-forest)}
+.tm-segcount .u{font-size:.7rem;color:var(--subtle)}
+.tm-segcount em{font-size:.66rem;color:var(--subtle);font-style:italic}
+.tm-segcount .tm-klt{font-weight:800;color:var(--subtle)}
+/* (retired: .tm-states / .tm-st* accordion + .tm-elev* strip — the map is the accordion now, Farrah is the elevation card) */
+.tm-tag.soon{background:#eef0ef;color:#6b7b6b;border:1px solid var(--border);cursor:pointer}
+.tm-mapwrap{position:relative;background:#f2f5f1}
+.tm-svg{display:block;width:100%;height:auto}
+.tm-band{fill:var(--tm-leaf);opacity:.16}
+.tm-line{fill:none;stroke:#b5451b;stroke-width:3.2;stroke-linecap:round;opacity:.9}
+.tm-scope{position:absolute;right:10px;top:10px;background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:9px;padding:6px 10px;font-size:.72rem}
+.tm-scope b{color:var(--tm-forest)}
+.tm-legend{position:absolute;left:10px;bottom:10px;background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:9px;padding:8px 10px;font-size:.7rem;line-height:1.7}
+.tm-legend .ln{display:inline-block;width:16px;height:3px;border-radius:2px;background:#b5451b;vertical-align:middle;margin-right:6px}
+.tm-legend .sw{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:6px}
+.tm-legend .sw.blue{background:#5b8fa8}
+.tm-legend em{color:#9aa89a;font-style:normal}
+.tm-maphint{margin-left:auto;font-size:.66rem;color:var(--subtle);font-style:italic}
+/* clickable map bands — "the curtain" */
+.tm-hit{fill:transparent;cursor:pointer}
+.tm-hit:hover{fill:var(--tm-leaf);opacity:.12}
+/* Farrah — the elevation card slot (drops in below the map). Profile + axes only;
+   the hiker app's personal GPS / "You" marker are intentionally omitted (aggregate view). */
+.tm-stage .tm-farrah{border-top:1px solid var(--border);animation:tmDrop .22s ease}
+@keyframes tmDrop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.tm-farrah{padding:10px 13px 14px;background:#fbfcfb}
+.tm-ftabs{display:flex;align-items:center;gap:4px;border-bottom:1px solid var(--border);margin-bottom:8px;flex-wrap:wrap}
+.tm-ftab{border:0;background:none;font:inherit;font-size:.76rem;font-weight:700;color:var(--subtle);padding:6px 9px;border-bottom:2px solid transparent;cursor:pointer}
+.tm-ftab.on{color:var(--tm-forest);border-bottom-color:var(--tm-pine)}
+.tm-ftab:hover{color:var(--tm-pine)}
+.tm-fbadge{margin-left:auto;font-size:.6rem;letter-spacing:.05em;text-transform:uppercase;font-weight:700;padding:3px 8px;border-radius:20px;background:#fdf3e3;color:#9a6a1c;border:1px solid #f0dcb4}
+.tm-fmeta{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.tm-floc{font-size:.78rem;font-weight:700;color:var(--tm-forest)}
+.tm-fhik{font-size:.72rem;color:var(--subtle)}
+.tm-fhik b{color:var(--tm-forest)}
+.tm-fhik em{font-style:italic;font-size:.66rem}
+.tm-fsvg{display:block;width:100%;height:auto;background:#fff;border:1px solid var(--border);border-radius:8px}
+.tm-fline{fill:none;stroke:var(--tm-pine);stroke-width:1.4}
+.tm-fwp{stroke:#c8a84b;stroke-width:1.6}
+.tm-fmile{stroke:#c2cdc1;stroke-width:1}
+.tm-fax{font-size:11px;fill:var(--subtle);font-weight:600}
+.tm-rail{display:flex;flex-direction:column;gap:14px}
+.tm-stat .row{display:flex;gap:12px;padding:12px 13px}
+.tm-stat .big{flex:1}.tm-stat .dv{width:1px;background:var(--border)}
+.tm-stat .num{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--tm-forest);line-height:1}
+.tm-stat .num .u{font-size:12px;color:var(--subtle);font-weight:600;font-family:inherit}
+.tm-stat .kk{font-size:.62rem;letter-spacing:.04em;text-transform:uppercase;color:var(--subtle);margin-top:4px}
+.tm-bars{padding:10px 13px;display:flex;flex-direction:column;gap:8px}
+.tm-bar{display:grid;grid-template-columns:64px 1fr 28px;align-items:center;gap:9px;font-size:.74rem;cursor:pointer}
+.tm-bar .lab{font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tm-bar .tr{height:8px;background:var(--tm-mist);border-radius:6px;overflow:hidden}
+.tm-bar .fl{height:100%;background:linear-gradient(90deg,var(--tm-leaf),var(--tm-pine));border-radius:6px}
+.tm-bar .v{color:var(--subtle);text-align:right}
+.tm-bar.me .fl{background:linear-gradient(90deg,#c8a84b,#d98a2b)}
+.tm-bar:hover .lab{color:var(--tm-pine)}
+.tm-list{padding:4px 13px 10px}
+.tm-item{display:flex;gap:9px;padding:8px 0;cursor:pointer}
+.tm-badge{flex:none;font-size:.58rem;font-weight:800;letter-spacing:.04em;padding:3px 7px;border-radius:5px;height:fit-content;text-transform:uppercase}
+.tm-badge.haz{background:#fde7e1;color:#b5451b}
+.tm-item .tt{font-size:.76rem;font-weight:600;color:var(--text);line-height:1.25}
+.tm-item .mt{font-size:.66rem;color:var(--subtle);margin-top:2px}
+@media(max-width:860px){.tm-grid{grid-template-columns:1fr}}
+/* toast */
+.tm-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(8px);background:#2a2a2a;color:#fff;padding:10px 16px;border-radius:10px;font-size:.82rem;box-shadow:0 6px 24px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:.25s;z-index:99999;max-width:90vw;text-align:center}
+.tm-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ============ SIGN-IN ============ -->
+<div id="signin-view">
+  <div class="card">
+    <div class="brand">Triple Crown Trek Planner</div>
+    <h1>Trail Data Console</h1>
+    <div class="sub">For authorized conservancy editors. Sign in with the email you were invited under.</div>
+    <div id="config-warn" class="config-warn hidden">
+      Set your Supabase <b>anon key</b> in this file (search <code>SUPABASE_ANON_KEY</code>) before this page will work.
+    </div>
+    <div class="field">
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="email" placeholder="you@conservancy.org" />
+    </div>
+    <button id="send-link" class="btn" style="width:100%">Send me a sign-in link</button>
+    <div id="signin-msg" class="ok hidden"></div>
+    <div id="signin-err" class="err hidden"></div>
+  </div>
+</div>
+
+<!-- ============ NOT AUTHORIZED ============ -->
+<div id="denied-view" class="hidden">
+  <div id="signin-view" style="display:flex">
+    <div class="card">
+      <div class="brand">Triple Crown Trek Planner</div>
+      <h1>Not authorized</h1>
+      <div class="sub">This email isn't on the editor list, or its access was revoked. If you believe this is a mistake, contact the console administrator.</div>
+      <button id="denied-signout" class="btn-ghost btn" style="width:100%">Sign out</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP SHELL ============ -->
+<div id="app-view" class="hidden">
+  <div class="topbar">
+    <span class="t-brand">Trail Data Console</span>
+    <select id="conservancy-select" class="hidden" title="Active conservancy"></select>
+    <span class="t-spacer"></span>
+    <span class="who"><b id="who-name">—</b><span id="who-meta">—</span></span>
+    <button id="signout" class="btn-ghost btn btn-sm" style="color:#cfe0cf;border-color:rgba(255,255,255,.3)">Sign out</button>
+  </div>
+  <div class="shell">
+    <nav class="sidenav">
+      <button class="navlink active" data-page="alerts">Alerts</button>
+      <button class="navlink" data-page="baseline">Baseline</button>
+      <button class="navlink" data-page="revisions">Revisions</button>
+      <button class="navlink hidden" id="nav-editors" data-page="editors">Editors</button>
+      <button class="navlink" data-page="map">Trail Map</button>
+      <div class="nav-sep"></div>
+      <a class="nav-guide" id="nav-console-guide" href="https://triplecrowntrekplanner.com/console-guide-at.pdf" target="_blank" rel="noopener" title="How to operate this console">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Console Guide</a>
+      <a class="nav-guide" id="nav-hiker-guide" href="https://triplecrowntrekplanner.com/at-guide.pdf" target="_blank" rel="noopener" title="The hiker-facing field guide for the selected trail">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Hiker Guide</a>
+    </nav>
+    <main class="main" id="main"></main>
+  </div>
+</div>
+
+<!-- ============ MODAL MOUNT ============ -->
+<div id="modal-mount"></div>
+
+<script>
+// =====================================================================
+//  CONFIG  — the anon key is a PUBLIC key (safe to embed; RLS protects data).
+//  Find it in Supabase → Project Settings → API → Project API keys → "anon public".
+// =====================================================================
+const SUPABASE_URL      = 'https://lxlxaykwhaayapryfgom.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4bHhheWt3aGFheWFwcnlmZ29tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzcxNzcsImV4cCI6MjA5NTA1MzE3N30.hWtBZBYuMK-Fr75YxwfkXlQPUachcMbHXidIoWvPsr0';
+
+// IMPORTANT (one-time Supabase setup): in Authentication → URL Configuration,
+// add this console's URL to BOTH "Site URL" and "Redirect URLs", e.g.
+//   https://triplecrowntrekplanner.com/admin/trail-data/
+
+const CONSERVANCIES = [
+  { code:'ATC',  trail:'AT'  },
+  { code:'PCTA', trail:'PCT' },
+  { code:'CDTC', trail:'CDT' },
+];
+const ROLES = ['editor','approver','superadmin'];
+
+const $ = (s)=>document.querySelector(s);
+const show = (el)=>el.classList.remove('hidden');
+const hide = (el)=>el.classList.add('hidden');
+const esc  = (s)=> (s==null?'':String(s)).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const fmtDate = (s)=> s ? new Date(s).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : '—';
+
+let sb = null;
+let me = null;            // { editor_id, display_name, conservancy_code, role, is_super }
+let allConservancies = []; // from DB (for selectors / labels)
+
+// ---- config guard ---------------------------------------------------
+function configured(){
+  return SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== 'PASTE_YOUR_SUPABASE_ANON_PUBLIC_KEY_HERE';
+}
+
+// ---- auth wrapper: run a data op, redirect to signin on auth failure --
+async function withAuth(fn){
+  const { data:{ session } } = await sb.auth.getSession();
+  if (!session){ return routeSignedOut(); }
+  try {
+    return await fn();
+  } catch (e){
+    const code = e && (e.status || e.code);
+    if (code === 401 || code === '401' || /jwt|expired|session/i.test(e?.message||'')){
+      await sb.auth.signOut();
+      return routeSignedOut();
+    }
+    throw e;
+  }
+}
+
+// ---- view routing ---------------------------------------------------
+function showOnly(id){
+  ['signin-view','denied-view','app-view'].forEach(v=>{
+    const el = document.getElementById(v);
+    if (v===id) show(el); else hide(el);
+  });
+}
+function routeSignedOut(){ me=null; showOnly('signin-view'); }
+
+async function routeSignedIn(){
+  // Bind / verify authorization via the SECURITY DEFINER RPC.
+  const { data, error } = await sb.rpc('editor_signin_bind');
+  if (error){ console.error(error); return showDenied(); }
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row || !row.authorized){ return showDenied(); }
+  me = row;
+  await loadConservancies();
+  buildShell();
+  showOnly('app-view');
+  go('alerts');
+}
+async function showDenied(){ showOnly('denied-view'); }
+
+// ---- bootstrap ------------------------------------------------------
+async function boot(){
+  if (!configured()){ show($('#config-warn')); $('#send-link').disabled = true; showOnly('signin-view'); return; }
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Tidy the magic-link callback params out of the URL once handled.
+  sb.auth.onAuthStateChange((event, session)=>{
+    if (event === 'SIGNED_IN'){
+      history.replaceState({}, '', location.pathname);
+      routeSignedIn();
+    } else if (event === 'SIGNED_OUT'){
+      routeSignedOut();
+    }
+  });
+
+  const { data:{ session } } = await sb.auth.getSession();
+  if (session){ routeSignedIn(); } else { routeSignedOut(); }
+}
+
+// ---- sign in / out --------------------------------------------------
+async function sendLink(){
+  const email = $('#email').value.trim();
+  hide($('#signin-err')); hide($('#signin-msg'));
+  if (!email || !/.+@.+\..+/.test(email)){ $('#signin-err').textContent='Enter a valid email.'; show($('#signin-err')); return; }
+  $('#send-link').disabled = true;
+  const { error } = await sb.auth.signInWithOtp({
+    email,
+    options:{ emailRedirectTo: location.origin + location.pathname }
+  });
+  $('#send-link').disabled = false;
+  if (error){ $('#signin-err').textContent = error.message; show($('#signin-err')); return; }
+  $('#signin-msg').textContent = 'Check your email for a sign-in link.'; show($('#signin-msg'));
+}
+
+async function loadConservancies(){
+  const { data, error } = await sb.from('conservancies')
+    .select('code,display_name_short,trail').order('code');
+  allConservancies = error ? CONSERVANCIES.map(c=>({code:c.code,trail:c.trail,display_name_short:c.code})) : data;
+}
+
+// ---- shell ----------------------------------------------------------
+function consvLabel(code){
+  const c = allConservancies.find(x=>x.code===code);
+  return c ? (c.display_name_short+' · '+c.trail) : code;
+}
+function buildShell(){
+  $('#who-name').textContent = me.display_name;
+  $('#who-meta').innerHTML = (me.is_super ? '<span class="role-pill">Superadmin</span>'
+                                          : esc(me.role)) + ' · ' + esc(me.is_super ? 'All conservancies' : consvLabel(me.conservancy_code));
+  // Editors nav is superadmin-only
+  if (me.is_super) show($('#nav-editors')); else hide($('#nav-editors'));
+
+  // Conservancy selector (superadmin sees all; single-conservancy editors see nothing to pick)
+  const sel = $('#conservancy-select');
+  if (me.is_super){
+    sel.innerHTML = allConservancies.map(c=>`<option value="${esc(c.code)}">${esc(c.display_name_short)} · ${esc(c.trail)}</option>`).join('');
+    show(sel);
+    sel.onchange = ()=>{
+      const active = document.querySelector('.navlink.active');
+      go(active ? active.dataset.page : 'alerts');
+    };
+  } else { hide(sel); }
+
+  document.querySelectorAll('.navlink').forEach(b=>{
+    b.onclick = ()=>{ if (b.dataset.page==='editors' && !me.is_super) return; go(b.dataset.page); };
+  });
+  $('#signout').onclick   = ()=> sb.auth.signOut();
+}
+
+function go(page){
+  try { document.body.dataset.trail = activeConsv().trail || 'AT'; } catch(e){}
+  try { const _hg=document.getElementById('nav-hiker-guide');
+        if(_hg){ const _t=(activeConsv().trail||'AT').toLowerCase();
+                 _hg.href='https://triplecrowntrekplanner.com/'+_t+'-guide.pdf'; } } catch(e){}
+  try { const _cg=document.getElementById('nav-console-guide');
+        if(_cg){ const _t=(activeConsv().trail||'AT').toLowerCase();
+                 _cg.href='https://triplecrowntrekplanner.com/console-guide-'+_t+'.pdf'; } } catch(e){}
+  if (page==='editors' && !me.is_super) page='alerts';
+  document.querySelectorAll('.navlink').forEach(b=>b.classList.toggle('active', b.dataset.page===page));
+  const main = $('#main');
+  if (page==='editors'){ renderEditors(main); return; }
+  if (page==='alerts'){ renderAlerts(main); return; }
+  if (page==='baseline'){ renderBaseline(main); return; }
+  if (page==='revisions'){ renderRevisions(main); return; }
+  if (page==='map'){ renderTrailMap(main); return; }
+  main.innerHTML = `<h2>${esc(page)}</h2><div class="page-sub">Unknown page.</div>`;
+}
+
+
+// =====================================================================
+//  TRAIL MAP (preview page) — state filter is LIVE; counts are sample.
+//  Self-contained: no Supabase calls. Trail switcher + state filter work;
+//  non-ready affordances fire a "coming soon" toast.
+// =====================================================================
+const TM_DATA = {
+  AT:[
+    {c:'GA',n:'Georgia',mi:78,e:'\uD83C\uDF32',d:'Steep Southern start — Springer Mtn to the North Carolina line.',k:['Springer Mtn','Neels Gap','Blood Mountain'],now:31,day:34},
+    {c:'NC',n:'North Carolina',mi:96,e:'\u26F0',d:'Nantahalas and the Smokies high country, shared with Tennessee.',k:['Standing Indian','Nantahala','Fontana Dam'],now:28,day:30},
+    {c:'TN',n:'Tennessee',mi:88,e:'\uD83C\uDFB8',d:'Roan Highlands balds and the Great Smoky Mountains ridge.',k:['Roan Highlands','Hot Springs','Max Patch'],now:26,day:29},
+    {c:'VA',n:'Virginia',mi:550,e:'\uD83E\uDD8C',d:'A quarter of the trail — Grayson Highlands to the Shenandoahs.',k:['Grayson Highlands','Shenandoah NP','McAfee Knob'],now:88,day:96},
+    {c:'MD',n:'Maryland',mi:41,e:'\u2693',d:'Short ridgeline walk along the Mason\u2013Dixon line.',k:['Mason Dixon Line','Maryland / Pennsylvania Border','Penn Mar Park'],now:12,day:13},
+    {c:'PA',n:'Pennsylvania',mi:229,e:'\uD83D\uDDFF',d:'Rocky underfoot \u2014 affectionately "Rocksylvania."',k:['Boiling Springs','Lehigh Gap','Delaware Water Gap'],now:41,day:45},
+    {c:'NJ',n:'New Jersey',mi:72,e:'\uD83C\uDF05',d:'Glacial lakes and the Sunrise Mountain ridge.',k:['High Point','Sunrise Mtn','Delaware Water Gap'],now:14,day:16},
+    {c:'NY',n:'New York',mi:90,e:'\uD83D\uDDFD',d:'Low miles, big rocks, and the Bear Mountain zoo.',k:['Bear Mountain','Harriman','RPH Shelter'],now:17,day:19},
+    {c:'CT',n:'Connecticut',mi:52,e:'\uD83C\uDF42',d:'River walking along the Housatonic.',k:['Housatonic River','Falls Village','Salisbury'],now:11,day:12},
+    {c:'MA',n:'Massachusetts',mi:90,e:'\uD83C\uDF93',d:'The Berkshires \u2014 Mt Greylock is the high point.',k:['Mt Greylock','Upper Goose Pond','Dalton'],now:15,day:16},
+    {c:'VT',n:'Vermont',mi:150,e:'\uD83C\uDF41',d:'The Long Trail joins \u2014 green, muddy, beautiful.',k:['Stratton Mtn','Killington','Long Trail jct'],now:22,day:25},
+    {c:'NH',n:'New Hampshire',mi:161,e:'\uD83C\uDFD4',d:'The Whites \u2014 Presidentials, huts, miles above treeline.',k:['Mt Washington','Franconia Ridge','Pinkham Notch'],now:33,day:37},
+    {c:'ME',n:'Maine',mi:281,e:'\uD83E\uDD8C',d:'282 miles; very rugged, Mt. Katahdin (5,268 ft) and Mahoosuc Notch (hardest mile)',k:['Approach Trail','Baxter State Park and Katahdin','Rainbow Ledges','Whitecap Mountain','Wilderness','Monson, Maine'],now:18,day:64}
+  ],
+  PCT:[
+    {c:'CA',n:'Southern California',mi:702,e:'\uD83C\uDF35',d:'Desert and the San Jacintos, north from the Campo border.',k:['Campo Border','San Jacinto','Big Bear'],now:40,day:55},
+    {c:'CA',n:'Sierra Nevada',mi:508,e:'\uD83C\uDFD4',d:'The High Sierra \u2014 Whitney, Forester, the great passes.',k:['Kennedy Meadows','Mt Whitney','Forester Pass'],now:60,day:90},
+    {c:'CA',n:'Northern California',mi:558,e:'\uD83C\uDF32',d:'Lassen, Hat Creek Rim, into the Trinity Alps.',k:['Lake Tahoe','Lassen','Burney Falls'],now:35,day:48},
+    {c:'OR',n:'Oregon',mi:455,e:'\uD83C\uDF32',d:'Volcanoes and lava \u2014 Crater Lake to the Bridge of the Gods.',k:['Crater Lake','Three Sisters','Timberline'],now:30,day:42},
+    {c:'WA',n:'Washington',mi:506,e:'\uD83C\uDFD4',d:'The Cascades \u2014 Goat Rocks to Manning Park, Canada.',k:['Goat Rocks','Glacier Peak','Manning Park'],now:28,day:39}
+  ],
+  CDT:[
+    {c:'NM',n:'New Mexico',mi:785,e:'\uD83C\uDF35',d:'Bootheel desert, the Gila, up into the San Juans.',k:['Crazy Cook','Gila River','Ghost Ranch'],now:22,day:31},
+    {c:'CO',n:'Colorado',mi:800,e:'\u26F0',d:'The high San Juans and the Collegiate peaks.',k:['Spring Creek Pass','Creede','Grays Peak'],now:30,day:44},
+    {c:'WY',n:'Wyoming',mi:550,e:'\uD83C\uDF32',d:'The Great Divide Basin and the Wind River Range.',k:['Great Divide Basin','Wind River Range','South Pass'],now:18,day:26},
+    {c:'ID',n:'Idaho',mi:250,e:'\uD83C\uDF32',d:'The Idaho\u2013Montana border ridge.',k:['Leadore','Lemhi Pass','Chief Joseph'],now:12,day:17},
+    {c:'MT',n:'Montana',mi:595,e:'\u26F0',d:'Glacier finish \u2014 the Bob, the Chinese Wall, the Canadian line.',k:['Bob Marshall','Chinese Wall','Glacier NP'],now:14,day:21}
+  ]
+};
+let tmMain=null, tmTrail='AT', tmIntro=false;
+const TM_NAME={AT:'Appalachian Trail',PCT:'Pacific Crest Trail',CDT:'Continental Divide Trail'};
+// Unified filter: one "segment in view" drives the count + the elevation card.
+// from/to are waypoint indices into the active trail's flattened waypoint list.
+let tmSeg={from:0,to:0,dir:'All',win:'Now'};
+let tmOpenState=null;     // which state row is expanded (accordion)
+let tmShowAll=false;      // From/To picker: major-default vs all waypoints
+
+function tmToast(msg){
+  let t=document.getElementById('tm-toast');
+  if(!t){ t=document.createElement('div'); t.id='tm-toast'; t.className='tm-toast'; document.body.appendChild(t); }
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+// --- Waypoints (derived). The console is self-contained + sample, so we build the
+// From/To list from each state's notable landmarks (k[]) — these ARE the major
+// waypoints (towns/passes/trailheads). Each gets a synthesized mile from its state's
+// mile band. "Major" = all of these; the "show all" toggle adds interpolated mid-points.
+// When this view is folded into the unified app, swap tmWaypoints() to read the real
+// {trail}_WAYPOINTS (mile,name,…) + blClassify, and tmElevProfile()->drawElevation().
+function tmStates(){ return TM_DATA[tmTrail]||[]; }
+function tmWaypoints(){
+  const list=tmStates(); const wp=[]; let cum=0;
+  // stateIdx = the row index this waypoint came from. Needed because a trail can
+  // repeat a state code across rows (PCT splits CA into 3 rows), so matching on the
+  // code alone would span all of them; the row index is unique per accordion row.
+  list.forEach((s,si)=>{
+    const ks=(s.k&&s.k.length)?s.k:[s.n];
+    const span=s.mi/ks.length;
+    ks.forEach((name,j)=>{
+      const mile=Math.round(cum + span*(j+0.5));
+      wp.push({mile,name,state:s.c,stateName:s.n,stateIdx:si,major:true});
+      if(tmShowAll && j<ks.length-1){
+        wp.push({mile:Math.round(cum+span*(j+1)),name:'· mi '+Math.round(cum+span*(j+1)),state:s.c,stateName:s.n,stateIdx:si,major:false});
+      }
+    });
+    cum+=s.mi;
+  });
+  return wp;
+}
+function tmTotal(){ return tmStates().reduce((a,x)=>a+x.mi,0); }
+
+// Deterministic SAMPLE density by mile (until the telemetry pipeline ships).
+// Anonymous + aggregate by design. Sums hikers across a segment's mile bins.
+const TM_K=5; // k-anonymity floor: below this, suppress the number
+function tmDensityAt(mile){
+  const list=tmStates(); let cum=0;
+  for(const s of list){ if(mile>=cum && mile<cum+s.mi){ const perMi=s.now/Math.max(1,s.mi); return perMi; } cum+=s.mi; }
+  return 0;
+}
+function tmSegCount(fromMile,toMile){
+  let lo=Math.min(fromMile,toMile), hi=Math.max(fromMile,toMile), n=0;
+  for(let m=lo;m<=hi;m++) n+=tmDensityAt(m);
+  let c=Math.round(n);
+  if(tmSeg.dir!=='All') c=Math.round(c*0.5);   // NOBO/SOBO split (sample)
+  if(tmSeg.win==='24h') c=Math.round(c*1.25);  // wider window (sample)
+  return c;
+}
+
+function renderTrailMap(main){
+  tmMain=main;
+  let tr=(activeConsv().trail||'AT').toUpperCase(); if(!TM_DATA[tr]) tr='AT';
+  if(tr!==tmTrail){ tmTrail=tr; tmResetSeg(); }
+  if(!tmSeg) tmResetSeg();
+  tmPaint();
+  if(!tmIntro){ tmIntro=true; setTimeout(()=>tmToast('Trail Map is in development \u2014 the state filter is live; hiker counts are sample data.'),420); }
+}
+function tmResetSeg(){ const wp=tmWaypoints(); tmSeg={from:0,to:Math.max(0,wp.length-1),dir:'All',win:'Now'}; tmOpenState=null; }
+
+// Farrah — the elevation card. This renders the PROFILE for a mile range (the reusable
+// drawElevation(from,to,…) slot). The hiker app's personal chrome — GPS Live, the "You ·
+// MI" marker, off-trail distance — is intentionally left out: this is the aggregate
+// operator view, which never locates an individual. Swap tmElevProfile -> drawElevation
+// when the codebases unify.
+function tmElevProfile(fromMile,toMile){
+  const W=1040,H=210,L=10,R=56,T=22,B=20;
+  let lo=Math.min(fromMile,toMile),hi=Math.max(fromMile,toMile); if(hi-lo<2) hi=lo+2;
+  const N=220, pts=[]; let emin=1e9,emax=-1e9;
+  const jit=m=>{ const s=Math.sin(m*12.9898)*43758.5453; return s-Math.floor(s); };
+  for(let i=0;i<=N;i++){ const m=lo+(hi-lo)*i/N;
+    let e=0.45+0.30*Math.sin(m*0.021)+0.16*Math.sin(m*0.071+1.3)+0.09*Math.sin(m*0.23+0.6)+0.05*(jit(m*1.7)-0.5);
+    e=Math.max(0.04,Math.min(0.99,e)); pts.push(e); if(e<emin)emin=e; if(e>emax)emax=e; }
+  const x=i=>L+(W-L-R)*i/N, y=v=>T+(H-T-B)*(1-v);
+  let line='M'+x(0).toFixed(1)+','+y(pts[0]).toFixed(1);
+  for(let i=1;i<=N;i++) line+=' L'+x(i).toFixed(1)+','+y(pts[i]).toFixed(1);
+  const area=line+' L'+x(N).toFixed(1)+','+(H-B)+' L'+x(0).toFixed(1)+','+(H-B)+' Z';
+  let gold=''; const nW=Math.max(6,Math.round((hi-lo)/22));
+  for(let k=0;k<nW;k++){ const fx=L+(W-L-R)*((k+0.5)/nW+(jit(k*3.1+lo)-0.5)*0.02); gold+='<line x1="'+fx.toFixed(1)+'" y1="'+T+'" x2="'+fx.toFixed(1)+'" y2="'+(T+9)+'" class="tm-fwp"/>'; }
+  let mile=''; const nM=90;
+  for(let k=0;k<=nM;k++){ const fx=L+(W-L-R)*k/nM, tall=(k%10===0); mile+='<line x1="'+fx.toFixed(1)+'" y1="'+(H-B)+'" x2="'+fx.toFixed(1)+'" y2="'+(H-B+(tall?6:3))+'" class="tm-fmile"/>'; }
+  const ftMax=Math.round(900+emax*5200), ftMin=Math.round(40+emin*900);
+  return '<svg viewBox="0 0 '+W+' '+H+'" class="tm-fsvg" role="img" aria-label="Elevation profile (sample)">'
+    +'<defs><linearGradient id="tmFgrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--tm-leaf)" stop-opacity="0.55"/><stop offset="1" stop-color="var(--tm-leaf)" stop-opacity="0.04"/></linearGradient></defs>'
+    +'<path d="'+area+'" fill="url(#tmFgrad)"/><path d="'+line+'" class="tm-fline"/>'+gold+mile
+    +'<text x="'+(W-R+6)+'" y="'+(T+8)+'" class="tm-fax">'+ftMax.toLocaleString()+' ft</text>'
+    +'<text x="'+(W-R+6)+'" y="'+(H-B)+'" class="tm-fax">'+ftMin+' ft</text></svg>';
+}
+function tmFarrah(s,sFrom,sTo){
+  const cnt=tmSegCount(sFrom,sTo), cntLabel=(cnt<TM_K)?'&lt;'+TM_K:cnt.toLocaleString();
+  const tabs=[['Elevation','\uD83D\uDCC8',true],['Trail Map','',false],['Weather','\u26C5',false],['Calendar','\uD83D\uDCC5',false]]
+    .map(t=>'<button class="tm-ftab'+(t[2]?' on':'')+'"'+(t[2]?'':' data-soon="This tab uses the shared hiker-app card once the codebases unify"')+'>'+(t[1]?t[1]+' ':'')+t[0]+'</button>').join('');
+  return '<div class="tm-farrah">'
+    +'<div class="tm-ftabs">'+tabs+'<span class="tm-fbadge">sample profile</span></div>'
+    +'<div class="tm-fmeta"><span class="tm-floc">'+esc(s.n)+' \u00B7 mi '+sFrom+'\u2013'+sTo+' \u00B7 '+tmSeg.win+'</span>'
+    +'<span class="tm-fhik">On segment: <b>'+cntLabel+'</b> hikers <em>(anon \u00B7 aggregate)</em></span></div>'
+    +tmElevProfile(sFrom,sTo)+'</div>';
+}
+
+function tmMapSvg(list, hiIdx){
+  const W=560,H=470,top=26,bot=26,N=list.length,bh=(H-top-bot)/N,cx=W/2;
+  let bands='',labels='',hits='',pts=[];
+  for(let i=0;i<N;i++){
+    const yB=H-bot-i*bh, yT=yB-bh;
+    if(i===hiIdx) bands+='<rect x="0" y="'+yT.toFixed(0)+'" width="'+W+'" height="'+bh.toFixed(0)+'" class="tm-band"/>';
+    bands+='<line x1="0" y1="'+yT.toFixed(0)+'" x2="'+W+'" y2="'+yT.toFixed(0)+'" stroke="#d7e0d6"/>';
+    labels+='<text x="13" y="'+(yB-bh/2+4).toFixed(0)+'" font-size="11" fill="#9aa89a" font-weight="600">'+esc(list[i].n)+'</text>';
+    // transparent click target for this band (rendered last so it sits on top)
+    hits+='<rect x="0" y="'+yT.toFixed(0)+'" width="'+W+'" height="'+bh.toFixed(0)+'" class="tm-hit" data-si="'+i+'"><title>'+esc(list[i].n)+'</title></rect>';
+    let x=cx+(i%2?56:-52)*Math.sin(i*0.8+0.6)+(i%3-1)*16;
+    x=Math.max(150,Math.min(W-70,x));
+    pts.push([x, H-bot-(i+0.5)*bh]);
+  }
+  let d='M'+pts[0][0].toFixed(0)+','+(H-bot)+' ';
+  for(let i=0;i<N;i++) d+='L'+pts[i][0].toFixed(0)+','+pts[i][1].toFixed(0)+' ';
+  d+='L'+pts[N-1][0].toFixed(0)+','+top;
+  let dots='';
+  const si=(hiIdx>=0?hiIdx:0), sx=pts[si][0], sy=pts[si][1];
+  for(let j=0;j<11;j++){ const a=j/11*6.2832, r=9+(j%3)*10; dots+='<circle cx="'+(sx+Math.cos(a)*r*1.5).toFixed(0)+'" cy="'+(sy+Math.sin(a)*r).toFixed(0)+'" r="'+(4+(j%2))+'" fill="#5b8fa8" opacity="'+(0.45+(j%3)*0.18).toFixed(2)+'"/>'; }
+  for(let i=0;i<N;i++){ if(i===hiIdx) continue; dots+='<circle cx="'+(pts[i][0]+8).toFixed(0)+'" cy="'+pts[i][1].toFixed(0)+'" r="3.4" fill="#5b8fa8" opacity="0.4"/>'; }
+  const pulse=hiIdx<0?'':'<circle cx="'+sx.toFixed(0)+'" cy="'+sy.toFixed(0)+'" r="6" fill="#5b8fa8"><animate attributeName="r" values="6;14;6" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.7;0;0.7" dur="2.4s" repeatCount="indefinite"/></circle>';
+  return '<svg viewBox="0 0 '+W+' '+H+'" class="tm-svg" role="img" aria-label="Trail map preview"><rect width="'+W+'" height="'+H+'" fill="#eef3ec"/>'+bands+labels+'<path d="'+d+'" class="tm-line"/>'+dots+pulse+hits+'</svg>';
+}
+
+function tmPaint(){
+  const list=tmStates(), wp=tmWaypoints(), total=tmTotal();
+  if(tmSeg.from>=wp.length) tmSeg.from=0;
+  if(tmSeg.to>=wp.length) tmSeg.to=wp.length-1;
+  const fromWp=wp[tmSeg.from]||wp[0], toWp=wp[tmSeg.to]||wp[wp.length-1];
+  const fromMile=fromWp?fromWp.mile:0, toMile=toWp?toWp.mile:total;
+
+  // segment count (aggregate + k-anon)
+  const segN=tmSegCount(fromMile,toMile);
+  const segLabel=(segN<TM_K)?'<span class="tm-klt">&lt;'+TM_K+'</span>':('<b>'+segN.toLocaleString()+'</b>');
+
+  // From/To option lists
+  const opt=(sel)=>wp.map((w,i)=>'<option value="'+i+'"'+(i===sel?' selected':'')+'>'+esc(w.name)+' \u00B7 mi '+w.mile+'</option>').join('');
+
+  // State accordion is now the map itself ("the curtain"): the open state's elevation
+  // card ("Farrah") drops in below the map. One open at a time via tmOpenState.
+  const hiIdx = tmOpenState!=null ? tmOpenState : -1;
+  let farrah='';
+  if(tmOpenState!=null && list[tmOpenState]){
+    const s=list[tmOpenState]; let cum=0; for(let j=0;j<tmOpenState;j++) cum+=list[j].mi;
+    farrah=tmFarrah(s,cum,cum+s.mi);
+  }
+
+  const maxDay=Math.max.apply(null,list.map(x=>x.day));
+  const bars=list.map((x,i)=>'<div class="tm-bar'+(i===tmOpenState?' me':'')+'" data-i="'+i+'"><span class="lab">'+esc(x.n)+'</span><span class="tr"><span class="fl" style="width:'+Math.round(x.day/maxDay*100)+'%"></span></span><span class="v">'+x.day+'</span></div>').join('');
+  const trailbtns=['AT','PCT','CDT','All'].map(t=>'<button data-t="'+t+'" class="'+(t===tmTrail?'on':'')+'">'+t+'</button>').join('');
+  const dirbtns=['All','NOBO','SOBO'].map(t=>'<button data-dir="'+t+'" class="'+(t===tmSeg.dir?'on':'')+'">'+t+'</button>').join('');
+  const winbtns=['Now','24h'].map(t=>'<button data-win="'+t+'" class="'+(t===tmSeg.win?'on':'')+'">'+t+'</button>').join('');
+
+  tmMain.innerHTML =
+  '<div class="tm-wrap" data-trail="'+tmTrail+'">'
+  + '<div class="page-head"><div class="grow"><h2>Trail Map</h2>'
+  +   '<div class="page-sub">A pane of glass on the trail \u2014 situational view, not actionable.</div></div>'
+  +   '<div class="tm-fresh"><span class="tm-pulse"></span> sample feed \u00B7 counts not live yet</div></div>'
+
+  + '<div class="tm-controls">'
+  +   '<div class="tm-seg tm-trailsw">'+trailbtns+'</div>'
+  +   '<span class="tm-lbl">Direction</span><div class="tm-seg tm-dir">'+dirbtns+'</div>'
+  +   '<span class="tm-lbl">Window</span><div class="tm-seg tm-win">'+winbtns+'</div>'
+  +   '<span class="tm-note">click-to-act disabled \u00B7 counts &amp; trends only</span></div>'
+
+  // From / To waypoint segment picker
+  + '<div class="tm-fromto">'
+  +   '<div class="tm-ft"><span class="tm-ft-lbl from">FROM</span><select class="tm-ft-sel" id="tm-from">'+opt(tmSeg.from)+'</select></div>'
+  +   '<span class="tm-ft-arrow">\u2192</span>'
+  +   '<div class="tm-ft"><span class="tm-ft-lbl to">TO</span><select class="tm-ft-sel" id="tm-to">'+opt(tmSeg.to)+'</select></div>'
+  +   '<label class="tm-ft-all"><input type="checkbox" id="tm-showall"'+(tmShowAll?' checked':'')+'> show all waypoints</label>'
+  +   '<div class="tm-segcount">Between these points: '+segLabel+' <span class="u">hikers</span> <em>(anon \u00B7 aggregate)</em></div>'
+  + '</div>'
+
+  + '<div class="tm-note2"><b>What\u2019s live today:</b> the segment filter + state drill-down. Hiker counts are <b>sample</b> \u2014 they light up when the telemetry pipeline ships, and stay anonymous &amp; aggregate by design.</div>'
+
+  + '<div class="tm-grid">'
+  +   '<div class="tm-cardbox tm-stage"><div class="tm-hd"><h3>'+esc(TM_NAME[tmTrail])+' \u00B7 '+total.toLocaleString()+' mi</h3><span class="tm-maphint">tap a state for its elevation card</span><span class="tm-tag sample">sample density</span></div>'
+  +     '<div class="tm-mapwrap">'+tmMapSvg(list,hiIdx)
+  +       '<div class="tm-scope">Segment \u00B7 mi '+fromMile+'\u2013'+toMile+' \u00B7 '+tmSeg.win+'</div>'
+  +       '<div class="tm-legend"><div><span class="ln"></span>Trail centerline</div><div><span class="sw blue"></span>Hiker density <em>(anon \u00B7 aggregate)</em></div></div>'
+  +     '</div>'+farrah+'</div>'
+  +   '<div class="tm-rail">'
+  +     '<div class="tm-cardbox"><div class="tm-hd"><h3>Hikers by state</h3><span class="tm-tag sample">sample</span></div><div class="tm-bars">'+bars+'</div></div>'
+  +     '<div class="tm-cardbox"><div class="tm-hd"><h3>Active alerts</h3><span class="tm-tag soon" data-soon="Live alerts on the map \u2014 coming soon">preview</span></div>'
+  +       '<div class="tm-list"><div class="tm-item" data-soon="Live alerts on the map \u2014 coming soon"><span class="tm-badge haz">Hazard</span><div><div class="tt">Footbridge out \u2014 ford only</div><div class="mt">sample \u00B7 6h ago</div></div></div></div></div>'
+  +   '</div>'
+  + '</div></div>';
+  tmAttach();
+}
+
+function tmAttach(){
+  const q=(sel)=>Array.prototype.slice.call(tmMain.querySelectorAll(sel));
+  const from=tmMain.querySelector('#tm-from'), to=tmMain.querySelector('#tm-to');
+  if(from) from.onchange=()=>{ tmSeg.from=+from.value; tmPaint(); };
+  if(to) to.onchange=()=>{ tmSeg.to=+to.value; tmPaint(); };
+  const sa=tmMain.querySelector('#tm-showall');
+  if(sa) sa.onchange=()=>{ tmShowAll=sa.checked; tmResetSeg(); tmPaint(); };
+  // the curtain: clicking a state band on the map opens its elevation card + syncs From/To
+  q('.tm-hit').forEach(el=>el.onclick=()=>{
+    const i=+el.dataset.si;
+    tmOpenState=(tmOpenState===i)?null:i;
+    if(tmOpenState!=null){
+      const wp=tmWaypoints();
+      let f=wp.findIndex(w=>w.stateIdx===i), t=-1; for(let j=wp.length-1;j>=0;j--){ if(wp[j].stateIdx===i){ t=j; break; } }
+      if(f>=0&&t>=0){ tmSeg.from=f; tmSeg.to=t; }
+    }
+    tmPaint();
+  });
+  q('.tm-bar').forEach(el=>el.onclick=()=>{ const i=+el.dataset.i; tmOpenState=(tmOpenState===i)?null:i;
+    if(tmOpenState!=null){ const wp=tmWaypoints(); let f=wp.findIndex(w=>w.stateIdx===i),t=-1; for(let j=wp.length-1;j>=0;j--){ if(wp[j].stateIdx===i){t=j;break;} } if(f>=0&&t>=0){tmSeg.from=f;tmSeg.to=t;} }
+    tmPaint(); });
+  q('.tm-trailsw button').forEach(el=>el.onclick=()=>{ const t=el.dataset.t; if(t==='All'){ tmToast('Combined all-trails view \u2014 coming soon'); return; } tmTrail=t; tmResetSeg(); tmPaint(); });
+  q('.tm-dir button').forEach(el=>el.onclick=()=>{ tmSeg.dir=el.dataset.dir; tmPaint(); });
+  q('.tm-win button').forEach(el=>el.onclick=()=>{ tmSeg.win=el.dataset.win; tmPaint(); });
+  q('[data-soon]').forEach(el=>el.onclick=()=>tmToast(el.dataset.soon||'Coming soon'));
+}
+// =====================================================================
+//  ALERTS PAGE (PROMPT 4)
+// =====================================================================
+const SEV_INFO = {
+  INFO:    'General information — trail notes, seasonal reminders. No urgency.',
+  ADVISORY:'Plan-ahead conditions — detours, services closed, fire restrictions.',
+  HAZARD:  'Immediate danger — washout, rockfall, active fire. Can be published immediately.',
+};
+let alertTab = 'active';          // 'active' | 'pending' | 'retired'
+let alertCache = [];              // last-loaded rows for the active trail
+let editingAlertId = null;        // set when the modal is in "edit" mode
+
+// Which trail is the editor acting on right now?
+//  - superadmin: follows the topbar conservancy selector
+//  - single-conservancy editor: their own conservancy's trail
+function activeConsv(){
+  let code = me.conservancy_code;
+  if (me.is_super){
+    const sel = $('#conservancy-select');
+    if (sel && sel.value) code = sel.value;
+  }
+  const c = allConservancies.find(x=>x.code===code) || {code, trail:''};
+  return { code:c.code, trail:c.trail };
+}
+
+// Can the current editor approve/reject/retire on the active trail?
+//  Plain 'editor' is draft-only (matches the deployed RLS update policy).
+function canApprove(){ return me.is_super || me.role==='approver'; }
+
+async function renderAlerts(main){
+  const { trail } = activeConsv();
+  main.innerHTML = `
+    <div class="page-head">
+      <div class="grow">
+        <h2>Alerts</h2>
+        <div class="page-sub">Closures, reroutes, and hazards for the ${esc(trail||'—')}. Two-person publish, with an emergency fast-path for hazards.</div>
+      </div>
+      <button class="btn" id="new-alert">+ New Alert</button>
+    </div>
+    <div class="tabs">
+      <button class="tab" data-tab="active">Active <span class="count" id="c-active">·</span></button>
+      <button class="tab" data-tab="pending">Pending Approval <span class="count" id="c-pending">·</span></button>
+      <button class="tab" data-tab="retired">Retired <span class="count" id="c-retired">·</span></button>
+    </div>
+    <div id="alerts-body">Loading…</div>`;
+  $('#new-alert').onclick = ()=>openAlertModal(null);
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.classList.toggle('active', t.dataset.tab===alertTab);
+    t.onclick = ()=>{ alertTab=t.dataset.tab; renderAlerts(main); };
+  });
+  loadAlerts();
+}
+
+// Classify a row into a tab bucket.
+function bucketOf(a){
+  if (a.retired_at || a.rejected_at) return 'retired';
+  if (a.published_at) return 'active';
+  return 'pending';
+}
+
+async function loadAlerts(){
+  const { trail } = activeConsv();
+  await withAuth(async ()=>{
+    // RLS lets editors see rows for trails they can edit; we filter by trail.
+    const { data, error } = await sb.from('trail_alerts')
+      .select('*').eq('trail', trail)
+      .order('published_at',{ascending:false, nullsFirst:true})
+      .order('effective_from',{ascending:false});
+    if (error) throw error;
+    alertCache = data || [];
+    const counts = { active:0, pending:0, retired:0 };
+    alertCache.forEach(a=>counts[bucketOf(a)]++);
+    const ca=$('#c-active'), cp=$('#c-pending'), cr=$('#c-retired');
+    if (ca) ca.textContent = counts.active;
+    if (cp) cp.textContent = counts.pending;
+    if (cr) cr.textContent = counts.retired;
+    paintAlerts();
+  });
+}
+
+function paintAlerts(){
+  const rows = alertCache.filter(a=>bucketOf(a)===alertTab);
+  const body = $('#alerts-body');
+  if (!body) return;
+  if (!rows.length){
+    const msg = alertTab==='active' ? 'No active alerts on this trail right now.'
+              : alertTab==='pending'? 'Nothing waiting for approval.'
+              : 'No retired or rejected alerts yet.';
+    body.innerHTML = `<div class="empty">${msg}</div>`;
+    return;
+  }
+  body.innerHTML = `<table><thead><tr>
+      <th>Severity</th><th>Alert</th><th>Mile</th><th>Status</th><th></th>
+    </tr></thead><tbody>${rows.map(rowHtml).join('')}</tbody></table>`;
+}
+
+function rowHtml(a){
+  const sev = `<span class="sev sev-${esc(a.severity)}">${esc(a.severity)}</span>`;
+  const mile = (a.nearest_mile!=null) ? esc(a.nearest_mile) : '—';
+  const drafterIsMe = a.created_by === me.editor_id;
+
+  // status cell
+  let status='';
+  if (a.rejected_at){
+    status = `<span class="tag tag-revoked">rejected</span>${a.rejection_reason?`<div class="alert-meta">${esc(a.rejection_reason)}</div>`:''}`;
+  } else if (a.retired_at){
+    status = `<span class="note">retired ${fmtDate(a.retired_at)}</span>`;
+  } else if (a.published_at && !a.approved_by){
+    status = `<span class="needs-review">Emergency — needs 2nd review</span><div class="alert-meta">published ${fmtDate(a.published_at)}</div>`;
+  } else if (a.published_at && a.approved_by){
+    status = `<span class="note">live · approved</span><div class="alert-meta">published ${fmtDate(a.published_at)}</div>`;
+  } else {
+    status = `<span class="tag tag-pending">draft</span>`;
+  }
+
+  // actions per bucket + role
+  const acts=[];
+  const b = bucketOf(a);
+  if (b==='pending'){
+    if (canApprove() && !drafterIsMe){
+      acts.push(`<button class="btn btn-sm" onclick="approveAlert('${a.id}')">Approve &amp; Publish</button>`);
+      acts.push(`<button class="btn-ghost btn btn-sm" onclick="rejectAlert('${a.id}')">Reject</button>`);
+    }
+    if (drafterIsMe) acts.push(`<span class="note">awaiting another editor</span>`);
+    acts.push(`<button class="btn-ghost btn btn-sm" onclick="editAlert('${a.id}')">Edit</button>`);
+  } else if (b==='active'){
+    if (canApprove() && a.published_at && !a.approved_by && !drafterIsMe)
+      acts.push(`<button class="btn btn-sm" onclick="approveAlert('${a.id}')">Confirm review</button>`);
+    acts.push(`<button class="btn-ghost btn btn-sm" onclick="editAlert('${a.id}')">Edit</button>`);
+    if (canApprove()) acts.push(`<button class="btn-danger btn btn-sm" onclick="retireAlert('${a.id}')">Retire</button>`);
+  }
+
+  const bodyPrev = (a.body||'').slice(0,90);
+  return `<tr>
+    <td>${sev}</td>
+    <td><b>${esc(a.title)}</b><div class="alert-meta">${esc(bodyPrev)}${(a.body||'').length>90?'…':''}</div>
+      ${a.source_url?`<div class="alert-meta"><a href="${esc(a.source_url)}" target="_blank" rel="noopener">source ↗</a></div>`:''}</td>
+    <td>${mile}</td>
+    <td>${status}</td>
+    <td><div class="row-actions">${acts.join('')||'<span class="note">—</span>'}</div></td>
+  </tr>`;
+}
+
+// ---- New / Edit modal ----------------------------------------------
+function openAlertModal(existing){
+  editingAlertId = existing ? existing.id : null;
+  const { trail } = activeConsv();
+  const a = existing || { severity:'ADVISORY', title:'', body:'', nearest_mile:'', lat:'', lon:'',
+                          effective_from:'', effective_until:'', source_url:'' };
+  const sevCard = (val)=>`<label class="sev-opt ${a.severity===val?'sel':''}" data-sev="${val}" title="${esc(SEV_INFO[val])}">
+      <input type="radio" name="sev" value="${val}" ${a.severity===val?'checked':''}/>
+      <div class="nm">${val}</div><div class="hint">${esc(SEV_INFO[val])}</div></label>`;
+
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal wide">
+    <h3>${existing?'Edit alert':'New alert'} <span class="trail-chip">${esc(trail)} — DRAFT EDIT</span></h3>
+    <div class="note" style="margin-bottom:14px">${existing
+      ? 'Editing creates a new revision. The alert returns to <b>pending</b> until another editor re-approves it — a live alert will be pulled from hikers until then.'
+      : 'Drafts go to Pending Approval. A second editor publishes them — except a HAZARD, which you can publish immediately.'}</div>
+
+    <div class="field"><label>Severity</label>
+      <div class="sev-pick" id="sev-pick">${['INFO','ADVISORY','HAZARD'].map(sevCard).join('')}</div>
+    </div>
+
+    <div class="field"><label>Title <span class="counter" id="ct-title">0/80</span></label>
+      <input id="al-title" maxlength="80" value="${esc(a.title)}" placeholder="Rockfall near Lava Falls"/></div>
+
+    <div class="field"><label>Body <span class="counter" id="ct-body">0/600</span></label>
+      <textarea id="al-body" maxlength="600" placeholder="What hikers need to know, and what to do.">${esc(a.body)}</textarea></div>
+
+    <div class="grid2">
+      <div class="field"><label>Nearest mile <span class="counter">required</span></label>
+        <input id="al-mile" type="number" step="0.1" value="${esc(a.nearest_mile)}" placeholder="e.g. 178.4"/></div>
+      <div class="field"><label>Source URL (optional)</label>
+        <input id="al-src" value="${esc(a.source_url||'')}" placeholder="https://…"/></div>
+      <div class="field"><label>Latitude (optional)</label>
+        <input id="al-lat" type="number" step="any" value="${esc(a.lat)}" placeholder="auto / manual"/></div>
+      <div class="field"><label>Longitude (optional)</label>
+        <input id="al-lon" type="number" step="any" value="${esc(a.lon)}" placeholder="auto / manual"/></div>
+      <div class="field"><label>Effective from</label>
+        <input id="al-from" type="datetime-local" value="${toLocalInput(a.effective_from)}"/></div>
+      <div class="field"><label>Effective until (optional)</label>
+        <input id="al-until" type="datetime-local" value="${toLocalInput(a.effective_until)}"/></div>
+    </div>
+
+    <div class="field"><label>Reason for this change <span class="counter" id="ct-reason">0/20 min</span></label>
+      <textarea id="al-reason" placeholder="Why is this being posted? This goes into the permanent audit log (min 20 chars)."></textarea></div>
+
+    <div id="al-err" class="err hidden"></div>
+    <div id="emergency-zone"></div>
+
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">Cancel</button>
+      <button class="btn" id="al-draft">${existing?'Save changes':'Save as draft'}</button>
+    </div>
+  </div></div>`;
+
+  // counters
+  const wire=(inp,ct,max)=>{ const f=()=>{ const n=$(inp).value.length; const e=$(ct);
+      e.textContent = inp==='#al-reason'?`${n}/20 min`:`${n}/${max}`;
+      e.classList.toggle('over', inp==='#al-reason'? n<20 : n>max); }; $(inp).oninput=f; f(); };
+  wire('#al-title','#ct-title',80); wire('#al-body','#ct-body',600); wire('#al-reason','#ct-reason',20);
+
+  // severity selection + emergency button visibility
+  function refreshSev(){
+    const v = document.querySelector('input[name=sev]:checked').value;
+    document.querySelectorAll('.sev-opt').forEach(o=>o.classList.toggle('sel', o.dataset.sev===v));
+    const zone = $('#emergency-zone');
+    if (v==='HAZARD' && !existing){
+      zone.innerHTML = `<div class="emergency-note">A HAZARD can go live to hikers <b>immediately</b>. You'll be named as publisher, and a second editor must review within 24 hours.</div>`;
+      if (!$('#al-emerg')){
+        const b=document.createElement('button'); b.className='btn btn-danger'; b.id='al-emerg';
+        b.textContent='Publish immediately (Emergency)'; b.onclick=()=>submitAlert(true);
+        document.querySelector('.modal-actions').appendChild(b);
+      }
+    } else {
+      zone.innerHTML=''; const ex=$('#al-emerg'); if(ex) ex.remove();
+    }
+  }
+  document.querySelectorAll('.sev-opt').forEach(o=>{
+    o.onclick=()=>{ o.querySelector('input').checked=true; refreshSev(); };
+  });
+  refreshSev();
+  $('#al-draft').onclick = ()=>submitAlert(false);
+}
+
+// datetime-local helpers
+function toLocalInput(iso){
+  if(!iso) return '';
+  const d=new Date(iso); if(isNaN(d)) return '';
+  const p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function fromLocalInput(v){ return v ? new Date(v).toISOString() : null; }
+
+function readAlertForm(){
+  const num=(v)=> v===''||v==null ? null : Number(v);
+  return {
+    severity: document.querySelector('input[name=sev]:checked').value,
+    title: $('#al-title').value.trim(),
+    body:  $('#al-body').value.trim(),
+    nearest_mile: num($('#al-mile').value),
+    lat: num($('#al-lat').value),
+    lon: num($('#al-lon').value),
+    effective_from: fromLocalInput($('#al-from').value),
+    effective_until: fromLocalInput($('#al-until').value),
+    source_url: $('#al-src').value.trim(),
+    reason: $('#al-reason').value.trim(),
+  };
+}
+
+async function submitAlert(emergency){
+  const f = readAlertForm();
+  const err=$('#al-err'); hide(err);
+  if (!f.title){ err.textContent='Title is required.'; show(err); return; }
+  if (!f.body){ err.textContent='Body is required.'; show(err); return; }
+  if (f.nearest_mile==null || Number.isNaN(f.nearest_mile)){ err.textContent='Nearest mile is required — every alert is anchored to a point on the trail.'; show(err); return; }
+  if (f.reason.length<20){ err.textContent='Reason must be at least 20 characters (it goes into the audit log).'; show(err); return; }
+  const { trail } = activeConsv();
+  document.querySelectorAll('.modal-actions button').forEach(b=>b.disabled=true);
+  try {
+    await withAuth(async ()=>{
+      let error;
+      if (editingAlertId){
+        ({ error } = await sb.rpc('td_alert_edit', {
+          p_alert_id:editingAlertId, p_severity:f.severity, p_title:f.title, p_body:f.body,
+          p_nearest_mile:f.nearest_mile, p_lat:f.lat, p_lon:f.lon,
+          p_effective_from:f.effective_from, p_effective_until:f.effective_until,
+          p_source_url:f.source_url, p_reason:f.reason }));
+      } else if (emergency){
+        ({ error } = await sb.rpc('td_alert_emergency_publish', {
+          p_trail:trail, p_title:f.title, p_body:f.body,
+          p_nearest_mile:f.nearest_mile, p_lat:f.lat, p_lon:f.lon,
+          p_effective_from:f.effective_from, p_effective_until:f.effective_until,
+          p_source_url:f.source_url, p_reason:f.reason }));
+      } else {
+        ({ error } = await sb.rpc('td_alert_draft', {
+          p_trail:trail, p_severity:f.severity, p_title:f.title, p_body:f.body,
+          p_nearest_mile:f.nearest_mile, p_lat:f.lat, p_lon:f.lon,
+          p_effective_from:f.effective_from, p_effective_until:f.effective_until,
+          p_source_url:f.source_url, p_reason:f.reason }));
+      }
+      if (error) throw error;
+    });
+    closeModal();
+    alertTab = editingAlertId ? 'pending' : (emergency ? 'active' : 'pending');
+    editingAlertId = null;
+    renderAlerts($('#main'));
+  } catch(e){
+    err.textContent = e.message || 'Could not save the alert.'; show(err);
+    document.querySelectorAll('.modal-actions button').forEach(b=>b.disabled=false);
+  }
+}
+
+function editAlert(id){ const a=alertCache.find(x=>x.id===id); if(a) openAlertModal(a); }
+
+async function approveAlert(id){
+  try {
+    await withAuth(async ()=>{ const { error } = await sb.rpc('td_alert_approve', { p_alert_id:id }); if (error) throw error; });
+  } catch(e){ alert(e.message||'Could not approve.'); }
+  loadAlerts();
+}
+
+function rejectAlert(id){
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal">
+    <h3>Reject this draft?</h3>
+    <div class="note">The drafter will see why. Rejected alerts move to the Retired tab and are never published.</div>
+    <div class="field" style="margin-top:12px"><label>Reason (min 10 chars)</label>
+      <textarea id="rej-reason" placeholder="What needs fixing?"></textarea></div>
+    <div id="rej-err" class="err hidden"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">Cancel</button>
+      <button class="btn-danger btn" id="rej-go">Reject draft</button>
+    </div></div></div>`;
+  $('#rej-go').onclick = async ()=>{
+    const reason = $('#rej-reason').value.trim();
+    if (reason.length<10){ $('#rej-err').textContent='Please give at least 10 characters.'; show($('#rej-err')); return; }
+    $('#rej-go').disabled=true;
+    try {
+      await withAuth(async ()=>{ const { error } = await sb.rpc('td_alert_reject',{p_alert_id:id,p_reason:reason}); if(error) throw error; });
+      closeModal(); loadAlerts();
+    } catch(e){ $('#rej-err').textContent=e.message||'Could not reject.'; show($('#rej-err')); $('#rej-go').disabled=false; }
+  };
+}
+
+function retireAlert(id){
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal">
+    <h3>Retire this alert?</h3>
+    <div class="note">It stops showing to hikers. This is recorded in the revision history with your reason.</div>
+    <div class="field" style="margin-top:12px"><label>Reason (min 20 chars)</label>
+      <textarea id="ret-reason" placeholder="e.g. Reroute reopened; trail crew confirmed passable on 2026-06-02."></textarea></div>
+    <div id="ret-err" class="err hidden"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">Cancel</button>
+      <button class="btn-danger btn" id="ret-go">Retire alert</button>
+    </div></div></div>`;
+  $('#ret-go').onclick = async ()=>{
+    const reason = $('#ret-reason').value.trim();
+    if (reason.length<20){ $('#ret-err').textContent='Please give at least 20 characters (it goes into the audit log).'; show($('#ret-err')); return; }
+    $('#ret-go').disabled=true;
+    try {
+      await withAuth(async ()=>{ const { error } = await sb.rpc('td_alert_retire',{p_alert_id:id,p_reason:reason}); if(error) throw error; });
+      closeModal(); loadAlerts();
+    } catch(e){ $('#ret-err').textContent=e.message||'Could not retire.'; show($('#ret-err')); $('#ret-go').disabled=false; }
+  };
+}
+
+// expose alert handlers for inline onclick
+window.approveAlert=approveAlert; window.rejectAlert=rejectAlert;
+window.editAlert=editAlert; window.retireAlert=retireAlert;
+
+// ---- Editors page (superadmin only) ---------------------------------
+// =====================================================================
+//  BASELINE PAGE (PROMPT 5) — complete
+//  Inc 1: read-only merged view (seed + published patches).
+//  Inc 2: waypoint-family write loop (New/Edit/Retire -> td_baseline_draft,
+//         Pending panel, Approve & Publish / Reject, companion alert).
+//  Inc 3: trek-reroute editor (length-changing, nobo+sobo cascade per D17',
+//         matched across directions by segment name, downstream preview +
+//         confirmation tickbox), before->after diff in the pending panel,
+//         prefilled companion alert.
+//  Merge logic mirrors tdApplyOverlay in index.html.
+// =====================================================================
+const BL_TABS = [
+  ['shelter',       'Shelters'],
+  ['waypoint',      'Waypoints'],
+  ['water_source',  'Water Sources'],
+  ['road_crossing', 'Road Crossings'],
+  ['trek_segment',  'Trek Segments'],
+];
+const BL_SINGULAR = { shelter:'Shelter', waypoint:'Waypoint', water_source:'Water Source', road_crossing:'Road Crossing' };
+let blTab     = 'shelter';
+let blSeed    = null;
+let blPatches = [];
+let blMerged  = null;
+let blRevs    = [];
+let blSearch  = '';
+let blSort    = 'mile';
+let blVisible = [];        // painted waypoint rows (index target for Edit/Retire)
+let blPendingOpen = false;
+let blEditing = null;      // { row, et } when editing a waypoint
+let blRrPlan  = null;      // last computed reroute plan (for submit)
+
+function blClassify(name){
+  const s = String(name||'');
+  if (/shelter|lean-?to|\bhut\b|cabin|campsite|tent\s?site|campground|wayside|lodge|the birches/i.test(s)) return 'shelter';
+  if (/spring|creek|stream|\bwater\b|\btank\b|windmill|\bwell\b|river|\blake\b|\bpond\b|falls|faucet|cache|brook|reservoir/i.test(s)) return 'water_source';
+  if (/\broad\b|\bgap\b|\bpass\b|hwy|highway|crossing|trailhead|\bnotch\b|\brd\b|parkway|pkwy|terminus|border/i.test(s)) return 'road_crossing';
+  return 'waypoint';
+}
+
+async function blLoadSeed(){
+  if (blSeed) return blSeed;
+  const res = await fetch('./baseline_seed.json', { cache:'no-store' });
+  if (!res.ok) throw new Error('baseline_seed.json ('+res.status+')');
+  blSeed = await res.json();
+  return blSeed;
+}
+
+// ---- merge (mirror of tdApplyOverlay) -------------------------------
+function blMatch(list, key, matcher){
+  if (key){ const i = list.findIndex(x=>x.key===key); if (i>=0) return i; }
+  if (Array.isArray(matcher) && matcher.length>=2)
+    return list.findIndex(x=>x.raw[0]===matcher[0] && x.raw[1]===matcher[1]);
+  if (matcher && typeof matcher==='object' && !Array.isArray(matcher))
+    return list.findIndex(x=>x.raw[0]===matcher.mile && x.raw[1]===matcher.name);
+  return -1;
+}
+function blMergeTrail(seedTrail, patches){
+  const wp = (seedTrail.waypoints||[]).map(r=>({ raw:r, origin:'seed', et:blClassify(r[1]), key:null }));
+  const treks = {
+    nobo: (seedTrail.treks?.nobo||[]).map(s=>({ seg:s, origin:'seed' })),
+    sobo: (seedTrail.treks?.sobo||[]).map(s=>({ seg:s, origin:'seed' })),
+  };
+  [...patches].sort((a,b)=>(a.revision||0)-(b.revision||0)).forEach(p=>{
+    const et=p.entity_type, op=p.operation, key=p.entity_key, pay=p.payload, prior=p.prior_payload;
+    if (et==='waypoint'||et==='shelter'||et==='water_source'||et==='road_crossing'){
+      if (op==='add' && pay){ wp.push({ raw:pay, origin:'patch', et, key }); }
+      else if (op==='update' && pay){
+        const i=blMatch(wp,key,prior||pay); const row={ raw:pay, origin:'patch', et, key };
+        if (i>=0) wp[i]=row; else wp.push(row);
+      } else if (op==='retire'){ const i=blMatch(wp,key,prior); if (i>=0) wp.splice(i,1); }
+    } else if (et==='trek_segment'){
+      const dir=(pay&&pay.direction)||(prior&&prior.direction);
+      const seg=(pay&&pay.segment)||pay, priorSeg=(prior&&prior.segment)||prior;
+      if (dir!=='nobo' && dir!=='sobo') return;
+      const arr=treks[dir];
+      if (op==='add' && seg){ arr.push({ seg, origin:'patch' }); arr.sort((a,b)=>(a.seg.cumMileStart||0)-(b.seg.cumMileStart||0)); }
+      else if (op==='update' && seg){ const i=arr.findIndex(x=>x.seg.id===(priorSeg||seg).id); const o={seg,origin:'patch'}; if (i>=0) arr[i]=o; else arr.push(o); }
+      else if (op==='retire'){ const i=arr.findIndex(x=>x.seg.id===(priorSeg||seg).id); if (i>=0) arr.splice(i,1); }
+    }
+  });
+  wp.sort((a,b)=>a.raw[0]-b.raw[0]);
+  return { waypoints:wp, treks };
+}
+
+// ---- render ---------------------------------------------------------
+async function renderBaseline(main){
+  const { trail } = activeConsv();
+  const canNew = blTab!=='trek_segment';
+  main.innerHTML = `
+    <div class="page-head">
+      <div class="grow">
+        <h2>Baseline</h2>
+        <div class="page-sub">Seed waypoints, shelters, water, road crossings, and trek segments for the ${esc(trail||'—')}, merged with published patches. Edits draft a revision; a second editor publishes.</div>
+      </div>
+      ${canNew?`<button class="btn" id="bl-new">+ New ${esc(BL_SINGULAR[blTab])}</button>`:''}
+    </div>
+    <div id="bl-pending"></div>
+    <div class="tabs">${BL_TABS.map(([k,label])=>
+      `<button class="tab" data-tab="${k}">${label} <span class="count" id="blc-${k}">·</span></button>`).join('')}</div>
+    <div class="bl-toolbar">
+      <input class="bl-search" id="bl-search" placeholder="Search by name or mile…" value="${esc(blSearch)}"/>
+      <select class="bl-sort" id="bl-sort">
+        <option value="mile"${blSort==='mile'?' selected':''}>Sort: Mile</option>
+        <option value="name"${blSort==='name'?' selected':''}>Sort: Name</option>
+      </select>
+    </div>
+    ${blTab==='trek_segment'?'<div class="bl-banner">Reroute changes a trek length and shifts downstream cumulative miles on <b>both</b> directions. Downstream elevation charts drift by the same amount until a future resync.</div>':''}
+    <div id="bl-body">Loading…</div>`;
+  if (canNew) $('#bl-new').onclick = ()=>openBaselineModal(null, blTab);
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.classList.toggle('active', t.dataset.tab===blTab);
+    t.onclick = ()=>{ blTab=t.dataset.tab; renderBaseline(main); };
+  });
+  $('#bl-search').oninput = (e)=>{ blSearch=e.target.value; blPaint(); };
+  $('#bl-sort').onchange  = (e)=>{ blSort=e.target.value;  blPaint(); };
+  blLoad();
+}
+
+async function blLoad(){
+  const { trail } = activeConsv();
+  const body = $('#bl-body');
+  try { await blLoadSeed(); }
+  catch (e){
+    if (body) body.innerHTML = `<div class="empty">Couldn't load <code>baseline_seed.json</code> — ${esc(e.message)}.<br>It must sit beside this page at <code>admin/trail-data/baseline_seed.json</code>.</div>`;
+    return;
+  }
+  if (!blSeed.trails || !blSeed.trails[trail]){
+    if (body) body.innerHTML = `<div class="empty">No seed snapshot for ${esc(trail)} in baseline_seed.json.</div>`;
+    return;
+  }
+  await withAuth(async ()=>{
+    const [{ data:patches, error:pe }, { data:revs, error:re }] = await Promise.all([
+      sb.from('trail_data_patches').select('*').eq('trail', trail).order('revision',{ascending:true}),
+      sb.from('trail_data_revisions').select('*').eq('trail', trail)
+        .in('kind',['baseline_add','baseline_update','baseline_retire'])
+        .is('published_at', null).is('rejected_at', null).order('drafted_at',{ascending:false}),
+    ]);
+    if (pe) throw pe; if (re) throw re;
+    blPatches = patches || [];
+    blRevs    = revs || [];
+    blMerged  = blMergeTrail(blSeed.trails[trail], blPatches);
+    const wpC = { shelter:0, waypoint:0, water_source:0, road_crossing:0 };
+    blMerged.waypoints.forEach(w=>{ wpC[w.et]=(wpC[w.et]||0)+1; });
+    const trekCount = blMerged.treks.nobo.length + blMerged.treks.sobo.length;
+    BL_TABS.forEach(([k])=>{ const el=$('#blc-'+k); if (el) el.textContent=(k==='trek_segment')?trekCount:(wpC[k]||0); });
+    blRenderPending();
+    blPaint();
+  });
+}
+
+function blOrigin(o){ return `<span class="origin origin-${o}">${o}</span>`; }
+
+// ---- pending drafts panel + diff ------------------------------------
+function blPatchDiffLine(p){
+  const nm = (a)=> a ? a[1] : '';
+  if (p.entity_type==='trek_segment'){
+    const o=p.prior_payload&&p.prior_payload.segment, n=p.payload&&p.payload.segment;
+    const dir=(p.payload&&p.payload.direction)||(p.prior_payload&&p.prior_payload.direction)||'';
+    if (o&&n) return `<span class="bl-dir">${esc(dir)}</span> ${esc(n.name)}: cum ${esc(o.cumMileStart)}–${esc(o.cumMileEnd)} → <b>${esc(n.cumMileStart)}–${esc(n.cumMileEnd)}</b>${o.miles!==n.miles?` <span class="note">(${esc(o.miles)}→${esc(n.miles)} mi)</span>`:''}`;
+    return `trek ${esc(p.entity_key)}`;
+  }
+  if (p.operation==='add')    return `<span class="dadd">+ add</span> ${esc(p.entity_type)} “${esc(nm(p.payload))}” @ mile ${esc(p.payload?p.payload[0]:'?')}`;
+  if (p.operation==='retire') return `<span class="ddel">− retire</span> ${esc(p.entity_type)} “${esc(nm(p.prior_payload))}” @ mile ${esc(p.prior_payload?p.prior_payload[0]:'?')}`;
+  const o=p.prior_payload, n=p.payload, parts=[];
+  if (o&&n){ if (o[0]!==n[0]) parts.push(`mile ${esc(o[0])}→${esc(n[0])}`); if (o[1]!==n[1]) parts.push(`name “${esc(o[1])}”→“${esc(n[1])}”`); }
+  return `update ${esc(p.entity_type)} “${esc(nm(n||o))}”${parts.length?': '+parts.join(', '):''}`;
+}
+function blRenderPending(){
+  const host = $('#bl-pending');
+  if (!host) return;
+  if (!blRevs.length){ host.innerHTML=''; return; }
+  const head = `<button class="bl-pending-head" id="bl-pending-toggle">
+      <span class="needs-review">Pending baseline changes</span>
+      <span class="count">${blRevs.length}</span>
+      <span class="note">${blPendingOpen?'▲ hide':'▼ review'}</span></button>`;
+  let list='';
+  if (blPendingOpen){
+    list = `<div class="bl-pending-list">${blRevs.map(r=>{
+      const mine = r.drafted_by===me.editor_id;
+      const patches = Array.isArray(r.draft_patches)?r.draft_patches:[];
+      const shown = patches.slice(0,15);
+      const preview = shown.map(p=>`<li>${blPatchDiffLine(p)}</li>`).join('') + (patches.length>15?`<li class="note">…and ${patches.length-15} more</li>`:'');
+      const acts=[];
+      if (canApprove() && !mine){
+        acts.push(`<button class="btn btn-sm" onclick="blApprove('${r.id}')">Approve &amp; Publish</button>`);
+        acts.push(`<button class="btn-ghost btn btn-sm" onclick="blReject('${r.id}')">Reject</button>`);
+      } else if (mine){ acts.push('<span class="note">awaiting another editor</span>'); }
+      else { acts.push('<span class="note">approver review required</span>'); }
+      return `<div class="bl-pending-item">
+        <div class="grow"><b>${esc(r.summary)}</b>
+          <div class="alert-meta">${esc(r.kind)} · drafted ${mine?'by you':'by another editor'} ${fmtDate(r.drafted_at)} · ${patches.length} patch${patches.length===1?'':'es'}</div>
+          <ul class="bl-prev">${preview||'<li class="note">(no patch preview)</li>'}</ul>
+          <div class="alert-meta">${esc(r.reason)}</div></div>
+        <div class="row-actions">${acts.join('')}</div></div>`;
+    }).join('')}</div>`;
+  }
+  host.innerHTML = `<div class="bl-pending-panel">${head}${list}</div>`;
+  const tog = $('#bl-pending-toggle');
+  if (tog) tog.onclick = ()=>{ blPendingOpen=!blPendingOpen; blRenderPending(); };
+}
+
+// ---- list paint -----------------------------------------------------
+function blPaint(){
+  const body = $('#bl-body');
+  if (!body || !blMerged) return;
+  const q = blSearch.trim().toLowerCase();
+
+  if (blTab==='trek_segment'){
+    const rowsFor=(dir)=> blMerged.treks[dir]
+      .filter(x=> !q || String(x.seg.name||'').toLowerCase().includes(q) || String(x.seg.id).includes(q))
+      .map(x=>{ const s=x.seg; return `<tr><td><span class="bl-dir">${dir}</span></td><td>${esc(s.id)}</td>
+        <td><b>${esc(s.name)}</b> <span class="note">${esc(s.state||'')}</span></td>
+        <td>${esc(s.miles)} mi</td><td>${esc(s.cumMileStart)}–${esc(s.cumMileEnd)}</td><td>${blOrigin(x.origin)}</td>
+        <td><div class="row-actions"><button class="btn-ghost btn btn-sm" onclick="blReroute('${dir}',${s.id})">Reroute</button></div></td></tr>`; });
+    const rows=[...rowsFor('nobo'),...rowsFor('sobo')];
+    body.innerHTML = rows.length
+      ? `<table><thead><tr><th>Dir</th><th>#</th><th>Segment</th><th>Miles</th><th>Cum mile</th><th>Origin</th><th></th></tr></thead><tbody>${rows.join('')}</tbody></table>`
+      : `<div class="empty">No trek segments match “${esc(blSearch)}”.</div>`;
+    return;
+  }
+
+  let rows = blMerged.waypoints.filter(w=>w.et===blTab);
+  if (q) rows = rows.filter(w=> String(w.raw[1]||'').toLowerCase().includes(q) || String(w.raw[0]).includes(q));
+  rows.sort((a,b)=> blSort==='name' ? String(a.raw[1]||'').localeCompare(String(b.raw[1]||'')) : (a.raw[0]-b.raw[0]));
+  blVisible = rows;
+  if (!rows.length){ body.innerHTML = `<div class="empty">Nothing in this category${blSearch?` matching “${esc(blSearch)}”`:''}.</div>`; return; }
+  body.innerHTML = `<table><thead><tr><th>Mile</th><th>Name</th><th>State</th><th>Origin</th><th></th></tr></thead><tbody>${
+    rows.map((w,i)=>`<tr>
+      <td>${esc(w.raw[0])}</td><td><b>${esc(w.raw[1])}</b></td><td>${esc(w.raw[2]||'')}</td><td>${blOrigin(w.origin)}</td>
+      <td><div class="row-actions">
+        <button class="btn-ghost btn btn-sm" onclick="blEdit(${i})">Edit</button>
+        <button class="btn-danger btn btn-sm" onclick="blRetireRow(${i})">Retire</button>
+      </div></td></tr>`).join('')
+  }</tbody></table>`;
+}
+
+// ---- keys + array helpers -------------------------------------------
+function blSlug(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40); }
+function blKey(et, trail, mile, name){ return `${et}:${trail}:${mile}:${blSlug(name)}`; }
+function blBuildRow(fields, base){
+  const f = base && Array.isArray(base) ? base.slice() : [];
+  return [
+    Number(fields.mile),
+    fields.name,
+    fields.state || (f[2]||''),
+    fields.lat===''?null:Number(fields.lat),
+    fields.lon===''?null:Number(fields.lon),
+    (f[5]!==undefined?f[5]:1),   // legacy display flags — preserved on edit,
+    (f[6]!==undefined?f[6]:1),   // default 1 on new (semantics TBD; FUTURES)
+    (f[7]!==undefined?f[7]:1),
+    fields.capacity!==undefined?fields.capacity:(f[8]||''),
+    fields.distNext!==undefined?fields.distNext:(f[9]||''),
+    fields.location!==undefined?fields.location:(f[10]||''),
+  ];
+}
+
+// ---- New / Edit waypoint modal --------------------------------------
+function openBaselineModal(existing, et){
+  blEditing = existing ? { row:existing.raw, et } : null;
+  const { trail } = activeConsv();
+  const r = existing ? existing.raw : [];
+  const v = (i,d='')=> (r[i]!==undefined && r[i]!==null) ? r[i] : d;
+  const typeLabel = BL_SINGULAR[et]||et;
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal wide">
+    <h3>${existing?'Edit':'New'} ${esc(typeLabel)} <span class="trail-chip">${esc(trail)} — DRAFT EDIT</span></h3>
+    <div class="note" style="margin-bottom:14px">Saving drafts a revision. It appears in <b>Pending baseline changes</b> until a second editor approves &amp; publishes — then it merges into what hikers see.</div>
+    <div class="frow"><label>Mile<input id="bl-f-mile" type="number" step="0.1" value="${esc(v(0))}"/></label>
+      <label>State<input id="bl-f-state" value="${esc(v(2))}"/></label></div>
+    <label>Name<input id="bl-f-name" value="${esc(v(1))}"/></label>
+    <div class="frow"><label>Latitude<input id="bl-f-lat" type="number" step="0.00001" value="${esc(v(3))}"/></label>
+      <label>Longitude<input id="bl-f-lon" type="number" step="0.00001" value="${esc(v(4))}"/></label></div>
+    <div class="frow"><label>Capacity / sleeps<input id="bl-f-cap" value="${esc(v(8))}"/></label>
+      <label>Dist. to next<input id="bl-f-dist" value="${esc(v(9))}"/></label>
+      <label>Location vs trail<input id="bl-f-loc" value="${esc(v(10))}" placeholder="e.g. On AT / 0.2 W"/></label></div>
+    <label>Reason for this change (min 20 chars)<textarea id="bl-f-reason" rows="2"></textarea></label>
+    <div class="modal-err" id="bl-modal-err"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">Cancel</button>
+      <button class="btn" id="bl-save">Save as draft</button>
+    </div></div></div>`;
+  $('#bl-save').onclick = ()=>blDraftSubmit(et);
+}
+
+async function blDraftSubmit(et){
+  const { trail } = activeConsv();
+  const errEl = $('#bl-modal-err');
+  const fields = {
+    mile: $('#bl-f-mile').value.trim(), name: $('#bl-f-name').value.trim(),
+    state: $('#bl-f-state').value.trim(), lat: $('#bl-f-lat').value.trim(), lon: $('#bl-f-lon').value.trim(),
+    capacity: $('#bl-f-cap').value, distNext: $('#bl-f-dist').value, location: $('#bl-f-loc').value,
+  };
+  const reason = $('#bl-f-reason').value.trim();
+  errEl.textContent='';
+  if (!fields.name){ errEl.textContent='Name is required.'; return; }
+  if (fields.mile==='' || isNaN(Number(fields.mile))){ errEl.textContent='Mile must be a number.'; return; }
+  if (reason.length<20){ errEl.textContent='Reason must be at least 20 characters.'; return; }
+
+  const base = blEditing ? blEditing.row : null;
+  const row  = blBuildRow(fields, base);
+  const isEdit = !!blEditing;
+  const kind = isEdit ? 'baseline_update' : 'baseline_add';
+  const patch = isEdit
+    ? { entity_type:et, entity_key:blKey(et,trail,row[0],row[1]), operation:'update', payload:row, prior_payload:base }
+    : { entity_type:et, entity_key:blKey(et,trail,row[0],row[1]), operation:'add',    payload:row, prior_payload:null };
+  const summary = `${isEdit?'Update':'Add'} ${BL_SINGULAR[et]||et} “${row[1]}” at mile ${row[0]}`.slice(0,200);
+
+  $('#bl-save').disabled = true;
+  try {
+    await withAuth(async ()=>{
+      const { error } = await sb.rpc('td_baseline_draft', {
+        p_trail:trail, p_kind:kind, p_summary:summary, p_reason:reason, p_patches:[patch]
+      });
+      if (error) throw error;
+    });
+    closeModal();
+    blOfferCompanionAlert({ title:summary.slice(0,80), body:summary+'.', mile:row[0] });
+    blPendingOpen = true;
+    blLoad();
+  } catch (e){ errEl.textContent = e.message || 'Could not save draft.'; $('#bl-save').disabled=false; }
+}
+
+// ---- Retire waypoint ------------------------------------------------
+function blRetireRow(i){
+  const w = blVisible[i]; if (!w) return;
+  const { trail } = activeConsv();
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal">
+    <h3>Retire ${esc(BL_SINGULAR[w.et]||w.et)} <span class="trail-chip">${esc(trail)} — DRAFT EDIT</span></h3>
+    <div class="note" style="margin-bottom:12px">Drafts a retirement of <b>${esc(w.raw[1])}</b> (mile ${esc(w.raw[0])}). On publish it disappears from the hiker planner and map. A second editor must approve.</div>
+    <label>Reason (min 20 chars)<textarea id="bl-r-reason" rows="2"></textarea></label>
+    <div class="modal-err" id="bl-r-err"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">Cancel</button>
+      <button class="btn-danger btn" id="bl-r-save">Draft retirement</button>
+    </div></div></div>`;
+  $('#bl-r-save').onclick = async ()=>{
+    const reason = $('#bl-r-reason').value.trim();
+    const err = $('#bl-r-err'); err.textContent='';
+    if (reason.length<20){ err.textContent='Reason must be at least 20 characters.'; return; }
+    const patch = { entity_type:w.et, entity_key:blKey(w.et,trail,w.raw[0],w.raw[1]), operation:'retire', payload:null, prior_payload:w.raw };
+    const summary = `Retire ${BL_SINGULAR[w.et]||w.et} “${w.raw[1]}” at mile ${w.raw[0]}`.slice(0,200);
+    $('#bl-r-save').disabled=true;
+    try{
+      await withAuth(async ()=>{ const { error } = await sb.rpc('td_baseline_draft', {
+        p_trail:trail, p_kind:'baseline_retire', p_summary:summary, p_reason:reason, p_patches:[patch] }); if (error) throw error; });
+      closeModal(); blOfferCompanionAlert({ title:summary.slice(0,80), body:summary+'.', mile:w.raw[0] }); blPendingOpen=true; blLoad();
+    }catch(e){ err.textContent=e.message||'Could not draft retirement.'; $('#bl-r-save').disabled=false; }
+  };
+}
+function blEdit(i){ const w=blVisible[i]; if (w) openBaselineModal(w, w.et); }
+
+// ---- Trek reroute (length-changing, nobo+sobo cascade — D17') -------
+function blMkTrekPatch(dir, oldSeg, newSeg){
+  return { entity_type:'trek_segment', entity_key:`trek:${dir}:${oldSeg.id}`, operation:'update',
+    payload:{ direction:dir, segment:newSeg }, prior_payload:{ direction:dir, segment:oldSeg } };
+}
+// Pure: compute the full patch set + affected list for a reroute.
+function blComputeReroute(pickDir, segId, newMiles){
+  const out = { patches:[], affected:[], delta:0, warnings:[], summary:'' };
+  const pickArr = blMerged.treks[pickDir].map(x=>x.seg).slice().sort((a,b)=>a.cumMileStart-b.cumMileStart);
+  const picked = pickArr.find(s=>s.id===segId);
+  if (!picked){ out.warnings.push('Segment not found.'); return out; }
+  const delta = Math.round((newMiles - picked.miles)*10)/10;
+  out.delta = delta;
+  const pickedName = picked.name;
+
+  function applyDir(dir, matchFn){
+    const arr = blMerged.treks[dir].map(x=>x.seg).slice().sort((a,b)=>a.cumMileStart-b.cumMileStart);
+    const idx = arr.findIndex(matchFn);
+    if (idx<0){ if (dir!==pickDir) out.warnings.push(`No “${pickedName}” segment in ${dir} — only ${pickDir} will change.`); return; }
+    const old = arr[idx];
+    const ns  = Object.assign({}, old, { miles:newMiles, cumMileEnd: Math.round((old.cumMileStart+newMiles)*10)/10 });
+    out.patches.push(blMkTrekPatch(dir, old, ns));
+    out.affected.push({ dir, name:old.name, oldS:old.cumMileStart, oldE:old.cumMileEnd, newS:ns.cumMileStart, newE:ns.cumMileEnd, picked:true });
+    for (let i=idx+1; i<arr.length; i++){
+      const s = arr[i];
+      const sn = Object.assign({}, s, { cumMileStart: Math.round((s.cumMileStart+delta)*10)/10, cumMileEnd: Math.round((s.cumMileEnd+delta)*10)/10 });
+      out.patches.push(blMkTrekPatch(dir, s, sn));
+      out.affected.push({ dir, name:s.name, oldS:s.cumMileStart, oldE:s.cumMileEnd, newS:sn.cumMileStart, newE:sn.cumMileEnd, picked:false });
+    }
+  }
+  applyDir(pickDir, s=>s.id===segId);
+  applyDir(pickDir==='nobo'?'sobo':'nobo', s=>s.name===pickedName);
+  out.summary = `Reroute ${pickedName}: ${picked.miles}→${newMiles} mi (${delta>=0?'+':''}${delta}); ${out.affected.length} segments both directions`.slice(0,200);
+  return out;
+}
+
+function blReroute(dir, segId){
+  const { trail } = activeConsv();
+  const picked = (blMerged.treks[dir].find(x=>x.seg.id===segId)||{}).seg;
+  if (!picked) return;
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal wide">
+    <h3>Reroute · ${esc(dir)} #${esc(picked.id)} ${esc(picked.name)} <span class="trail-chip">${esc(trail)} — DRAFT EDIT</span></h3>
+    <div class="note" style="margin-bottom:14px">Changing this segment's length shifts the cumulative miles of every downstream segment in <b>both</b> directions. The elevation chart for those miles drifts by the same amount until a future resync — fine for small reroutes.</div>
+    <div class="frow">
+      <label>Current length<input value="${esc(picked.miles)} mi" disabled/></label>
+      <label>New length (miles)<input id="rr-miles" type="number" step="0.1" value="${esc(picked.miles)}"/></label>
+      <label>Current cum end<input value="${esc(picked.cumMileEnd)}" disabled/></label>
+    </div>
+    <div id="rr-preview" class="bl-rr-preview"></div>
+    <label class="rr-ack"><input type="checkbox" id="rr-ack"/> I understand this shifts downstream cumulative miles on nobo and sobo.</label>
+    <label>Reason (min 20 chars)<textarea id="rr-reason" rows="2"></textarea></label>
+    <div class="modal-err" id="rr-err"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">Cancel</button>
+      <button class="btn" id="rr-save" disabled>Save reroute draft</button>
+    </div></div></div>`;
+  const recompute=()=>{
+    const nm = parseFloat($('#rr-miles').value);
+    const prev = $('#rr-preview'), save = $('#rr-save');
+    if (isNaN(nm) || nm<=0){ prev.innerHTML='<span class="note">Enter a positive new length.</span>'; save.disabled=true; return; }
+    const r = blComputeReroute(dir, segId, nm);
+    blRrPlan = r;
+    const lines = r.affected.slice(0,14).map(a=>
+      `<div>${a.picked?'<b>● </b>':''}<span class="bl-dir">${esc(a.dir)}</span> ${esc(a.name)}: ${esc(a.oldS)}–${esc(a.oldE)} → <b>${esc(a.newS)}–${esc(a.newE)}</b></div>`).join('');
+    const more = r.affected.length>14?`<div class="note">…and ${r.affected.length-14} more</div>`:'';
+    const warn = r.warnings.length?`<div class="needs-review">${r.warnings.map(esc).join(' ')}</div>`:'';
+    prev.innerHTML = `<div class="alert-meta">Δ ${r.delta>=0?'+':''}${r.delta} mi · ${r.affected.length} segment(s) across both directions${r.delta===0?' — no change':''}</div>${warn}<div class="bl-rr-list">${lines}${more}</div>`;
+    save.disabled = !($('#rr-ack').checked && r.delta!==0 && r.patches.length>0);
+  };
+  $('#rr-miles').oninput = recompute;
+  $('#rr-ack').onchange  = recompute;
+  recompute();
+  $('#rr-save').onclick = async ()=>{
+    const reason = $('#rr-reason').value.trim(); const err = $('#rr-err'); err.textContent='';
+    if (reason.length<20){ err.textContent='Reason must be at least 20 characters.'; return; }
+    const r = blRrPlan; if (!r || !r.patches.length){ err.textContent='Nothing to change.'; return; }
+    $('#rr-save').disabled=true;
+    try{
+      await withAuth(async ()=>{ const { error } = await sb.rpc('td_baseline_draft', {
+        p_trail:trail, p_kind:'baseline_update', p_summary:r.summary, p_reason:reason, p_patches:r.patches }); if (error) throw error; });
+      closeModal();
+      blOfferCompanionAlert({ title:`Reroute: ${trail} mile ${picked.cumMileStart}`.slice(0,80),
+        body:`${picked.name} rerouted (${r.delta>=0?'+':''}${r.delta} mi). See baseline update.`, mile:picked.cumMileStart });
+      blPendingOpen=true; blLoad();
+    }catch(e){ err.textContent=e.message||'Could not save reroute.'; $('#rr-save').disabled=false; }
+  };
+}
+
+// ---- Approve / Reject -----------------------------------------------
+async function blApprove(revId){
+  await withAuth(async ()=>{ const { error } = await sb.rpc('td_baseline_approve', { p_revision_id:revId }); if (error) throw error; });
+  blLoad();
+}
+function blReject(revId){
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal">
+    <h3>Reject baseline draft <span class="trail-chip">${esc(activeConsv().trail)} — DRAFT EDIT</span></h3>
+    <label>Reason (min 20 chars)<textarea id="bl-rj-reason" rows="2"></textarea></label>
+    <div class="modal-err" id="bl-rj-err"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">Cancel</button>
+      <button class="btn-danger btn" id="bl-rj-save">Reject</button>
+    </div></div></div>`;
+  $('#bl-rj-save').onclick = async ()=>{
+    const reason=$('#bl-rj-reason').value.trim(); const err=$('#bl-rj-err'); err.textContent='';
+    if (reason.length<20){ err.textContent='Reason must be at least 20 characters.'; return; }
+    $('#bl-rj-save').disabled=true;
+    try{ await withAuth(async ()=>{ const { error } = await sb.rpc('td_baseline_reject', { p_revision_id:revId, p_reason:reason }); if (error) throw error; });
+      closeModal(); blLoad();
+    }catch(e){ err.textContent=e.message||'Could not reject.'; $('#bl-rj-save').disabled=false; }
+  };
+}
+
+// ---- companion alert offer (suggest, don't force; prefilled) --------
+function blOfferCompanionAlert(info){
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal">
+    <h3>Tell hikers? <span class="trail-chip">${esc(activeConsv().trail)} — DRAFT EDIT</span></h3>
+    <div class="note" style="margin-bottom:14px">Draft saved. Want to also post a trail alert so hikers see this change? Optional — the baseline edit stands on its own.</div>
+    <div class="alert-meta" style="margin-bottom:14px">${esc(info.title)}${info.mile!=null?` · mile ${esc(info.mile)}`:''}</div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">No thanks</button>
+      <button class="btn" id="bl-ca-yes">Draft an alert</button>
+    </div></div></div>`;
+  $('#bl-ca-yes').onclick = ()=>{
+    closeModal();
+    openAlertModal(null);
+    const t=$('#al-title'); if (t){ t.value=String(info.title||'').slice(0,80); t.dispatchEvent(new Event('input')); }
+    const b=$('#al-body');  if (b){ b.value=String(info.body||'').slice(0,600); b.dispatchEvent(new Event('input')); }
+    const m=$('#al-mile');  if (m && info.mile!=null) m.value=info.mile;
+  };
+}
+
+// =====================================================================
+//  REVISIONS PAGE (PROMPT 6)
+//  Inc 2a: read-only reverse-chron table + click-to-diff. No write paths
+//  yet (Revert lands in 2b; filters + CSV in 2c; alert-revert in 2d).
+//  Diff reuses blPatchDiffLine over each revision's stored draft_patches.
+// =====================================================================
+let revCache   = [];   // last-loaded revisions for the active trail (sorted)
+let revEditors = {};   // editor id -> display_name (best-effort; needs editor read)
+let revById    = {};   // revision id -> row (for revert/original cross-links)
+let revFilters = { from:'', to:'', editor:'', kind:'' };  // date range / editor / kind
+let revFiltered= [];   // rows currently shown (what CSV exports)
+let revAlertByRev = {}; // alert_create revision id -> trail_alerts row (for alert-revert)
+
+// newest-first anchor: published time if published, else when it was drafted.
+function revWhen(r){ return r.published_at || r.drafted_at; }
+
+function revStatus(r){
+  if (r.rejected_at)             return { key:'rejected', html:'<span class="tag tag-revoked">rejected</span>' };
+  if (r.reverted_by_revision_id) return { key:'reverted', html:'<span class="tag tag-reverted">reverted</span>' };
+  if (r.published_at && r.approved_by)  return { key:'published', html:'<span class="tag tag-live">published</span>' };
+  if (r.published_at && !r.approved_by) return { key:'published', html:'<span class="tag tag-live">published</span> <span class="needs-review">· emergency</span>' };
+  return { key:'pending', html:'<span class="tag tag-pending">pending</span>' };
+}
+
+// Editor display name (escaped). Falls back to "you" / "—" when the name
+// isn't readable (conservancy_editors read is gated; superadmin sees all).
+function revName(id){
+  if (!id) return '—';
+  if (id===me.editor_id) return revEditors[id] ? esc(revEditors[id])+' (you)' : 'you';
+  return revEditors[id] ? esc(revEditors[id]) : '—';
+}
+
+async function renderRevisions(main){
+  const { trail } = activeConsv();
+  main.innerHTML = `
+    <div class="page-head">
+      <div class="grow">
+        <h2>Revisions</h2>
+        <div class="page-sub">Every drafted, published, and reverted change to the ${esc(trail||'—')} — newest first. Click a row for the full diff.</div>
+      </div>
+      <button class="btn" id="rev-csv">Download CSV</button>
+    </div>
+    <div id="rev-toolbar"></div>
+    <div id="rev-body">Loading…</div>`;
+  $('#rev-csv').onclick = revDownloadCSV;
+  revLoad();
+}
+
+async function revLoad(){
+  const { trail } = activeConsv();
+  const body = $('#rev-body');
+  await withAuth(async ()=>{
+    const [{ data:revs, error:re }, { data:eds }, { data:alerts }] = await Promise.all([
+      sb.from('trail_data_revisions').select('*').eq('trail', trail),
+      sb.from('conservancy_editors').select('id,display_name'),  // best-effort name map
+      sb.from('trail_alerts').select('id,severity,retired_at,approved_by,revision_id,title').eq('trail', trail),
+    ]);
+    if (re) throw re;
+    revEditors = {};
+    (eds||[]).forEach(e=>{ revEditors[e.id]=e.display_name; });
+    revAlertByRev = {};
+    (alerts||[]).forEach(a=>{ if (a.revision_id) revAlertByRev[a.revision_id]=a; });
+    revCache = (revs||[]).slice().sort((a,b)=> new Date(revWhen(b)) - new Date(revWhen(a)));
+    revById = {};
+    revCache.forEach(r=>{ revById[r.id]=r; });
+    revRenderToolbar();
+    revPaint();
+  });
+}
+
+// local YYYY-MM-DD (matches the date the table shows via fmtDate)
+function ymdLocal(s){ if(!s) return ''; const d=new Date(s);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+function revMatchesFilters(r){
+  const f = revFilters;
+  if (f.kind && r.kind !== f.kind) return false;
+  if (f.editor && r.drafted_by !== f.editor && r.approved_by !== f.editor) return false;
+  const d = ymdLocal(revWhen(r));
+  if (f.from && d && d < f.from) return false;
+  if (f.to   && d && d > f.to)   return false;
+  return true;
+}
+
+function revRenderToolbar(){
+  const host = $('#rev-toolbar');
+  if (!host) return;
+  // editor + kind option sets, drawn from what's actually present
+  const edIds = new Set();
+  const kinds = new Set();
+  revCache.forEach(r=>{ if (r.drafted_by) edIds.add(r.drafted_by); if (r.approved_by) edIds.add(r.approved_by); if (r.kind) kinds.add(r.kind); });
+  const edOpts = ['<option value="">All editors</option>'].concat(
+    [...edIds].map(id=>`<option value="${esc(id)}"${revFilters.editor===id?' selected':''}>${revName(id).replace(/ \(you\)$/,' (you)')}</option>`)).join('');
+  const kOpts = ['<option value="">All kinds</option>'].concat(
+    [...kinds].sort().map(k=>`<option value="${esc(k)}"${revFilters.kind===k?' selected':''}>${esc(k)}</option>`)).join('');
+  host.innerHTML = `<div class="bl-toolbar rev-toolbar">
+    <label class="rev-fl">From <input type="date" id="rev-from" value="${esc(revFilters.from)}"></label>
+    <label class="rev-fl">To <input type="date" id="rev-to" value="${esc(revFilters.to)}"></label>
+    <select id="rev-editor" class="bl-sort">${edOpts}</select>
+    <select id="rev-kind" class="bl-sort">${kOpts}</select>
+    <button class="btn-ghost btn btn-sm" id="rev-clear">Clear</button>
+  </div>`;
+  $('#rev-from').onchange   = (e)=>{ revFilters.from=e.target.value; revPaint(); };
+  $('#rev-to').onchange     = (e)=>{ revFilters.to=e.target.value;   revPaint(); };
+  $('#rev-editor').onchange = (e)=>{ revFilters.editor=e.target.value; revPaint(); };
+  $('#rev-kind').onchange   = (e)=>{ revFilters.kind=e.target.value;  revPaint(); };
+  $('#rev-clear').onclick   = ()=>{ revFilters={from:'',to:'',editor:'',kind:''}; revRenderToolbar(); revPaint(); };
+}
+
+function revPaint(){
+  const body = $('#rev-body');
+  if (!body) return;
+  if (!revCache.length){ body.innerHTML = `<div class="empty">No revisions recorded on this trail yet.</div>`; return; }
+  revFiltered = revCache.filter(revMatchesFilters);
+  if (!revFiltered.length){ body.innerHTML = `<div class="empty">No revisions match the current filters.</div>`; return; }
+  const rows = revFiltered.map(r=>{
+    const n  = Array.isArray(r.draft_patches) ? r.draft_patches.length : 0;
+    const st = revStatus(r);
+    return `<tr class="rev-row" onclick="revOpen('${r.id}')">
+      <td>${fmtDate(r.published_at)}</td>
+      <td><span class="tag tag-role">${esc(r.kind)}</span></td>
+      <td><b>${esc(r.summary)}</b>${n?`<div class="alert-meta">${n} patch${n===1?'':'es'}</div>`:''}</td>
+      <td>${revName(r.drafted_by)}</td>
+      <td>${revName(r.approved_by)}</td>
+      <td>${st.html}</td>
+    </tr>`;
+  }).join('');
+  body.innerHTML = `<div class="rev-count note">${revFiltered.length} of ${revCache.length} revision${revCache.length===1?'':'s'}</div>
+    <table><thead><tr>
+      <th>Published</th><th>Kind</th><th>Summary</th><th>Drafted by</th><th>Approved by</th><th>Status</th>
+    </tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// ---- CSV audit export (exports the currently-filtered set) ----------
+function revCsvCell(v){ return '"' + (v==null?'':String(v)).replace(/"/g,'""') + '"'; }
+function revDownloadCSV(){
+  const { trail } = activeConsv();
+  const rows = (revFiltered && revFiltered.length) ? revFiltered : revCache;
+  if (!rows.length){ return; }
+  const header = ['published_at','drafted_at','approved_at','rejected_at','trail','kind','status',
+                  'summary','reason','rejection_reason','drafted_by','approved_by','patches',
+                  'id','reverts_revision_id','reverted_by_revision_id'];
+  const nameOf = (id)=> id ? (revEditors[id]||id) : '';
+  const lines = [ header.map(revCsvCell).join(',') ];
+  rows.forEach(r=>{
+    lines.push([
+      r.published_at||'', r.drafted_at||'', r.approved_at||'', r.rejected_at||'',
+      r.trail||trail, r.kind||'', revStatus(r).key,
+      r.summary||'', r.reason||'', r.rejection_reason||'',
+      nameOf(r.drafted_by), nameOf(r.approved_by),
+      Array.isArray(r.draft_patches)?r.draft_patches.length:0,
+      r.id||'', r.reverts_revision_id||'', r.reverted_by_revision_id||''
+    ].map(revCsvCell).join(','));
+  });
+  const csv  = '\ufeff' + lines.join('\r\n');   // BOM + CRLF so Excel opens cleanly
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `revisions_${trail||'trail'}_${ymdLocal(new Date().toISOString())}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+// A published baseline revision is revertable: not rejected, not already
+// reverted, kind baseline_*, with stored patches to invert. (Alert reverts: 2d.)
+function revCanRevert(r){
+  return !!(r.published_at && !r.rejected_at && !r.reverted_by_revision_id
+    && String(r.kind||'').indexOf('baseline_')===0
+    && Array.isArray(r.draft_patches) && r.draft_patches.length>0);
+}
+// An existing pending revert that already targets this revision (avoid doubles).
+function revPendingRevertFor(id){
+  return revCache.find(s=> s.reverts_revision_id===id && !s.published_at && !s.rejected_at);
+}
+// Later PUBLISHED revisions that touched the same entity_keys as r — reverting
+// r restores state from before r and may undo these. Surfaced, never auto-blocked.
+function revInterveningEdits(r){
+  if (!Array.isArray(r.draft_patches) || !r.published_at) return [];
+  const keys = new Set(r.draft_patches.map(p=>p && p.entity_key).filter(Boolean));
+  if (!keys.size) return [];
+  const t0 = new Date(r.published_at).getTime();
+  return revCache.filter(s=> s.id!==r.id && s.published_at
+    && new Date(s.published_at).getTime() > t0
+    && Array.isArray(s.draft_patches)
+    && s.draft_patches.some(p=> p && keys.has(p.entity_key)));
+}
+// Alert-revert eligibility: a published alert_create whose alert is still mapped
+// (by revision_id) and not yet retired. update/retire reverts are deferred (2d).
+function revAlertCanRevert(r){
+  if (!(r.published_at && !r.rejected_at && !r.reverted_by_revision_id && r.kind==='alert_create')) return false;
+  const a = revAlertByRev[r.id];
+  return !!(a && !a.retired_at);
+}
+// Emergency one-step gate (mirrors td_alert_revert_now): superadmin + HAZARD +
+// emergency-published-unreviewed (approved_by null).
+function revAlertEmergencyEligible(r){
+  const a = revAlertByRev[r.id];
+  return !!(revAlertCanRevert(r) && me.is_super && a && a.severity==='HAZARD' && !a.approved_by);
+}
+
+function revOpen(id){
+  const r = revById[id];
+  if (!r) return;
+  const st = revStatus(r);
+  const patches = Array.isArray(r.draft_patches) ? r.draft_patches : [];
+
+  let diff;
+  if (patches.length){
+    diff = `<ul class="bl-prev">${patches.map(p=>`<li>${blPatchDiffLine(p)}</li>`).join('')}</ul>`;
+  } else if (String(r.kind||'').indexOf('alert')===0){
+    diff = `<div class="note">This is an alert change — see the Alerts page for the full before/after. (In-place alert diffs arrive with alert-revert support.)</div>`;
+  } else if (r.kind==='revert' && r.reverts_revision_id){
+    const o = revById[r.reverts_revision_id];
+    diff = `<div class="note">Alert revert — retires the alert${o?` created by “${esc(o.summary)}”`:''}.</div>`;
+  } else {
+    diff = `<div class="note">No stored patch detail for this revision.</div>`;
+  }
+
+  let links='';
+  if (r.reverts_revision_id && revById[r.reverts_revision_id])
+    links += `<div class="alert-meta">↩ Reverts: “${esc(revById[r.reverts_revision_id].summary)}”</div>`;
+  if (r.reverted_by_revision_id && revById[r.reverted_by_revision_id])
+    links += `<div class="alert-meta">⟲ Reverted by: “${esc(revById[r.reverted_by_revision_id].summary)}”</div>`;
+
+  // ---- contextual footer -------------------------------------------
+  let footer;
+  const isPendingRevert = r.kind==='revert' && !r.published_at && !r.rejected_at;
+  if (isPendingRevert){
+    const mine = r.drafted_by===me.editor_id;
+    const acts = [];
+    if (canApprove() && !mine){
+      acts.push('<button class="btn" id="rev-approve">Approve &amp; Publish</button>');
+      acts.push('<button class="btn-danger btn" id="rev-reject">Reject</button>');
+    } else {
+      acts.push(`<span class="note">${mine?'awaiting another editor to approve':'approver review required'}</span>`);
+      // Reject needs no second editor (and a solo operator must be able to clear
+      // their own draft) — so the drafter may withdraw their own pending revert.
+      if (mine || canApprove()) acts.push('<button class="btn-danger btn" id="rev-reject">Reject</button>');
+    }
+    footer = `<div class="modal-err" id="rev-act-err"></div>
+      <div class="modal-actions">${acts.join('')}<button class="btn-ghost btn" onclick="closeModal()">Close</button></div>`;
+  } else if (revCanRevert(r)){
+    const pend = revPendingRevertFor(r.id);
+    if (pend){
+      footer = `<div class="rev-reason note">A revert of this change is already pending review.</div>
+        <div class="modal-actions"><button class="btn-ghost btn" onclick="closeModal()">Close</button></div>`;
+    } else {
+      const iv = revInterveningEdits(r);
+      const ivWarn = iv.length ? `<div class="rev-iv"><b>Heads up:</b> ${iv.length} later published change${iv.length===1?'':'s'} touched the same entit${iv.length===1?'y':'ies'}:
+        <ul class="bl-prev">${iv.slice(0,6).map(s=>`<li>${esc(s.summary)} <span class="note">(${fmtDate(s.published_at)})</span></li>`).join('')}${iv.length>6?`<li class="note">…and ${iv.length-6} more</li>`:''}</ul>
+        Reverting restores the state from before <em>this</em> change and may undo those too — your call.</div>` : '';
+      footer = `${ivWarn}
+        <div class="rev-revert-box">
+          <label class="rev-reason">Reason for the revert <span class="counter" id="rev-rv-ct">0/20 min</span>
+            <textarea id="rev-revert-reason" rows="2" placeholder="Why is this being reverted? Goes into the permanent audit log (min 20 chars)."></textarea></label>
+          <div class="modal-err" id="rev-revert-err"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-ghost btn" onclick="closeModal()">Close</button>
+          <button class="btn-danger btn" id="rev-revert-go">Draft revert</button>
+        </div>`;
+    }
+  } else if (revAlertCanRevert(r)){
+    const pend = revPendingRevertFor(r.id);
+    if (pend){
+      footer = `<div class="rev-reason note">A revert of this alert is already pending review.</div>
+        <div class="modal-actions"><button class="btn-ghost btn" onclick="closeModal()">Close</button></div>`;
+    } else {
+      const emer = revAlertEmergencyEligible(r);
+      const note = emer
+        ? `<div class="rev-iv"><b>Emergency HAZARD.</b> As superadmin you can retire this emergency-published HAZARD immediately — no second editor. Use this only when it's known wrong.</div>`
+        : `<div class="rev-reason note">This drafts a retirement of the alert; another editor publishes it.</div>`;
+      footer = `${note}
+        <div class="rev-revert-box">
+          <label class="rev-reason">Reason for the revert <span class="counter" id="rev-rv-ct">0/20 min</span>
+            <textarea id="rev-revert-reason" rows="2" placeholder="Why is this being reverted? Goes into the permanent audit log (min 20 chars)."></textarea></label>
+          <div class="modal-err" id="rev-revert-err"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-ghost btn" onclick="closeModal()">Close</button>
+          <button class="btn-danger btn" id="rev-arevert-go">${emer?'Retire now (emergency)':'Draft retire-revert'}</button>
+        </div>`;
+    }
+  } else {
+    footer = `<div class="modal-actions"><button class="btn-ghost btn" onclick="closeModal()">Close</button></div>`;
+  }
+
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal wide">
+    <h3>${esc(r.summary)}</h3>
+    <div class="alert-meta">${esc(r.kind)} · ${st.html}</div>
+    <div class="rev-meta">
+      <div><span class="note">Drafted</span> · ${revName(r.drafted_by)} · ${fmtDate(r.drafted_at)}</div>
+      <div><span class="note">Approved</span> · ${revName(r.approved_by)} · ${fmtDate(r.approved_at)}</div>
+      <div><span class="note">Published</span> · ${fmtDate(r.published_at)}</div>
+      ${r.rejected_at?`<div><span class="note">Rejected</span> · ${revName(r.rejected_by)} · ${fmtDate(r.rejected_at)}</div>`:''}
+    </div>
+    ${r.reason?`<div class="rev-reason"><span class="note">Reason</span><br>${esc(r.reason)}</div>`:''}
+    ${r.rejection_reason?`<div class="rev-reason"><span class="note">Rejection reason</span><br>${esc(r.rejection_reason)}</div>`:''}
+    ${links}
+    <div class="rev-diff-h">Change detail</div>
+    ${diff}
+    ${footer}
+  </div></div>`;
+
+  // wire contextual actions
+  const ag=$('#rev-approve');     if (ag) ag.onclick=()=>revApprove(r.id);
+  const rj=$('#rev-reject');      if (rj) rj.onclick=()=>revReject(r.id);
+  const rg=$('#rev-revert-go');   if (rg) rg.onclick=()=>revDoRevert(r.id);
+  const ar=$('#rev-arevert-go');  if (ar) ar.onclick=()=>revDoAlertRevert(r.id, revAlertEmergencyEligible(r));
+  const rt=$('#rev-revert-reason'), ct=$('#rev-rv-ct');
+  if (rt && ct) rt.oninput=()=>{ ct.textContent = rt.value.trim().length+'/20 min'; };
+}
+
+// ---- revert actions -------------------------------------------------
+async function revDoRevert(id){
+  const ta=$('#rev-revert-reason'), err=$('#rev-revert-err'), go=$('#rev-revert-go');
+  const reason = ta ? ta.value.trim() : '';
+  if (err) err.textContent='';
+  if (reason.length<20){ if (err) err.textContent='Please give a reason of at least 20 characters for the audit log.'; return; }
+  if (go) go.disabled=true;
+  try{
+    await withAuth(async ()=>{ const { error } = await sb.rpc('td_revert_draft', { p_revision_id:id, p_reason:reason }); if (error) throw error; });
+    closeModal(); revLoad();
+  }catch(e){ if (err) err.textContent=e.message||'Could not draft the revert.'; if (go) go.disabled=false; }
+}
+async function revApprove(id){
+  const err=$('#rev-act-err');
+  const row = revById[id];
+  const isAlertRevert = row && (!Array.isArray(row.draft_patches) || row.draft_patches.length===0);
+  const rpc = isAlertRevert ? 'td_alert_revert_approve' : 'td_revert_approve';
+  document.querySelectorAll('.modal-actions button').forEach(b=>b.disabled=true);
+  try{
+    await withAuth(async ()=>{ const { error } = await sb.rpc(rpc, { p_revision_id:id }); if (error) throw error; });
+    closeModal(); revLoad();
+  }catch(e){
+    if (err) err.textContent=e.message||'Could not approve the revert.';
+    document.querySelectorAll('.modal-actions button').forEach(b=>b.disabled=false);
+  }
+}
+async function revDoAlertRevert(id, emergency){
+  const ta=$('#rev-revert-reason'), err=$('#rev-revert-err'), go=$('#rev-arevert-go');
+  const reason = ta ? ta.value.trim() : '';
+  if (err) err.textContent='';
+  if (reason.length<20){ if (err) err.textContent='Please give a reason of at least 20 characters for the audit log.'; return; }
+  if (go) go.disabled=true;
+  try{
+    const fn = emergency ? 'td_alert_revert_now' : 'td_alert_revert_draft';
+    await withAuth(async ()=>{ const { error } = await sb.rpc(fn, { p_revision_id:id, p_reason:reason }); if (error) throw error; });
+    closeModal(); revLoad();
+  }catch(e){ if (err) err.textContent=e.message||'Could not revert the alert.'; if (go) go.disabled=false; }
+}
+function revReject(id){
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal">
+    <h3>Reject revert</h3>
+    <label>Reason (min 20 chars)<textarea id="rev-rj-reason" rows="2"></textarea></label>
+    <div class="modal-err" id="rev-rj-err"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">Cancel</button>
+      <button class="btn-danger btn" id="rev-rj-save">Reject</button>
+    </div></div></div>`;
+  $('#rev-rj-save').onclick = async ()=>{
+    const reason=$('#rev-rj-reason').value.trim(); const err=$('#rev-rj-err'); err.textContent='';
+    if (reason.length<20){ err.textContent='Reason must be at least 20 characters.'; return; }
+    $('#rev-rj-save').disabled=true;
+    try{ await withAuth(async ()=>{ const { error } = await sb.rpc('td_revert_reject', { p_revision_id:id, p_reason:reason }); if (error) throw error; });
+      closeModal(); revLoad();
+    }catch(e){ err.textContent=e.message||'Could not reject.'; $('#rev-rj-save').disabled=false; }
+  };
+}
+
+async function renderEditors(main){
+  main.innerHTML = `<h2>Editors</h2>
+    <div class="page-sub">Named humans authorized to draft and approve trail-data changes. Access is per-conservancy; revoke is a soft-revoke that preserves the audit trail.</div>
+    <div class="panel" style="margin-bottom:22px">
+      <h3 style="font-size:1.05rem;margin-bottom:14px">Invite an editor</h3>
+      <div class="invite-grid">
+        <div class="field"><label>Full name</label><input id="inv-name" placeholder="Jane Ridgeline" /></div>
+        <div class="field"><label>Email</label><input id="inv-email" type="email" placeholder="jane@conservancy.org" /></div>
+        <div class="field"><label>Conservancy</label><select id="inv-consv">${allConservancies.map(c=>`<option value="${esc(c.code)}">${esc(c.display_name_short)} · ${esc(c.trail)}</option>`).join('')}</select></div>
+        <div class="field"><label>Role</label><select id="inv-role">${ROLES.map(r=>`<option value="${r}">${r}</option>`).join('')}</select></div>
+      </div>
+      <button id="inv-send" class="btn">Create &amp; send sign-in link</button>
+      <div id="inv-msg" class="ok hidden"></div>
+      <div id="inv-err" class="err hidden"></div>
+    </div>
+    <div id="editors-table">Loading editors…</div>`;
+  $('#inv-send').onclick = inviteEditor;
+  loadEditors();
+}
+
+async function loadEditors(){
+  await withAuth(async ()=>{
+    const { data, error } = await sb.from('conservancy_editors')
+      .select('*').order('conservancy_code').order('display_name');
+    if (error) throw error;
+    const rows = (data||[]).map(e=>{
+      const revoked = !!e.revoked_at;
+      const pending = !e.accepted_at && !revoked;
+      const roleTag = e.role==='superadmin' ? '<span class="tag tag-super">superadmin</span>'
+                                            : `<span class="tag tag-role">${esc(e.role)}</span>`;
+      const status = revoked ? '<span class="tag tag-revoked">revoked</span>'
+                   : pending ? '<span class="tag tag-pending">invited</span>'
+                             : `<span class="note">${fmtDate(e.last_active_at)}</span>`;
+      const action = revoked
+        ? `<button class="btn-ghost btn btn-sm" onclick="restoreEditor('${e.id}')">Restore</button>`
+        : `<button class="btn-danger btn btn-sm" onclick="confirmRevoke('${e.id}','${esc(e.display_name).replace(/'/g,"&#39;")}')">Revoke</button>`;
+      return `<tr class="${revoked?'revoked':''}">
+        <td><b>${esc(e.display_name)}</b><br><span class="note">${esc(e.email)}</span></td>
+        <td>${esc(e.conservancy_code)}</td>
+        <td>${roleTag}</td>
+        <td>${fmtDate(e.invited_at)}</td>
+        <td>${status}</td>
+        <td style="text-align:right">${action}</td>
+      </tr>`;
+    }).join('');
+    $('#editors-table').innerHTML = `<table>
+      <thead><tr><th>Editor</th><th>Conservancy</th><th>Role</th><th>Invited</th><th>Last active / status</th><th></th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="6" class="note">No editors yet.</td></tr>'}</tbody></table>`;
+  });
+}
+
+async function inviteEditor(){
+  const name  = $('#inv-name').value.trim();
+  const email = $('#inv-email').value.trim();
+  const code  = $('#inv-consv').value;
+  const role  = $('#inv-role').value;
+  hide($('#inv-err')); hide($('#inv-msg'));
+  if (!name || !email || !/.+@.+\..+/.test(email)){ $('#inv-err').textContent='Name and a valid email are required.'; show($('#inv-err')); return; }
+  $('#inv-send').disabled = true;
+  try {
+    await withAuth(async ()=>{
+      const { error } = await sb.from('conservancy_editors').insert({
+        email, display_name:name, conservancy_code:code, role,
+        invited_by: me.editor_id, accepted_at: null
+      });
+      if (error) throw error;
+    });
+    // Fire the sign-in link to the invitee (Supabase default magic-link email).
+    const { error:otpErr } = await sb.auth.signInWithOtp({
+      email, options:{ emailRedirectTo: location.origin + location.pathname, shouldCreateUser:true }
+    });
+    $('#inv-msg').textContent = otpErr
+      ? `Editor created. (Couldn't auto-send the link: ${otpErr.message} — they can request one on the sign-in page.)`
+      : 'Editor created and a sign-in link was emailed.';
+    show($('#inv-msg'));
+    $('#inv-name').value=''; $('#inv-email').value='';
+    loadEditors();
+  } catch(e){
+    $('#inv-err').textContent = /duplicate|unique/i.test(e.message||'')
+      ? 'That email already has an active row for this conservancy.' : (e.message||'Could not create editor.');
+    show($('#inv-err'));
+  } finally { $('#inv-send').disabled = false; }
+}
+
+function confirmRevoke(id, name){
+  $('#modal-mount').innerHTML = `<div class="overlay"><div class="modal">
+    <h3>Revoke access?</h3>
+    <div class="note"><b>${name}</b> will lose console access immediately and see the "not authorized" screen on their next page load. Their audit history is preserved. You can restore them later.</div>
+    <div class="modal-actions">
+      <button class="btn-ghost btn" onclick="closeModal()">Cancel</button>
+      <button class="btn-danger btn" onclick="doRevoke('${id}')">Revoke</button>
+    </div></div></div>`;
+}
+function closeModal(){ $('#modal-mount').innerHTML=''; }
+
+async function doRevoke(id){
+  closeModal();
+  await withAuth(async ()=>{
+    const { error } = await sb.from('conservancy_editors').update({ revoked_at:new Date().toISOString() }).eq('id', id);
+    if (error) throw error;
+  });
+  loadEditors();
+}
+async function restoreEditor(id){
+  try {
+    await withAuth(async ()=>{
+      const { error } = await sb.from('conservancy_editors').update({ revoked_at:null }).eq('id', id);
+      if (error) throw error;
+    });
+  } catch(e){ alert(/duplicate|unique/i.test(e.message||'') ? 'Cannot restore: an active row already exists for that email + conservancy.' : e.message); }
+  loadEditors();
+}
+
+// expose handlers used in inline onclick
+window.confirmRevoke = confirmRevoke;
+window.closeModal = closeModal;
+window.doRevoke = doRevoke;
+window.restoreEditor = restoreEditor;
+
+$('#send-link').onclick = sendLink;
+$('#email').addEventListener('keydown', e=>{ if(e.key==='Enter') sendLink(); });
+$('#denied-signout').onclick = ()=> sb && sb.auth.signOut();
+
+boot();
+</script>
+</body>
+</html>
