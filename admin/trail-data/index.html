@@ -260,7 +260,7 @@
       <button class="navlink" data-page="revisions">Revisions</button>
       <button class="navlink hidden" id="nav-editors" data-page="editors">Editors</button>
       <div class="nav-sep"></div>
-      <a class="nav-guide" id="nav-console-guide" href="https://triplecrowntrekplanner.com/console-guide.pdf" target="_blank" rel="noopener" title="How to operate this console">
+      <a class="nav-guide" id="nav-console-guide" href="https://triplecrowntrekplanner.com/console-guide-at.pdf" target="_blank" rel="noopener" title="How to operate this console">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Console Guide</a>
       <a class="nav-guide" id="nav-hiker-guide" href="https://triplecrowntrekplanner.com/at-guide.pdf" target="_blank" rel="noopener" title="The hiker-facing field guide for the selected trail">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Hiker Guide</a>
@@ -419,6 +419,9 @@ function go(page){
   try { const _hg=document.getElementById('nav-hiker-guide');
         if(_hg){ const _t=(activeConsv().trail||'AT').toLowerCase();
                  _hg.href='https://triplecrowntrekplanner.com/'+_t+'-guide.pdf'; } } catch(e){}
+  try { const _cg=document.getElementById('nav-console-guide');
+        if(_cg){ const _t=(activeConsv().trail||'AT').toLowerCase();
+                 _cg.href='https://triplecrowntrekplanner.com/console-guide-'+_t+'.pdf'; } } catch(e){}
   if (page==='editors' && !me.is_super) page='alerts';
   document.querySelectorAll('.navlink').forEach(b=>b.classList.toggle('active', b.dataset.page===page));
   const main = $('#main');
