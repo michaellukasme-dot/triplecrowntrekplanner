@@ -223,13 +223,7 @@
 .tm-seg button.on{background:#fff;color:var(--tm-forest);box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .tm-lbl{font-size:.66rem;letter-spacing:.05em;text-transform:uppercase;color:var(--subtle);margin-left:6px}
 .tm-note{margin-left:auto;font-size:.72rem;color:var(--subtle);font-style:italic}
-.tm-filterhint{font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;color:var(--tm-sage);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:7px}
-.tm-filterhint .d{width:6px;height:6px;border-radius:50%;background:var(--tm-leaf)}
-.tm-names{display:flex;gap:0 2px;align-items:center;flex-wrap:wrap;color:var(--subtle);font-size:.78rem;font-weight:600;margin-bottom:9px}
-.tm-names .tm-s{white-space:nowrap;padding:1px 5px;border-radius:6px;cursor:pointer;transition:.12s}
-.tm-names .tm-s:hover{color:var(--tm-forest);background:var(--tm-mist)}
-.tm-names .tm-s.active{color:var(--tm-pine);font-weight:800;box-shadow:inset 0 -2px 0 var(--tm-pine)}
-.tm-names .tm-sep{color:var(--tm-leaf)}
+/* (retired: .tm-filterhint and .tm-names — old prev/next state carousel, removed with the single-state card) */
 .tm-hlrow{display:flex;align-items:center;gap:10px}
 .tm-arrow{width:30px;height:30px;flex:none;border:1px solid var(--border);background:#fff;border-radius:50%;color:var(--subtle);font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .tm-arrow:hover{border-color:var(--tm-pine);color:var(--tm-pine)}
@@ -604,18 +598,21 @@ function tmToast(msg){
 function tmStates(){ return TM_DATA[tmTrail]||[]; }
 function tmWaypoints(){
   const list=tmStates(); const wp=[]; let cum=0;
-  for(const s of list){
+  // stateIdx = the row index this waypoint came from. Needed because a trail can
+  // repeat a state code across rows (PCT splits CA into 3 rows), so matching on the
+  // code alone would span all of them; the row index is unique per accordion row.
+  list.forEach((s,si)=>{
     const ks=(s.k&&s.k.length)?s.k:[s.n];
     const span=s.mi/ks.length;
     ks.forEach((name,j)=>{
       const mile=Math.round(cum + span*(j+0.5));
-      wp.push({mile,name,state:s.c,stateName:s.n,major:true});
+      wp.push({mile,name,state:s.c,stateName:s.n,stateIdx:si,major:true});
       if(tmShowAll && j<ks.length-1){
-        wp.push({mile:Math.round(cum+span*(j+1)),name:'· mi '+Math.round(cum+span*(j+1)),state:s.c,stateName:s.n,major:false});
+        wp.push({mile:Math.round(cum+span*(j+1)),name:'· mi '+Math.round(cum+span*(j+1)),state:s.c,stateName:s.n,stateIdx:si,major:false});
       }
     });
     cum+=s.mi;
-  }
+  });
   return wp;
 }
 function tmTotal(){ return tmStates().reduce((a,x)=>a+x.mi,0); }
@@ -728,7 +725,7 @@ function tmPaint(){
   '<div class="tm-wrap" data-trail="'+tmTrail+'">'
   + '<div class="page-head"><div class="grow"><h2>Trail Map</h2>'
   +   '<div class="page-sub">A pane of glass on the trail \u2014 situational view, not actionable.</div></div>'
-  +   '<div class="tm-fresh"><span class="tm-pulse"></span> near real-time \u00B7 updated 14s ago</div></div>'
+  +   '<div class="tm-fresh"><span class="tm-pulse"></span> sample feed \u00B7 counts not live yet</div></div>'
 
   + '<div class="tm-controls">'
   +   '<div class="tm-seg tm-trailsw">'+trailbtns+'</div>'
@@ -776,14 +773,14 @@ function tmAttach(){
     const i=+el.dataset.si;
     tmOpenState=(tmOpenState===i)?null:i;
     if(tmOpenState!=null){
-      const wp=tmWaypoints(), sc=tmStates()[i].c;
-      let f=wp.findIndex(w=>w.state===sc), t=-1; for(let j=wp.length-1;j>=0;j--){ if(wp[j].state===sc){ t=j; break; } }
+      const wp=tmWaypoints();
+      let f=wp.findIndex(w=>w.stateIdx===i), t=-1; for(let j=wp.length-1;j>=0;j--){ if(wp[j].stateIdx===i){ t=j; break; } }
       if(f>=0&&t>=0){ tmSeg.from=f; tmSeg.to=t; }
     }
     tmPaint();
   });
   q('.tm-bar').forEach(el=>el.onclick=()=>{ const i=+el.dataset.i; tmOpenState=(tmOpenState===i)?null:i;
-    if(tmOpenState!=null){ const wp=tmWaypoints(), sc=tmStates()[i].c; let f=wp.findIndex(w=>w.state===sc),t=-1; for(let j=wp.length-1;j>=0;j--){ if(wp[j].state===sc){t=j;break;} } if(f>=0&&t>=0){tmSeg.from=f;tmSeg.to=t;} }
+    if(tmOpenState!=null){ const wp=tmWaypoints(); let f=wp.findIndex(w=>w.stateIdx===i),t=-1; for(let j=wp.length-1;j>=0;j--){ if(wp[j].stateIdx===i){t=j;break;} } if(f>=0&&t>=0){tmSeg.from=f;tmSeg.to=t;} }
     tmPaint(); });
   q('.tm-trailsw button').forEach(el=>el.onclick=()=>{ const t=el.dataset.t; if(t==='All'){ tmToast('Combined all-trails view \u2014 coming soon'); return; } tmTrail=t; tmResetSeg(); tmPaint(); });
   q('.tm-dir button').forEach(el=>el.onclick=()=>{ tmSeg.dir=el.dataset.dir; tmPaint(); });
