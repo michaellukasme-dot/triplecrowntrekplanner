@@ -39,6 +39,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Triple Crown Planner">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon-167.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152.png">
 
 <!-- ══ STRUCTURED DATA — WebApplication (JSON-LD) ══ -->
 <script type="application/ld+json">
@@ -717,6 +721,21 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 #gps-aware-toast .gat-actions button:hover{filter:brightness(1.08)}
 #gps-aware-toast .gat-keep{background:#cfe0cf;color:#16321a}
 #gps-aware-toast .gat-off{background:transparent;border-color:rgba(255,255,255,.3);color:#cfe0cf}
+/* combined welcome toast (install + Find Me) — added by tctp_as_app */
+#gps-aware-toast .wt-row{display:flex;gap:11px;align-items:center;padding:10px 2px}
+#gps-aware-toast .wt-row + .wt-row{border-top:1px solid rgba(255,255,255,.10)}
+#gps-aware-toast .wt-ic{flex:none;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;line-height:1}
+#gps-aware-toast .wt-ic svg{width:30px;height:30px;display:block}
+#gps-aware-toast .wt-body{flex:1;min-width:0;font-size:.8rem;line-height:1.45;color:#dce7d8}
+#gps-aware-toast .wt-body strong{color:#fff}
+#gps-aware-toast .wt-steps{display:none;margin-top:6px;font-size:.72rem;color:#bcd1b5;line-height:1.4}
+#gps-aware-toast .wt-steps.show{display:block}
+#gps-aware-toast .wt-acts{flex:none;display:flex;gap:7px;align-items:center}
+#gps-aware-toast .wt-acts button{font-family:inherit;font-size:.74rem;font-weight:700;border-radius:9px;padding:7px 13px;cursor:pointer;border:1px solid transparent;transition:filter .15s;white-space:nowrap}
+#gps-aware-toast .wt-acts button:hover{filter:brightness(1.08)}
+#gps-aware-toast .wt-primary{background:#cfe0cf;color:#16321a}
+#gps-aware-toast .wt-ghost{background:transparent;border-color:rgba(255,255,255,.3);color:#cfe0cf}
+@media(max-width:460px){#gps-aware-toast .wt-row{flex-wrap:wrap}#gps-aware-toast .wt-acts{width:100%;justify-content:flex-end;padding-left:41px}}
 .board-filters{display:flex;gap:5px;padding:8px 14px;border-bottom:1px solid var(--border);
   flex-wrap:wrap;background:var(--stone)}
 .board-filter{padding:3px 9px;border-radius:10px;border:1px solid var(--border);
@@ -1428,37 +1447,94 @@ window.onload = () => {
 };
 
 function initDefaultGps(){
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(_){}
   try {
-    if (!navigator.geolocation) return;
-    if (localStorage.getItem('tctp_gps_off') === '1') return;   // hiker turned it off before — respect that
-    if (typeof gpsActive !== 'undefined' && gpsActive) return;
-    startGPS();
-    showGpsToast();
+    if (navigator.geolocation
+        && localStorage.getItem('tctp_gps_off') !== '1'
+        && !(typeof gpsActive !== 'undefined' && gpsActive)) {
+      startGPS();
+    }
   } catch(_){}
+  try { showGpsToast(); } catch(_){}
 }
+
+/* PWA install affordance (added by tctp_as_app) */
+function tctpIsStandalone(){
+  return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+}
+function tctpIsIOS(){
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+}
+window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); window._deferredInstallPrompt = e; });
 
 function showGpsToast(){
   if (document.getElementById('gps-aware-toast')) return;
-  const w = document.createElement('div');
+  var showFindMe = (localStorage.getItem('tctp_gps_off') !== '1');
+  var showInstall = !tctpIsStandalone()
+                 && (localStorage.getItem('tctp_install_dismissed') !== '1')
+                 && (tctpIsIOS() || !!window._deferredInstallPrompt);
+  if (!showFindMe && !showInstall) return;
+
+  var icon = '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="22" fill="#1e3a1e"/>'+
+    '<circle cx="52" cy="40" r="16" fill="#c8a84b"/>'+
+    '<polygon points="14,76 30,46 39,58 50,30 61,58 70,50 86,76 86,80 14,80" fill="#eef2ea"/>'+
+    '<polygon points="45,40 50,30 55,40" fill="#fff"/></svg>';
+
+  var html = '';
+  if (showInstall){
+    html += '<div class="wt-row" id="wt-row-install"><span class="wt-ic">'+icon+'</span>'+
+      '<div class="wt-body"><strong>Add Triple&nbsp;Crown Trek&nbsp;Planner to your home screen.</strong> Launch full-screen, even offline.'+
+      '<div class="wt-steps" id="wt-ios-steps">On iPhone: tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</div></div>'+
+      '<div class="wt-acts"><button class="wt-primary" onclick="tctpInstallYes()">Yes</button>'+
+      '<button class="wt-ghost" onclick="tctpInstallNo()">No</button></div></div>';
+  }
+  if (showFindMe){
+    html += '<div class="wt-row" id="wt-row-findme"><span class="wt-ic">📍</span>'+
+      '<div class="wt-body"><strong>Find&nbsp;Me is on.</strong> The map keeps you on the line and shows what&rsquo;s ahead &mdash; your call.</div>'+
+      '<div class="wt-acts"><button class="wt-primary" onclick="dismissGpsToast()">Keep it on</button>'+
+      '<button class="wt-ghost" onclick="dismissGpsToast(true)">Turn it off</button></div></div>';
+  }
+
+  var w = document.createElement('div');
   w.id = 'gps-aware-toast';
-  w.innerHTML =
-    '<div class="gat-row"><span class="gat-dot">📍</span>'+
-    '<div class="gat-body"><strong>Find&nbsp;Me is on — on purpose.</strong> '+
-    'Because we&rsquo;re a mapping app, and a map that doesn&rsquo;t know where you are isn&rsquo;t much of a trail companion. It sets you on the line and shows what&rsquo;s ahead — and it&rsquo;s your call: keep it on, or turn it off.</div></div>'+
-    '<div class="gat-actions"><button class="gat-keep" onclick="dismissGpsToast()">Keep it on</button>'+
-    '<button class="gat-off" onclick="dismissGpsToast(true)">Turn it off</button></div>';
+  w.innerHTML = html;
   document.body.appendChild(w);
-  requestAnimationFrame(()=>w.classList.add('show'));
-  w._t = setTimeout(()=>dismissGpsToast(), 12000);
+  requestAnimationFrame(function(){ w.classList.add('show'); });
+  w._t = setTimeout(function(){ tctpHideToast(); }, 14000);
 }
 
+function tctpHideToast(){
+  var w = document.getElementById('gps-aware-toast'); if (!w) return;
+  clearTimeout(w._t); w.classList.remove('show');
+  setTimeout(function(){ try { w.remove(); } catch(_){} }, 350);
+}
+function tctpCloseRow(id){
+  var w = document.getElementById('gps-aware-toast'); if (!w) return;
+  var row = document.getElementById(id); if (row) row.remove();
+  if (!w.querySelector('.wt-row')) tctpHideToast();
+}
+
+/* Find Me row */
 function dismissGpsToast(turnOff){
-  const w = document.getElementById('gps-aware-toast');
   if (turnOff) { try { if (typeof gpsActive !== 'undefined' && gpsActive) toggleGPS(); } catch(_){} }
-  if (!w) return;
-  clearTimeout(w._t);
-  w.classList.remove('show');
-  setTimeout(()=>{ try { w.remove(); } catch(_){} }, 350);
+  tctpCloseRow('wt-row-findme');
+}
+
+/* Install row */
+function tctpInstallYes(){
+  if (tctpIsIOS()){
+    var st = document.getElementById('wt-ios-steps'); if (st) st.classList.add('show');
+    try { localStorage.setItem('tctp_install_dismissed','1'); } catch(_){}
+    return;
+  }
+  var pr = window._deferredInstallPrompt;
+  if (pr && pr.prompt){ try { pr.prompt(); } catch(_){} window._deferredInstallPrompt = null; }
+  try { localStorage.setItem('tctp_install_dismissed','1'); } catch(_){}
+  tctpCloseRow('wt-row-install');
+}
+function tctpInstallNo(){
+  try { localStorage.setItem('tctp_install_dismissed','1'); } catch(_){}
+  tctpCloseRow('wt-row-install');
 }
 
 function getTreks() {
@@ -8101,5 +8177,13 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
   </div>
 </div>
 
+<!-- PWA: register the service worker (network-first HTML; offline shell). Added by tctp_as_app. -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/service-worker.js').catch(function () {});
+    });
+  }
+</script>
 </body>
 </html>
