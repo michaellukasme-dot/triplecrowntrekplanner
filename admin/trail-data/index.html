@@ -518,7 +518,12 @@ function buildShell(){
   if (me.is_super){
     sel.innerHTML = allConservancies.map(c=>`<option value="${esc(c.code)}">${esc(c.display_name_short)} · ${esc(c.trail)}</option>`).join('');
     show(sel);
+    // Persist the chosen conservancy so a reload / new tab / backgrounded-tab discard doesn't
+    // snap back to the first option (was always defaulting to AT). Restore runs before go().
+    try { const _sv = localStorage.getItem('tdc_consv');
+          if (_sv && allConservancies.some(c=>c.code===_sv)) sel.value = _sv; } catch(e){}
     sel.onchange = ()=>{
+      try { localStorage.setItem('tdc_consv', sel.value); } catch(e){}
       const active = document.querySelector('.navlink.active');
       go(active ? active.dataset.page : 'alerts');
     };
