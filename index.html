@@ -1472,8 +1472,7 @@ function showGpsToast(){
   if (document.getElementById('gps-aware-toast')) return;
   var showFindMe = (localStorage.getItem('tctp_gps_off') !== '1');
   var showInstall = !tctpIsStandalone()
-                 && (localStorage.getItem('tctp_install_dismissed') !== '1')
-                 && (tctpIsIOS() || !!window._deferredInstallPrompt);
+                 && (localStorage.getItem('tctp_install_dismissed') !== '1');
   if (!showFindMe && !showInstall) return;
 
   var icon = '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="22" fill="#1e3a1e"/>'+
@@ -1529,9 +1528,13 @@ function tctpInstallYes(){
     return;
   }
   var pr = window._deferredInstallPrompt;
-  if (pr && pr.prompt){ try { pr.prompt(); } catch(_){} window._deferredInstallPrompt = null; }
-  try { localStorage.setItem('tctp_install_dismissed','1'); } catch(_){}
-  tctpCloseRow('wt-row-install');
+  if (pr && pr.prompt){
+    try { pr.prompt(); } catch(_){} window._deferredInstallPrompt = null;
+    try { localStorage.setItem('tctp_install_dismissed','1'); } catch(_){}
+    tctpCloseRow('wt-row-install');
+  } else {
+    try { window.open('quick-start-guide.html','_blank','noopener'); } catch(_){}
+  }
 }
 function tctpInstallNo(){
   try { localStorage.setItem('tctp_install_dismissed','1'); } catch(_){}
