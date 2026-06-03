@@ -1083,6 +1083,12 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .a5-kanon{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:.72rem;color:var(--pine);font-weight:600;padding:9px 14px 2px}
 .a5-kanon .muted{color:var(--subtle);font-style:italic;font-weight:400}
 .a5-foot{font-size:.64rem;color:var(--subtle);padding:9px 16px;border-top:1px solid var(--border)}
+
+/* A5 From/To waypoint-filter bar (state comes from accordion) */
+.a5-ft-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;margin-bottom:14px}
+.a5-ft-bar .ft-badge{flex:none}
+.a5-ft-bar select{flex:1 1 220px;min-width:150px}
+.a5-oab{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--subtle);cursor:pointer;white-space:nowrap;font-weight:500}
 </style>
 <style id="pb-redesign-css">
 .sp-board-top{display:flex;justify-content:flex-end;align-items:center;padding:8px 14px 0}
@@ -1205,45 +1211,6 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
     <div class="direction-toggle" id="dirToggle">
       <button class="dir-btn active" id="btnNOBO" onclick="setDirection('NOBO')">↑ NOBO</button>
       <button class="dir-btn" id="btnSOBO" onclick="setDirection('SOBO')">↓ SOBO</button>
-    </div>
-  </div>
-
-  <!-- FROM -->
-  <div class="sb-section">
-    <div class="from-to-block">
-      <div class="from-to-title"><span class="ft-badge">FROM</span></div>
-      <div class="ft-row">
-        <div class="ft-col">
-          <label>State</label>
-          <select id="fromState" onchange="onFromStateChange()"></select>
-        </div>
-        <div class="ft-col">
-          <label>Trek</label>
-          <select id="fromTrek" onchange="onFromTrekChange()"></select>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TO -->
-  <div class="sb-section">
-    <div class="from-to-block">
-      <div class="from-to-title">
-        <span class="ft-badge" style="background:var(--rust)">TO</span>
-        <label style="margin-left:auto;display:flex;align-items:center;gap:5px;font-size:.68rem;color:var(--subtle);cursor:pointer;font-weight:400;letter-spacing:0;text-transform:none">
-          <input type="checkbox" id="outAndBack" onchange="onOutAndBackChange()"> Out &amp; Back
-        </label>
-      </div>
-      <div class="ft-row">
-        <div class="ft-col">
-          <label>State</label>
-          <select id="toState" onchange="onToStateChange()"></select>
-        </div>
-        <div class="ft-col">
-          <label>Trek</label>
-          <select id="toTrek" onchange="recalc()"></select>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -1404,7 +1371,18 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
     </div>
   </div>
 
-    <!-- A5 curtain accordion (state filter + the relocating live card) -->
+    <!-- A5 From/To waypoint-filter bar — leg-only; state comes from the accordion -->
+  <div class="card a5-ft-bar" id="a5FtBar">
+    <span class="ft-badge">FROM</span>
+    <select id="fromTrek" onchange="onFromTrekChange()"></select>
+    <span class="ft-badge" style="background:var(--rust)">TO</span>
+    <select id="toTrek" onchange="recalc()"></select>
+    <label class="a5-oab"><input type="checkbox" id="outAndBack" onchange="onOutAndBackChange()"> Out &amp; Back</label>
+    <select id="fromState" style="display:none" aria-hidden="true"></select>
+    <select id="toState" style="display:none" aria-hidden="true"></select>
+  </div>
+
+  <!-- A5 curtain accordion (state filter + the relocating live card) -->
   <div class="card a5-acc-card" id="a5AccCard">
     <div class="a5-acc-head" id="a5AccHead" onclick="a5CollapseAll()" title="Show all states">
       <span class="a5-acc-title" id="a5AccTitle">Trail</span>
@@ -1636,13 +1614,12 @@ function buildStateDropdowns() {
 }
 
 function buildTrekDropdown(stateId, trekId, last=false) {
-  const state = document.getElementById(stateId).value;
-  const treks = getTreks().filter(t => t.state === state);
+  const treks = getTreks(); /* A5: all legs — state filter removed, state comes from accordion */
   const el = document.getElementById(trekId);
   el.innerHTML = '';
   treks.forEach(t => {
     const o = document.createElement('option');
-    o.value = t.id; o.textContent = t.name;
+    o.value = t.id; o.textContent = t.name + ' \u00B7 mi ' + Math.round(t.cumMileStart);
     el.appendChild(o);
   });
   if(last && treks.length) el.value = treks[treks.length-1].id;
@@ -8504,6 +8481,33 @@ function postSlackPackRequest(){
   };
 
   document.addEventListener('DOMContentLoaded', function(){ try{ window.a5Render(); }catch(_){} });
+})();
+</script>
+<script>
+/* ===== Planner-settings education toast — once per session on first manual edit ===== */
+(function(){
+  function show(){
+    if(document.getElementById('tctp-plan-toast')) return;
+    var icon='<svg viewBox="0 0 100 100" width="32" height="32" aria-hidden="true" style="display:block;border-radius:8px"><rect width="100" height="100" rx="22" fill="#16321a"/><circle cx="52" cy="40" r="16" fill="#c8a84b"/><polygon points="14,76 30,46 39,58 50,30 61,58 70,50 86,76 86,80 14,80" fill="#eef2ea"/></svg>';
+    var w=document.createElement('div'); w.id='tctp-plan-toast'; w.setAttribute('role','status');
+    w.style.cssText='position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(16px);z-index:99999;max-width:min(450px,92vw);background:#1e3a1e;color:#eef2ea;border-radius:14px;box-shadow:0 12px 34px rgba(0,0,0,.30);padding:13px 15px;display:flex;gap:11px;align-items:flex-start;font-size:.82rem;line-height:1.42;opacity:0;transition:opacity .25s ease,transform .25s ease';
+    w.innerHTML='<span style="flex:none">'+icon+'</span><div style="flex:1">'
+      +'<strong>These are your planning numbers \u2014 set them however you like.</strong> On trail with Find\u00A0Me on, TCTP learns your real climb and descent pace and rest rhythm, then updates the schedule to match. You walk; the trail gets the final say.'
+      +'<div style="margin-top:9px;text-align:right"><button id="tctp-plan-toast-ok" style="background:#c8a84b;color:#1e2a18;border:none;border-radius:9px;padding:5px 15px;font-weight:700;font-size:.78rem;cursor:pointer">Got it</button></div></div>';
+    document.body.appendChild(w);
+    requestAnimationFrame(function(){ w.style.opacity='1'; w.style.transform='translateX(-50%) translateY(0)'; });
+    function close(){ if(!w.parentNode)return; clearTimeout(w._t); w.style.opacity='0'; w.style.transform='translateX(-50%) translateY(16px)'; setTimeout(function(){ if(w.parentNode) w.parentNode.removeChild(w); },300); }
+    var ok=document.getElementById('tctp-plan-toast-ok'); if(ok) ok.onclick=close;
+    w._t=setTimeout(close, 13000);
+  }
+  function maybeShow(){
+    try{ if(sessionStorage.getItem('tctp_plan_toast_seen')==='1') return; sessionStorage.setItem('tctp_plan_toast_seen','1'); }catch(_){}
+    show();
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    ['startDate','startTime','hikeHrs','paceUp','paceDown','hikeDays','zeroDays','breakDuration','breakEvery']
+      .forEach(function(id){ var el=document.getElementById(id); if(el) el.addEventListener('change', maybeShow); });
+  });
 })();
 </script>
 </body>
