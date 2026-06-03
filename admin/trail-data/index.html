@@ -268,11 +268,13 @@
 .tm-maphint{margin-left:auto;font-size:.66rem;color:var(--subtle);font-style:italic}
 .tm-stage-title{cursor:pointer;border-radius:6px;padding:1px 6px;margin:-1px -6px;transition:background .15s,color .15s}
 .tm-stage-title:hover{background:var(--tm-mist);color:var(--tm-forest)}
-.tm-rowicons{position:relative;z-index:1;float:right;line-height:46px;margin-right:6px;display:inline-flex;gap:9px;align-items:center}
-.tm-ic{font-size:.72rem;font-weight:700;color:#6f7d6f;display:inline-flex;align-items:center;gap:1px;letter-spacing:-.2px}
+.tm-rowicons{position:absolute;right:72px;top:0;height:46px;z-index:1;display:inline-flex;align-items:center;gap:14px}
+.tm-ic{display:inline-flex;align-items:center;gap:3px;min-width:26px;font-size:.74rem;font-weight:700;color:#5d6b5d}
+.tm-ic .tm-ge{font-size:1.05rem;line-height:1}
+.tm-ic.z{opacity:.3}
 .tm-ic.bear{color:#a5562b}
-.tm-agg{float:none;line-height:1.4;margin:0 0 0 4px;padding:2px 8px;background:var(--tm-mist);border-radius:999px;gap:11px}
-.tm-agg .tm-ic{font-size:.74rem}
+.tm-ic.alert{color:#b8860b}
+.tm-agg{position:static;float:none;height:auto;margin:0 0 0 6px;padding:3px 12px;background:var(--tm-mist);border-radius:999px;gap:14px}
 /* the map IS the accordion — one row per state; the card drops in beneath the tapped row */
 .tm-scopebar{padding:7px 13px;border-bottom:1px solid var(--border);font-size:.72rem;color:var(--tm-pine);font-weight:600;background:#f2f5f1}
 .tm-rows{position:relative}
@@ -785,24 +787,28 @@ function tmFarrah(s,sFrom,sTo){
 // The map IS the accordion: one row per state, with the winding centerline drawn
 // per-row (segments meet at row edges so it reads continuous). The open state's card
 // (Farrah) is inserted immediately BENEATH its row, so it appears at the selection.
-// [sample] Per-state rollup counts for the accordion icons. Deterministic from the
-// state's mile length + a stable hash, so they hold still across renders. SAMPLE for
-// now: water/shelter plug into the baseline typed-waypoint counts (et=water_source /
-// shelter) and bear into the hiker-app sighting feed once those are reconciled per row.
+// [sample] Per-state rollup counts for the accordion icons — bear sightings, water
+// sources, active alerts, shelters. Deterministic from state mile + a stable hash so
+// they hold still across renders. SAMPLE until the real feeds wire in: water/shelter
+// from baseline typed waypoints (et=water_source/shelter), bear from the hiker sighting
+// feed, alert from the console's Alerts pipeline (per-state intersection).
 function tmWpCounts(s, idx){
   const h=n=>{ const x=Math.sin((idx+1)*12.9898+n*7.77)*43758.5453; return x-Math.floor(x); };
   const water  = Math.round(2 + s.mi/14 * (0.6+h(1)*0.8));
   const shelter= Math.round(1 + s.mi/22 * (0.5+h(2)*0.7));
-  const bear   = (h(3)<0.5)?0:Math.round(0.5+h(4)*2.5);   // sparse: most states 0, a few 1-3
-  return {water, shelter, bear};
+  const bear   = (h(3)<0.55)?0:Math.round(0.5+h(4)*2.5);  // sparse sightings
+  const alert  = (h(5)<0.72)?0:1;                          // rare active hazards/advisories
+  return {bear, water, alert, shelter};
 }
 // Trail-wide rollup = the sum of every row's counts (sits on the white title bar).
-function tmWpRollup(list){ return list.reduce((a,s,i)=>{ const c=tmWpCounts(s,i); a.water+=c.water; a.shelter+=c.shelter; a.bear+=c.bear; return a; }, {water:0,shelter:0,bear:0}); }
+function tmWpRollup(list){ return list.reduce((a,s,i)=>{ const c=tmWpCounts(s,i); a.bear+=c.bear; a.water+=c.water; a.alert+=c.alert; a.shelter+=c.shelter; return a; }, {bear:0,water:0,alert:0,shelter:0}); }
 function tmIcChips(c, cls){
+  const ic=(g,n,t,k)=>'<span class="tm-ic'+(n?'':' z')+(k?' '+k:'')+'" title="'+t+'"><span class="tm-ge">'+g+'</span>'+n+'</span>';
   return '<span class="tm-rowicons'+(cls?' '+cls:'')+'">'
-    +'<span class="tm-ic" title="Water sources">\uD83D\uDCA7'+c.water+'</span>'
-    +'<span class="tm-ic" title="Shelters">\u26FA'+c.shelter+'</span>'
-    +(c.bear?'<span class="tm-ic bear" title="Bear sightings reported">\uD83D\uDC3B'+c.bear+'</span>':'')
+    +ic('\uD83D\uDC3B',c.bear,'Bear sightings','bear')
+    +ic('\uD83D\uDCA7',c.water,'Water sources','water')
+    +ic('\u26A0\uFE0F',c.alert,'Active alerts','alert')
+    +ic('\uD83D\uDED6',c.shelter,'Shelters','shelter')
     +'</span>';
 }
 function tmMapRows(list, openIdx, farrahHtml){
