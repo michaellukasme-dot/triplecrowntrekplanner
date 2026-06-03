@@ -266,6 +266,8 @@
 .tm-band{fill:var(--tm-leaf);opacity:.16}
 .tm-line{fill:none;stroke:#b5451b;stroke-width:3.2;stroke-linecap:round;opacity:.9}
 .tm-maphint{margin-left:auto;font-size:.66rem;color:var(--subtle);font-style:italic}
+.tm-stage-title{cursor:pointer;border-radius:6px;padding:1px 6px;margin:-1px -6px;transition:background .15s,color .15s}
+.tm-stage-title:hover{background:var(--tm-mist);color:var(--tm-forest)}
 /* the map IS the accordion — one row per state; the card drops in beneath the tapped row */
 .tm-scopebar{padding:7px 13px;border-bottom:1px solid var(--border);font-size:.72rem;color:var(--tm-pine);font-weight:600;background:#f2f5f1}
 .tm-rows{position:relative}
@@ -867,7 +869,7 @@ function tmPaint(){
   + '<div class="tm-note2"><b>What\u2019s live today:</b> the segment filter + state drill-down. Hiker counts are <b>sample</b> \u2014 they light up when the telemetry pipeline ships, and stay anonymous &amp; aggregate by design.</div>'
 
   + '<div class="tm-grid">'
-  +   '<div class="tm-cardbox tm-stage"><div class="tm-hd"><h3>'+esc(TM_NAME[tmTrail])+' \u00B7 '+total.toLocaleString()+' mi</h3><span class="tm-maphint">tap a state for its elevation card</span><span class="tm-tag sample">sample density</span></div>'
+  +   '<div class="tm-cardbox tm-stage"><div class="tm-hd"><h3 class="tm-stage-title" data-tmhome="1" title="Show the whole-trail elevation">'+esc(TM_NAME[tmTrail])+' \u00B7 '+total.toLocaleString()+' mi</h3><span class="tm-maphint">tap a state \u2014 or the title for the whole trail</span><span class="tm-tag sample">sample density</span></div>'
   +     '<div class="tm-scopebar">Segment \u00B7 mi '+fromMile+'\u2013'+toMile+' \u00B7 '+tmSeg.win+'</div>'
   +     '<div class="tm-rows">'+tmMapRows(list,hiIdx,farrah)+'</div>'
   +     '<div class="tm-legend2"><span><span class="ln"></span>Trail centerline</span><span><span class="sw blue"></span>Hiker density <em>(anon \u00B7 aggregate)</em></span></div>'
@@ -905,6 +907,15 @@ function tmAttach(){
       let f=wp.findIndex(w=>w.stateIdx===i), t=-1; for(let j=wp.length-1;j>=0;j--){ if(wp[j].stateIdx===i){ t=j; break; } }
       if(f>=0&&t>=0){ if(tmSeg.dir==='SOBO'){ tmSeg.from=t; tmSeg.to=f; } else { tmSeg.from=f; tmSeg.to=t; } }
     }
+    tmSyncDir();
+    tmPaint();
+  });
+  // clicking the white trail-title header collapses any open state and shows the
+  // whole-trail elevation card above the From/To bar (mirrors the hiker console).
+  q('[data-tmhome]').forEach(el=>el.onclick=()=>{
+    tmOpenState=null;
+    const wp=tmWaypoints();
+    tmSeg.from=0; tmSeg.to=Math.max(0,wp.length-1);
     tmSyncDir();
     tmPaint();
   });
