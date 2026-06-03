@@ -281,7 +281,9 @@ input[type="checkbox"]{width:14px;height:14px;accent-color:var(--pine);cursor:po
 .elev-wrap{position:relative;padding:12px 16px 8px;height:170px}
 
 /* ── Full-screen card overlay ── */
-.card-expand-btn{margin-left:auto;padding:5px 7px;border:none;background:transparent;cursor:pointer;color:var(--subtle);border-radius:5px;line-height:1;transition:background .15s;display:flex;align-items:center}
+.card-expand-btn{margin-left:auto;padding:5px 7px;border:none;background:transparent;cursor:pointer;color:var(--subtle);border-radius:5px;line-height:1;transition:background .15s;display:flex;align-items:center;position:relative}
+.magic-tip{position:absolute;top:calc(100% + 8px);right:0;width:max-content;max-width:230px;background:#1e3a1e;color:#eef2ea;font-size:.72rem;font-weight:500;line-height:1.4;padding:8px 11px;border-radius:10px;box-shadow:0 8px 22px rgba(0,0,0,.28);opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .18s ease,transform .18s ease;pointer-events:none;z-index:60;white-space:normal;text-align:left;font-family:inherit}
+.card-expand-btn:hover .magic-tip,.card-expand-btn:focus-visible .magic-tip{opacity:1;visibility:visible;transform:translateY(0)}
 .card-expand-btn:hover{background:var(--mist);color:var(--pine)}
 .card-fs-overlay{display:none;position:fixed;inset:0;z-index:800;background:#0d1f0d;flex-direction:column}
 .card-fs-overlay.open{display:flex}
@@ -1083,6 +1085,17 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .a5-kanon{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:.72rem;color:var(--pine);font-weight:600;padding:9px 14px 2px}
 .a5-kanon .muted{color:var(--subtle);font-style:italic;font-weight:400}
 .a5-foot{font-size:.64rem;color:var(--subtle);padding:9px 16px;border-top:1px solid var(--border)}
+.a5-band{position:relative;overflow:hidden}
+.a5-band-name,.a5-band-mi{position:relative;z-index:1}
+.a5-cl-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.a5-cl{fill:none;stroke:var(--rust);stroke-width:3.2;stroke-linecap:round;opacity:.9}
+.a5-dot{animation:a5dot 3.4s ease-in-out infinite}
+@keyframes a5dot{0%,100%{opacity:.30}50%{opacity:.62}}
+.a5-acc-hint{font-size:.72rem;color:var(--subtle);font-style:italic}
+.a5-sample-badge{font-size:.6rem;font-weight:700;letter-spacing:.05em;background:#fdf3e3;color:#9a6a1c;border:1px solid #f0dcb4;border-radius:20px;padding:3px 9px;white-space:nowrap}
+.a5-leg-ln{display:inline-block;width:16px;height:3px;border-radius:2px;background:var(--rust);vertical-align:middle;margin-right:6px}
+.a5-leg-sw{display:inline-block;width:10px;height:10px;border-radius:50%;background:#5b8fa8;vertical-align:middle;margin:0 6px 0 14px}
+.a5-foot em{font-style:italic;color:#9aa89a}
 
 /* A5 From/To waypoint-filter bar (state comes from accordion) */
 .a5-ft-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;margin-bottom:14px}
@@ -1334,7 +1347,7 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
         <button class="card-tab" onclick="switchTab('wx',this)">🌤 Weather</button>
         <button class="card-tab" onclick="switchTab('cal',this)">📅 Hike Calendar</button>
       </div>
-      <button class="card-expand-btn" onclick="openCardFullscreen()" title="Full screen">
+      <button class="card-expand-btn" onclick="openCardFullscreen()" aria-label="Expand to full screen"><span class="magic-tip">Tap to go full-screen — this is where all the magic happens.</span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
       </button>
     </div>
@@ -1386,10 +1399,12 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
   <div class="card a5-acc-card" id="a5AccCard">
     <div class="a5-acc-head" id="a5AccHead" onclick="a5CollapseAll()" title="Show all states">
       <span class="a5-acc-title" id="a5AccTitle">Trail</span>
+      <span class="a5-acc-hint">tap a state for its elevation card</span>
+      <span class="a5-sample-badge">SAMPLE DENSITY</span>
     </div>
     <div class="a5-acc-sub" id="a5AccSub">Segment</div>
     <div class="a5-acc" id="a5Accordion"></div>
-    <div class="a5-foot">Trail centerline · You (this device) · others shown anon · aggregate</div>
+    <div class="a5-foot"><span class="a5-leg-ln"></span>Trail centerline<span class="a5-leg-sw"></span>Hiker density <em>(anon · aggregate)</em></div>
   </div>
 
   <!-- Itinerary Card -->
@@ -7264,7 +7279,9 @@ function tdRenderAlertBanner(){
   const trail = window.ACTIVE_TRAIL_ID || 'AT';
   // Never render a draft (null published_at). RLS keeps drafts from real anonymous
   // hikers; this also keeps an editor's same-origin signed-in preview correct.
-  const alerts = (_tdAlertCache[trail] || []).filter(a => a.published_at).slice();
+  let alerts = (_tdAlertCache[trail] || []).filter(a => a.published_at).slice();
+  const _a5R = window._a5BandRange; // A5: filter advisories to the open accordion state's miles (else whole trail)
+  if (_a5R) alerts = alerts.filter(a => a.nearest_mile == null || (a.nearest_mile >= _a5R.lo && a.nearest_mile <= _a5R.hi));
 
   const sevRank = { HAZARD: 0, ADVISORY: 1, INFO: 2 };
   alerts.sort((a,b) => {
@@ -8443,15 +8460,26 @@ function postSlackPackRequest(){
 
   window.a5Render = function(){
     var host=document.getElementById('a5Accordion'); if(!host) return;
-    cardHome(); A5.open=null;
+    cardHome(); A5.open=null; window._a5BandRange=null; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner();
     var bs=bands(), you=youMile();
     var total=(typeof window.ACTIVE_TOTAL_MILES!=='undefined'?window.ACTIVE_TOTAL_MILES:(bs.length?bs[bs.length-1].hi:0));
     var tt=document.getElementById('a5AccTitle'); if(tt) tt.textContent=trailLabel()+' · '+Number(total).toLocaleString()+' mi';
     var sub=document.getElementById('a5AccSub'); if(sub) sub.textContent='Segment · '+dir();
+    // winding centerline x-positions (sinusoidal), one per band in ascending order
+    var W=560,RH=46,cx=W/2,N=bs.length,nx=[],q;
+    for(q=0;q<N;q++){ var xx=cx+(q%2?56:-52)*Math.sin(q*0.8+0.6)+(q%3-1)*16; nx.push(Math.max(150,Math.min(W-70,xx))); }
+    var jit=function(v){ var s=Math.sin(v*51.17)*4711.13; return s-Math.floor(s); };
     var order=bs.slice().reverse(); // high-mile (north) at top for NOBO
     host.innerHTML=order.map(function(b){
       var i=bs.indexOf(b), isYou=(you!=null&&you>=b.lo&&you<=b.hi);
+      var topX=(i===N-1)?nx[i]:(nx[i]+nx[i+1])/2, botX=(i===0)?nx[i]:(nx[i]+nx[i-1])/2;
+      var path='M'+topX.toFixed(0)+',0 L'+nx[i].toFixed(0)+','+(RH/2)+' L'+botX.toFixed(0)+','+RH;
+      var dn=2+Math.floor(jit(i*7+3)*6), dots='', k;
+      for(k=0;k<dn;k++){ var ang=jit(i*9+k*2)*6.2832, rr=7+jit(i*5+k)*15;
+        var dcx=nx[i]+Math.cos(ang)*rr, dcy=RH/2+Math.sin(ang)*rr*0.42, dr=2.4+(k%2);
+        dots+='<circle class="a5-dot" cx="'+dcx.toFixed(0)+'" cy="'+dcy.toFixed(0)+'" r="'+dr.toFixed(1)+'" fill="#5b8fa8" style="animation-delay:'+((k*0.41)%3).toFixed(2)+'s"/>'; }
       return '<div class="a5-band" data-i="'+i+'" onclick="a5Toggle('+i+')">'
+        +'<svg class="a5-cl-svg" viewBox="0 0 '+W+' '+RH+'" preserveAspectRatio="none" aria-hidden="true"><path d="'+path+'" class="a5-cl" vector-effect="non-scaling-stroke"/>'+dots+'</svg>'
         +'<span class="a5-band-name">'+esc(b.name)+(isYou?' <span class="a5-you">\u00B7 you</span>':'')+'</span>'
         +'<span class="a5-band-mi">mi '+Math.round(b.lo)+'\u2013'+Math.round(b.hi)+'</span></div>'
         +'<div class="a5-band-body" id="a5-body-'+i+'"></div>';
@@ -8462,12 +8490,12 @@ function postSlackPackRequest(){
     var bs=bands(), b=bs[i]; if(!b) return;
     var card=document.getElementById('elevCard');
     var be=document.querySelector('.a5-band[data-i="'+i+'"]'), body=document.getElementById('a5-body-'+i);
-    if(A5.open===i){ cardHome(); if(body) body.style.display='none'; if(be) be.classList.remove('open'); A5.open=null; redrawTop(); return; }
+    if(A5.open===i){ cardHome(); if(body) body.style.display='none'; if(be) be.classList.remove('open'); A5.open=null; window._a5BandRange=null; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner(); redrawTop(); return; }
     if(A5.open!=null){ var pb=document.getElementById('a5-body-'+A5.open), pe=document.querySelector('.a5-band[data-i="'+A5.open+'"]'); if(pb){pb.innerHTML='';pb.style.display='none';} if(pe) pe.classList.remove('open'); }
     cardHome();
     var n=wpsIn(b.lo,b.hi).length, K=(typeof TM_K!=='undefined'?TM_K:5), ym=youMile();
     body.innerHTML='<div class="a5-kanon"><span>Mile '+(ym!=null?Math.round(ym):Math.round((b.lo+b.hi)/2))+' \u00B7 '+esc(b.name)+' \u00B7 '+n+' shelters/water</span><span class="muted">others near you: &lt;'+K+' \u00B7 anon \u00B7 aggregate \u00B7 sample</span></div>';
-    body.appendChild(card); body.style.display='block'; if(be) be.classList.add('open'); A5.open=i;
+    body.appendChild(card); body.style.display='block'; if(be) be.classList.add('open'); A5.open=i; window._a5BandRange={lo:b.lo,hi:b.hi}; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner();
     requestAnimationFrame(function(){ try{ if(typeof drawElevation==='function') drawElevation(b.lo,b.hi,wpsIn(b.lo,b.hi),(typeof currentItinerary!=='undefined'?currentItinerary:[])); }catch(_){} });
   };
 
@@ -8477,7 +8505,7 @@ function postSlackPackRequest(){
     cardHome();
     if(pb){ pb.innerHTML=''; pb.style.display='none'; }
     if(pe) pe.classList.remove('open');
-    A5.open=null; redrawTop();
+    A5.open=null; window._a5BandRange=null; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner(); redrawTop();
   };
 
   document.addEventListener('DOMContentLoaded', function(){ try{ window.a5Render(); }catch(_){} });
