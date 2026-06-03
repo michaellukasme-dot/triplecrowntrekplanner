@@ -268,6 +268,11 @@
 .tm-maphint{margin-left:auto;font-size:.66rem;color:var(--subtle);font-style:italic}
 .tm-stage-title{cursor:pointer;border-radius:6px;padding:1px 6px;margin:-1px -6px;transition:background .15s,color .15s}
 .tm-stage-title:hover{background:var(--tm-mist);color:var(--tm-forest)}
+.tm-rowicons{position:relative;z-index:1;float:right;line-height:46px;margin-right:6px;display:inline-flex;gap:9px;align-items:center}
+.tm-ic{font-size:.72rem;font-weight:700;color:#6f7d6f;display:inline-flex;align-items:center;gap:1px;letter-spacing:-.2px}
+.tm-ic.bear{color:#a5562b}
+.tm-agg{float:none;line-height:1.4;margin:0 0 0 4px;padding:2px 8px;background:var(--tm-mist);border-radius:999px;gap:11px}
+.tm-agg .tm-ic{font-size:.74rem}
 /* the map IS the accordion — one row per state; the card drops in beneath the tapped row */
 .tm-scopebar{padding:7px 13px;border-bottom:1px solid var(--border);font-size:.72rem;color:var(--tm-pine);font-weight:600;background:#f2f5f1}
 .tm-rows{position:relative}
@@ -780,6 +785,26 @@ function tmFarrah(s,sFrom,sTo){
 // The map IS the accordion: one row per state, with the winding centerline drawn
 // per-row (segments meet at row edges so it reads continuous). The open state's card
 // (Farrah) is inserted immediately BENEATH its row, so it appears at the selection.
+// [sample] Per-state rollup counts for the accordion icons. Deterministic from the
+// state's mile length + a stable hash, so they hold still across renders. SAMPLE for
+// now: water/shelter plug into the baseline typed-waypoint counts (et=water_source /
+// shelter) and bear into the hiker-app sighting feed once those are reconciled per row.
+function tmWpCounts(s, idx){
+  const h=n=>{ const x=Math.sin((idx+1)*12.9898+n*7.77)*43758.5453; return x-Math.floor(x); };
+  const water  = Math.round(2 + s.mi/14 * (0.6+h(1)*0.8));
+  const shelter= Math.round(1 + s.mi/22 * (0.5+h(2)*0.7));
+  const bear   = (h(3)<0.5)?0:Math.round(0.5+h(4)*2.5);   // sparse: most states 0, a few 1-3
+  return {water, shelter, bear};
+}
+// Trail-wide rollup = the sum of every row's counts (sits on the white title bar).
+function tmWpRollup(list){ return list.reduce((a,s,i)=>{ const c=tmWpCounts(s,i); a.water+=c.water; a.shelter+=c.shelter; a.bear+=c.bear; return a; }, {water:0,shelter:0,bear:0}); }
+function tmIcChips(c, cls){
+  return '<span class="tm-rowicons'+(cls?' '+cls:'')+'">'
+    +'<span class="tm-ic" title="Water sources">\uD83D\uDCA7'+c.water+'</span>'
+    +'<span class="tm-ic" title="Shelters">\u26FA'+c.shelter+'</span>'
+    +(c.bear?'<span class="tm-ic bear" title="Bear sightings reported">\uD83D\uDC3B'+c.bear+'</span>':'')
+    +'</span>';
+}
 function tmMapRows(list, openIdx, farrahHtml){
   const W=560, RH=46, cx=W/2, N=list.length;
   const nx=[]; for(let i=0;i<N;i++){ let x=cx+(i%2?56:-52)*Math.sin(i*0.8+0.6)+(i%3-1)*16; nx.push(Math.max(150,Math.min(W-70,x))); }
@@ -797,7 +822,7 @@ function tmMapRows(list, openIdx, farrahHtml){
       +'<svg class="tm-rowsvg" viewBox="0 0 '+W+' '+RH+'" preserveAspectRatio="none" aria-hidden="true">'
       +(open?'<rect width="'+W+'" height="'+RH+'" class="tm-band"/>':'')
       +'<path d="'+path+'" class="tm-line" vector-effect="non-scaling-stroke"/>'+dots+pulse+'</svg>'
-      +'<span class="tm-rowname">'+esc(s.n)+'</span><span class="tm-rowmi">'+s.mi+' mi</span></button>';
+      +'<span class="tm-rowname">'+esc(s.n)+'</span><span class="tm-rowmi">'+s.mi+' mi</span>'+tmIcChips(tmWpCounts(s,i))+'</button>';
     if(open && farrahHtml) html+=farrahHtml;
   }
   return html;
@@ -869,7 +894,7 @@ function tmPaint(){
   + '<div class="tm-note2"><b>What\u2019s live today:</b> the segment filter + state drill-down. Hiker counts are <b>sample</b> \u2014 they light up when the telemetry pipeline ships, and stay anonymous &amp; aggregate by design.</div>'
 
   + '<div class="tm-grid">'
-  +   '<div class="tm-cardbox tm-stage"><div class="tm-hd"><h3 class="tm-stage-title" data-tmhome="1" title="Show the whole-trail elevation">'+esc(TM_NAME[tmTrail])+' \u00B7 '+total.toLocaleString()+' mi</h3><span class="tm-maphint">tap a state \u2014 or the title for the whole trail</span><span class="tm-tag sample">sample density</span></div>'
+  +   '<div class="tm-cardbox tm-stage"><div class="tm-hd"><h3 class="tm-stage-title" data-tmhome="1" title="Show the whole-trail elevation">'+esc(TM_NAME[tmTrail])+' \u00B7 '+total.toLocaleString()+' mi</h3>'+tmIcChips(tmWpRollup(list),'tm-agg')+'<span class="tm-maphint">tap a state \u2014 or the title for the whole trail</span><span class="tm-tag sample">sample density</span></div>'
   +     '<div class="tm-scopebar">Segment \u00B7 mi '+fromMile+'\u2013'+toMile+' \u00B7 '+tmSeg.win+'</div>'
   +     '<div class="tm-rows">'+tmMapRows(list,hiIdx,farrah)+'</div>'
   +     '<div class="tm-legend2"><span><span class="ln"></span>Trail centerline</span><span><span class="sw blue"></span>Hiker density <em>(anon \u00B7 aggregate)</em></span></div>'
