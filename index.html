@@ -2563,11 +2563,18 @@ function drawFsElevation() {
   const wrap = canvas.parentElement;
   if (!wrap || wrap.clientWidth === 0) return;
 
-  // ── CRASH FIX: guard against no main meta ──
-  const mainCanvas = document.getElementById('elevCanvas');
-  if (!mainCanvas || !mainCanvas._elevMeta) return;
-  const meta = mainCanvas._elevMeta;
-  if (!meta.pts || !meta.pts.length) return;
+  // [v15] Robust source: window the FULL active-trail elevation around the hiker's
+  // position, independent of whatever segment the planner card is showing. (Previously
+  // read #elevCanvas._elevMeta, which the relocating card can narrow to a single state —
+  // leaving the On-Trail view blank whenever the GPS mile fell outside that segment.)
+  const _fsTrail = (typeof tdGetTrail === 'function')
+    ? (tdGetTrail(window.ACTIVE_TRAIL_ID || 'AT') || window.ACTIVE_TRAIL || AT)
+    : (window.ACTIVE_TRAIL || AT);
+  const allPts = (_fsTrail && _fsTrail.elevation && _fsTrail.elevation.length) ? _fsTrail.elevation : null;
+  if (!allPts) return;
+  const routeStart = allPts[0][0];
+  const routeEnd   = allPts[allPts.length - 1][0];
+  const rows = (typeof currentItinerary !== 'undefined') ? currentItinerary : [];
 
   const dpr = window.devicePixelRatio || 1;
   const W = wrap.clientWidth, H = wrap.clientHeight;
@@ -2583,8 +2590,7 @@ function drawFsElevation() {
   const cW = W - PAD.left - PAD.right;
   const cH = H - PAD.top  - PAD.bottom;
 
-  const { pts: allPts, minE: globalMin, maxE: globalMax, eRange: globalRange,
-          startMile: routeStart, endMile: routeEnd, rows } = meta;
+  // (view source defined above — full active-trail elevation)
 
   // ── Determine view window ──
   let viewStart, viewEnd;
