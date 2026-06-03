@@ -269,7 +269,8 @@
 .tm-stage-title{cursor:pointer;border-radius:6px;padding:1px 6px;margin:-1px -6px;transition:background .15s,color .15s}
 .tm-stage-title:hover{background:var(--tm-mist);color:var(--tm-forest)}
 .tm-rowicons{position:absolute;right:72px;top:0;height:46px;z-index:1;display:inline-flex;align-items:center;gap:14px}
-.tm-ic{display:inline-flex;align-items:center;gap:3px;min-width:26px;font-size:.74rem;font-weight:700;color:#5d6b5d}
+.tm-ic{display:inline-flex;align-items:center;gap:3px;min-width:26px;font-size:.74rem;font-weight:700;color:#5d6b5d;cursor:pointer;border-radius:5px;padding:2px 4px;transition:background .12s}
+.tm-ic:hover{background:rgba(90,143,168,.16)}
 .tm-ic .tm-ge{font-size:1.05rem;line-height:1}
 .tm-ic.z{opacity:.3}
 .tm-ic.bear{color:#a5562b}
@@ -802,9 +803,13 @@ function tmWpCounts(s, idx){
 }
 // Trail-wide rollup = the sum of every row's counts (sits on the white title bar).
 function tmWpRollup(list){ return list.reduce((a,s,i)=>{ const c=tmWpCounts(s,i); a.bear+=c.bear; a.water+=c.water; a.alert+=c.alert; a.shelter+=c.shelter; return a; }, {bear:0,water:0,alert:0,shelter:0}); }
-function tmIcChips(c, cls){
+function tmIcChips(c, cls, label){
+  const al=c.alert===1?'alert':'alerts';
+  const tally=(label?label+'  \u00B7  ':'')
+    +'\uD83D\uDC3B '+c.bear+' bear   \uD83D\uDCA7 '+c.water+' water   \u26A0\uFE0F '+c.alert+' '+al+'   \u26FA\uFE0F '+c.shelter+' shelters'
+    +'   \u2014   sample \u00B7 full report on the Alerts tab';
   const ic=(g,n,t,k)=>'<span class="tm-ic'+(n?'':' z')+(k?' '+k:'')+'" title="'+t+'"><span class="tm-ge">'+g+'</span>'+n+'</span>';
-  return '<span class="tm-rowicons'+(cls?' '+cls:'')+'">'
+  return '<span class="tm-rowicons'+(cls?' '+cls:'')+'" data-tally="'+esc(tally)+'">'
     +ic('\uD83D\uDC3B',c.bear,'Bear sightings','bear')
     +ic('\uD83D\uDCA7',c.water,'Water sources','water')
     +ic('\u26A0\uFE0F',c.alert,'Active alerts','alert')
@@ -828,7 +833,7 @@ function tmMapRows(list, openIdx, farrahHtml){
       +'<svg class="tm-rowsvg" viewBox="0 0 '+W+' '+RH+'" preserveAspectRatio="none" aria-hidden="true">'
       +(open?'<rect width="'+W+'" height="'+RH+'" class="tm-band"/>':'')
       +'<path d="'+path+'" class="tm-line" vector-effect="non-scaling-stroke"/>'+dots+pulse+'</svg>'
-      +'<span class="tm-rowname">'+esc(s.n)+'</span><span class="tm-rowmi">'+s.mi+' mi</span>'+tmIcChips(tmWpCounts(s,i))+'</button>';
+      +'<span class="tm-rowname">'+esc(s.n)+'</span><span class="tm-rowmi">'+s.mi+' mi</span>'+tmIcChips(tmWpCounts(s,i), '', s.n)+'</button>';
     if(open && farrahHtml) html+=farrahHtml;
   }
   return html;
@@ -900,7 +905,7 @@ function tmPaint(){
   + '<div class="tm-note2"><b>What\u2019s live today:</b> the segment filter + state drill-down. Hiker counts are <b>sample</b> \u2014 they light up when the telemetry pipeline ships, and stay anonymous &amp; aggregate by design.</div>'
 
   + '<div class="tm-grid">'
-  +   '<div class="tm-cardbox tm-stage"><div class="tm-hd"><h3 class="tm-stage-title" data-tmhome="1" title="Show the whole-trail elevation">'+esc(TM_NAME[tmTrail])+' \u00B7 '+total.toLocaleString()+' mi</h3>'+tmIcChips(tmWpRollup(list),'tm-agg')+'<span class="tm-maphint">tap a state \u2014 or the title for the whole trail</span><span class="tm-tag sample">sample density</span></div>'
+  +   '<div class="tm-cardbox tm-stage"><div class="tm-hd"><h3 class="tm-stage-title" data-tmhome="1" title="Show the whole-trail elevation">'+esc(TM_NAME[tmTrail])+' \u00B7 '+total.toLocaleString()+' mi</h3>'+tmIcChips(tmWpRollup(list),'tm-agg', TM_NAME[tmTrail]+' \u00B7 whole trail ('+list.length+' states)')+'<span class="tm-maphint">tap a state \u2014 or the title for the whole trail</span><span class="tm-tag sample">sample density</span></div>'
   +     '<div class="tm-scopebar">Segment \u00B7 mi '+fromMile+'\u2013'+toMile+' \u00B7 '+tmSeg.win+'</div>'
   +     '<div class="tm-rows">'+tmMapRows(list,hiIdx,farrah)+'</div>'
   +     '<div class="tm-legend2"><span><span class="ln"></span>Trail centerline</span><span><span class="sw blue"></span>Hiker density <em>(anon \u00B7 aggregate)</em></span></div>'
@@ -965,6 +970,10 @@ function tmAttach(){
   q('.tm-win button').forEach(el=>el.onclick=()=>{ tmSeg.win=el.dataset.win; tmPaint(); });
   q('.tm-ftab[data-ftab]').forEach(el=>el.onclick=()=>{ tmFarrahTab=el.dataset.ftab; tmPaint(); });
   q('[data-soon]').forEach(el=>el.onclick=()=>tmToast(el.dataset.soon||'Coming soon'));
+  // clicking a rollup icon (drop/tent/bear/alert) toasts that scope's tallies — no new
+  // screen. The full report lives on the Alerts tab. stopPropagation so the accordion
+  // row underneath doesn't open/close on the same click.
+  q('.tm-ic').forEach(el=>el.onclick=(e)=>{ e.stopPropagation(); const g=el.closest('.tm-rowicons'); if(g&&g.dataset.tally) tmToast(g.dataset.tally); });
 }
 // =====================================================================
 //  ALERTS PAGE (PROMPT 4)
