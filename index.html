@@ -8458,9 +8458,24 @@ function postSlackPackRequest(){
   function cardHome(){ var card=document.getElementById('elevCard'), acc=document.getElementById('a5AccCard'); if(card&&acc&&card.nextElementSibling!==acc){ acc.parentNode.insertBefore(card,acc); } }
   function redrawTop(){ try{ var f=getFromTrekObj&&getFromTrekObj(), t=getToTrekObj&&getToTrekObj(); if(f&&t&&typeof drawElevation==='function') drawElevation(f.cumMileStart,t.cumMileEnd,[],(typeof currentItinerary!=='undefined'?currentItinerary:[])); }catch(_){} }
 
+  function a5FillDropdowns(b){
+    if(typeof getTreks!=='function') return;
+    var all = getTreks() || [];
+    var scoped = b ? all.filter(function(t){ return t.state === b.code; }) : all;
+    if(b && !scoped.length) scoped = all;
+    ['fromTrek','toTrek'].forEach(function(id){
+      var el=document.getElementById(id); if(!el) return;
+      var prev=el.value;
+      el.innerHTML='';
+      scoped.forEach(function(t){ var o=document.createElement('option'); o.value=String(t.id); o.textContent=t.name+' \u00B7 mi '+Math.round(t.cumMileStart); el.appendChild(o); });
+      if(Array.prototype.some.call(el.options,function(o){return o.value===prev;})) el.value=prev;
+      else el.value=(id==='toTrek'&&scoped.length)?String(scoped[scoped.length-1].id):(scoped.length?String(scoped[0].id):'');
+    });
+  }
+
   window.a5Render = function(){
     var host=document.getElementById('a5Accordion'); if(!host) return;
-    cardHome(); A5.open=null; window._a5BandRange=null; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner();
+    cardHome(); A5.open=null; window._a5BandRange=null; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner(); a5FillDropdowns(null);
     var bs=bands(), you=youMile();
     var total=(typeof window.ACTIVE_TOTAL_MILES!=='undefined'?window.ACTIVE_TOTAL_MILES:(bs.length?bs[bs.length-1].hi:0));
     var tt=document.getElementById('a5AccTitle'); if(tt) tt.textContent=trailLabel()+' · '+Number(total).toLocaleString()+' mi';
@@ -8490,12 +8505,12 @@ function postSlackPackRequest(){
     var bs=bands(), b=bs[i]; if(!b) return;
     var card=document.getElementById('elevCard');
     var be=document.querySelector('.a5-band[data-i="'+i+'"]'), body=document.getElementById('a5-body-'+i);
-    if(A5.open===i){ cardHome(); if(body) body.style.display='none'; if(be) be.classList.remove('open'); A5.open=null; window._a5BandRange=null; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner(); redrawTop(); return; }
+    if(A5.open===i){ cardHome(); if(body) body.style.display='none'; if(be) be.classList.remove('open'); A5.open=null; window._a5BandRange=null; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner(); a5FillDropdowns(null); redrawTop(); return; }
     if(A5.open!=null){ var pb=document.getElementById('a5-body-'+A5.open), pe=document.querySelector('.a5-band[data-i="'+A5.open+'"]'); if(pb){pb.innerHTML='';pb.style.display='none';} if(pe) pe.classList.remove('open'); }
     cardHome();
     var n=wpsIn(b.lo,b.hi).length, K=(typeof TM_K!=='undefined'?TM_K:5), ym=youMile();
     body.innerHTML='<div class="a5-kanon"><span>Mile '+(ym!=null?Math.round(ym):Math.round((b.lo+b.hi)/2))+' \u00B7 '+esc(b.name)+' \u00B7 '+n+' shelters/water</span><span class="muted">others near you: &lt;'+K+' \u00B7 anon \u00B7 aggregate \u00B7 sample</span></div>';
-    body.appendChild(card); body.style.display='block'; if(be) be.classList.add('open'); A5.open=i; window._a5BandRange={lo:b.lo,hi:b.hi}; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner();
+    body.appendChild(card); body.style.display='block'; if(be) be.classList.add('open'); A5.open=i; window._a5BandRange={lo:b.lo,hi:b.hi}; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner(); a5FillDropdowns(b);
     requestAnimationFrame(function(){ try{ if(typeof drawElevation==='function') drawElevation(b.lo,b.hi,wpsIn(b.lo,b.hi),(typeof currentItinerary!=='undefined'?currentItinerary:[])); }catch(_){} });
   };
 
@@ -8505,7 +8520,7 @@ function postSlackPackRequest(){
     cardHome();
     if(pb){ pb.innerHTML=''; pb.style.display='none'; }
     if(pe) pe.classList.remove('open');
-    A5.open=null; window._a5BandRange=null; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner(); redrawTop();
+    A5.open=null; window._a5BandRange=null; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner(); a5FillDropdowns(null); redrawTop();
   };
 
   document.addEventListener('DOMContentLoaded', function(){ try{ window.a5Render(); }catch(_){} });
