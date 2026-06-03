@@ -14,7 +14,7 @@
  * ----------------------------------------------------------------------------
  */
 
-const CACHE_VERSION = 'v4';                       // ⬅ bump on meaningful asset changes
+const CACHE_VERSION = 'v5';                       // ⬅ bump on meaningful asset changes
 const SHELL_CACHE  = 'tctp-shell-'  + CACHE_VERSION;
 const ASSET_CACHE  = 'tctp-assets-' + CACHE_VERSION;
 
