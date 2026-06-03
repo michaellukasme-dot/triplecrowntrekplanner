@@ -307,6 +307,12 @@
 .tm-noc-cnt .t{font-size:.62rem;letter-spacing:.1em;color:var(--nsub);font-weight:700}
 .tm-noc-cnt.off{opacity:.35}
 .tm-noc-foot{text-align:center;font-size:.66rem;color:var(--nsub);padding:0 0 12px}
+.tm-fnoc{margin-left:auto;padding:4px 10px;border:1px solid #3a2f23;border-radius:8px;background:#2e2317;color:#e8dcc8;font:inherit;font-size:.66rem;font-weight:700;cursor:pointer;letter-spacing:.04em}
+.tm-fnoc:hover{background:#3b2d1d}
+.tm-fnoc + .tm-fbadge{margin-left:8px}
+.tm-noc-fpanel{position:absolute;top:calc(100% + 6px);left:0;z-index:60;background:var(--nchip);border:1px solid var(--nborder);border-radius:10px;box-shadow:0 14px 34px rgba(0,0,0,.45);padding:10px 12px;display:flex;flex-direction:column;gap:7px;min-width:230px}
+.tm-noc-fpanel .frow{display:flex;align-items:center;gap:8px;font-size:.78rem;cursor:pointer;color:var(--ntext)}
+.tm-noc-fpanel .fact{display:flex;gap:6px;margin-top:4px;padding-top:8px;border-top:1px solid var(--nborder)}
 /* the map IS the accordion — one row per state; the card drops in beneath the tapped row */
 .tm-scopebar{padding:7px 13px;border-bottom:1px solid var(--border);font-size:.72rem;color:var(--tm-pine);font-weight:600;background:#f2f5f1}
 .tm-rows{position:relative}
@@ -801,7 +807,7 @@ function tmSegMapSvg(fromMile,toMile){
     +'<text x="'+(W-R)+'" y="'+(H-9)+'" class="tm-fax" text-anchor="end">mi '+(desc?lo:hi)+'</text>'
     +'<text x="'+(W-R+6)+'" y="'+(T+8)+'" class="tm-fax">density</text></svg>';
 }
-function tmFarrah(s,sFrom,sTo){
+function tmFarrah(s,sFrom,sTo,stIdx){
   const cnt=tmSegCount(sFrom,sTo), cntLabel=(cnt<TM_K)?'&lt;'+TM_K:cnt.toLocaleString();
   const st=tmSegStats(sFrom,sTo), tab=(tmFarrahTab==='map')?'map':'elev';
   const tabs=[['elev','Elevation','\uD83D\uDCC8'],['map','Trail Map',''],['weather','Weather','\u26C5'],['cal','Calendar','\uD83D\uDCC5']]
@@ -810,7 +816,7 @@ function tmFarrah(s,sFrom,sTo){
   const panel=(tab==='map')?tmSegMapSvg(sFrom,sTo):tmElevProfile(sFrom,sTo);
   const badge=(tab==='map')?'sample density':'real elevation';
   return '<div class="tm-farrah">'
-    +'<div class="tm-ftabs">'+tabs+'<span class="tm-fbadge">'+badge+'</span></div>'
+    +'<div class="tm-ftabs">'+tabs+((typeof stIdx==='number')?'<button class="tm-fnoc" data-nocst="'+stIdx+'" title="Open the NOC Wall filtered to '+esc(s.n)+'">\uD83D\uDEF0 NOC</button>':'')+'<span class="tm-fbadge">'+badge+'</span></div>'
     +'<div class="tm-fmeta"><span class="tm-floc">'+esc(s.n)+' \u00B7 mi '+sFrom+'\u2013'+sTo+' \u00B7 '+st.len+' mi \u00B7 +'+st.gain.toLocaleString()+' ft \u00B7 high '+st.high.toLocaleString()+' ft</span>'
     +'<span class="tm-fhik">On segment: <b>'+cntLabel+'</b> hikers <em>(anon \u00B7 aggregate)</em></span></div>'
     +panel+'</div>';
@@ -830,10 +836,13 @@ function tmWpCounts(s, idx){
   const shelter= Math.round(1 + s.mi/22 * (0.5+h(2)*0.7));
   const bear   = (h(3)<0.55)?0:Math.round(0.5+h(4)*2.5);  // sparse sightings
   const alert  = (h(5)<0.72)?0:1;                          // rare active hazards/advisories
-  return {bear, water, alert, shelter};
+  const road    = Math.round(1 + s.mi/30 * (0.5+h(6)*0.6));   // road crossings
+  const wp      = Math.round(2 + s.mi/18 * (0.5+h(7)*0.7));   // other named waypoints
+  const resupply= Math.round(1 + s.mi/45 * (0.4+h(8)*0.6));   // resupply / towns
+  return {bear, water, alert, shelter, road, wp, resupply};
 }
 // Trail-wide rollup = the sum of every row's counts (sits on the white title bar).
-function tmWpRollup(list){ return list.reduce((a,s,i)=>{ const c=tmWpCounts(s,i); a.bear+=c.bear; a.water+=c.water; a.alert+=c.alert; a.shelter+=c.shelter; return a; }, {bear:0,water:0,alert:0,shelter:0}); }
+function tmWpRollup(list){ return list.reduce((a,s,i)=>{ const c=tmWpCounts(s,i); for(const k in c) a[k]=(a[k]||0)+c[k]; return a; }, {}); }
 function tmIcChips(c, cls, label){
   const al=c.alert===1?'alert':'alerts';
   const tally=(label?label+'  \u00B7  ':'')
@@ -890,7 +899,7 @@ function tmPaint(){
   let farrah='';
   if(tmOpenState!=null && list[tmOpenState]){
     const s=list[tmOpenState]; let cum=0; for(let j=0;j<tmOpenState;j++) cum+=list[j].mi;
-    farrah=tmFarrah(s,cum,cum+s.mi);
+    farrah=tmFarrah(s,cum,cum+s.mi,tmOpenState);
   }
 
   // [parity] Always-visible SEGMENT elevation card when no state is drilled in.
@@ -1007,6 +1016,7 @@ function tmAttach(){
   // row underneath doesn't open/close on the same click.
   q('.tm-ic').forEach(el=>el.onclick=(e)=>{ e.stopPropagation(); const g=el.closest('.tm-rowicons'); if(g&&g.dataset.tally) tmToast(g.dataset.tally); });
   const nocBtn=tmMain.querySelector('#tmNocBtn'); if(nocBtn) nocBtn.onclick=tmNocOpenFn;
+  q('.tm-fnoc').forEach(el=>el.onclick=()=>tmNocOpenFn(+el.dataset.nocst));
 }
 // =====================================================================
 //  NOC WALL — the Trail Map at command-center scale. Real elevation across
@@ -1025,6 +1035,7 @@ function tmNocIcons(){
       m=Math.max(cum+0.5,Math.min(cum+s.mi-0.5,m));
       icons.push({type, mile:m, st:si, stn:s.n}); } };
     put('water',c.water); put('shelter',c.shelter); put('bear',c.bear); put('alert',c.alert);
+    put('road',c.road); put('wp',c.wp); put('resupply',c.resupply);
     cum+=s.mi;
   });
   return icons;
@@ -1037,8 +1048,8 @@ function tmNocPaint(){
   let mn=Infinity,mx=-Infinity; for(const e of pts){ if(e<mn)mn=e; if(e>mx)mx=e; } const span=(mx-mn)||1;
   const all=tmNocIcons();
   const vis=all.filter(ic=>(tmNoc.st<0||ic.st===tmNoc.st)&&tmNoc.types[ic.type]);
-  const cnt={bear:0,water:0,alert:0,shelter:0}; vis.forEach(ic=>cnt[ic.type]++);
-  const G={water:'\uD83D\uDCA7',shelter:'\u26FA\uFE0F',bear:'\uD83D\uDC3B',alert:'\u26A0\uFE0F'};
+  const cnt={}; vis.forEach(ic=>cnt[ic.type]=(cnt[ic.type]||0)+1);
+  const G={water:'\uD83D\uDCA7',shelter:'\u26FA\uFE0F',bear:'\uD83D\uDC3B',alert:'\u26A0\uFE0F',road:'\uD83D\uDEE3\uFE0F',wp:'\uD83D\uDCCD',resupply:'\uD83C\uDF4E'};
   const W=760,H=560,T=26,B=34;
   const y=v=>T+(H-T-B)*(1-(v-mn)/span);
   const mons=[0,1,2].map(p=>{
@@ -1063,15 +1074,18 @@ function tmNocPaint(){
       +'</svg>'+ics+'</div>';
   }).join('');
   const scope=tmNoc.st<0?TM_NAME[tmTrail]+' \u00B7 whole trail':list[tmNoc.st].n;
-  const cdef=[['bear','\uD83D\uDC3B','BEAR'],['water','\uD83D\uDCA7','WATER'],['alert','\u26A0\uFE0F','ALERTS'],['shelter','\u26FA\uFE0F','SHELTERS']];
-  const counters=cdef.map(c=>'<div class="tm-noc-cnt'+(tmNoc.types[c[0]]?'':' off')+'" data-cnt="'+c[0]+'"><span class="e">'+c[1]+'</span><b>'+cnt[c[0]].toLocaleString()+'</b><span class="t">'+c[2]+'</span></div>').join('');
+  const cdef=[['bear','\uD83D\uDC3B','BEAR','Bear sightings'],['water','\uD83D\uDCA7','WATER','Water sources'],['alert','\u26A0\uFE0F','ALERTS','Active alerts'],['shelter','\u26FA\uFE0F','SHELTERS','Shelters'],['road','\uD83D\uDEE3\uFE0F','ROADS','Road crossings'],['wp','\uD83D\uDCCD','WAYPOINTS','Waypoints (other)'],['resupply','\uD83C\uDF4E','RESUPPLY','Resupply / towns']];
+  const onN=cdef.filter(c=>tmNoc.types[c[0]]).length;
+  const counters=cdef.filter(c=>tmNoc.types[c[0]]).map(c=>'<div class="tm-noc-cnt" data-cnt="'+c[0]+'"><span class="e">'+c[1]+'</span><b>'+(cnt[c[0]]||0).toLocaleString()+'</b><span class="t">'+c[2]+'</span></div>').join('');
   const stchips='<button class="nbtn'+(tmNoc.st<0?' on':'')+'" data-nst="-1">All states</button>'+list.map((s,i)=>'<button class="nbtn'+(tmNoc.st===i?' on':'')+'" data-nst="'+i+'">'+esc(s.n)+'</button>').join('');
-  const tychips=cdef.map(c=>'<button class="nbtn'+(tmNoc.types[c[0]]?' on':'')+'" data-nty="'+c[0]+'" title="show / hide">'+c[1]+'</button>').join('');
+  const fpanel=tmNoc.fOpen?('<div class="tm-noc-fpanel">'
+    +cdef.map(c=>'<label class="frow"><input type="checkbox" data-fty="'+c[0]+'"'+(tmNoc.types[c[0]]?' checked':'')+'> <span>'+c[1]+' '+c[3]+'</span></label>').join('')
+    +'<div class="fact"><button class="nbtn" data-fall="1">All</button><button class="nbtn" data-fall="0">None</button><button class="nbtn" id="tmNocFdone">Done</button></div></div>'):'';
   const trailchips=['AT','PCT','CDT'].map(t=>'<button class="nbtn'+(t===tmTrail?' on':'')+'" data-ntr="'+t+'">'+t+'</button>').join('');
   root.innerHTML=
     '<div class="tm-noc-hd"><h2>\uD83D\uDEF0 NOC Wall \u00B7 '+esc(TM_NAME[tmTrail])+'</h2><span class="sub">situational view \u00B7 sample feed \u00B7 full reports live on the Alerts tab</span>'
     +'<div class="tm-noc-x">'+trailchips+'<button class="nbtn" id="tmNocMode">'+(tmNoc.dark?'\u2600\uFE0F Light':'\uD83C\uDF19 Dark')+'</button><button class="nbtn" id="tmNocClose">\u2715 Close</button></div></div>'
-    +'<div class="tm-noc-filters"><span class="lab">STATE</span>'+stchips+'<span class="lab" style="margin-left:10px">SHOW</span>'+tychips+'</div>'
+    +'<div class="tm-noc-filters"><span class="lab">STATE</span>'+stchips+'<span class="lab" style="margin-left:10px">SHOW</span><span style="position:relative;display:inline-block"><button class="nbtn'+(tmNoc.fOpen?' on':'')+'" id="tmNocFbtn">\u2699\uFE0F Filters \u00B7 '+onN+'/'+cdef.length+'</button>'+fpanel+'</span></div>'
     +'<div class="tm-noc-wall">'+mons+'</div>'
     +'<div class="tm-noc-counters">'+counters+'</div>'
     +'<div class="tm-noc-foot">'+esc(scope)+' \u00B7 click a counter or an icon for details \u00B7 counts are sample until the live feeds ship</div>';
@@ -1080,15 +1094,18 @@ function tmNocPaint(){
   root.querySelector('#tmNocMode').onclick=()=>{ tmNoc.dark=!tmNoc.dark; tmNocPaint(); };
   root.querySelectorAll('[data-ntr]').forEach(el=>el.onclick=()=>{ tmTrail=el.dataset.ntr; tmNoc.st=-1; tmResetSeg(); tmPaint(); tmNocPaint(); });
   root.querySelectorAll('[data-nst]').forEach(el=>el.onclick=()=>{ tmNoc.st=+el.dataset.nst; tmNocPaint(); });
-  root.querySelectorAll('[data-nty]').forEach(el=>el.onclick=()=>{ const k=el.dataset.nty; tmNoc.types[k]=tmNoc.types[k]?0:1; tmNocPaint(); });
-  const names={bear:'\uD83D\uDC3B Bear sightings',water:'\uD83D\uDCA7 Water sources',alert:'\u26A0\uFE0F Active alerts',shelter:'\u26FA\uFE0F Shelters'};
+  const fb=root.querySelector('#tmNocFbtn'); if(fb) fb.onclick=()=>{ tmNoc.fOpen=!tmNoc.fOpen; tmNocPaint(); };
+  root.querySelectorAll('[data-fty]').forEach(el=>el.onchange=()=>{ tmNoc.types[el.dataset.fty]=el.checked?1:0; tmNocPaint(); });
+  root.querySelectorAll('[data-fall]').forEach(el=>el.onclick=()=>{ const v=+el.dataset.fall; cdef.forEach(c=>tmNoc.types[c[0]]=v); tmNocPaint(); });
+  const fd=root.querySelector('#tmNocFdone'); if(fd) fd.onclick=()=>{ tmNoc.fOpen=false; tmNocPaint(); };
+  const names={}; cdef.forEach(c=>names[c[0]]=c[1]+' '+c[3]);
   root.querySelectorAll('.tm-noc-cnt').forEach(el=>el.onclick=()=>{ const k=el.dataset.cnt;
     tmToast(names[k]+' \u00B7 '+scope+' \u00B7 '+cnt[k]+' on the wall \u2014 sample \u00B7 full report on the Alerts tab'); });
   root.querySelectorAll('.tm-noc-ic').forEach(el=>el.onclick=()=>{ const ic=all[+el.dataset.i]; if(!ic) return;
     tmToast(names[ic.type].replace(/s$/,'')+' \u00B7 mi '+Math.round(ic.mile)+' \u00B7 '+ic.stn+' \u2014 sample \u00B7 full report on the Alerts tab'); });
 }
-function tmNocOpenFn(){
-  tmNoc={dark:true, st:-1, types:{bear:1,water:1,alert:1,shelter:1}};
+function tmNocOpenFn(st){
+  tmNoc={dark:true, st:(typeof st==='number'&&st>=0)?st:-1, fOpen:false, types:{bear:1,water:1,alert:1,shelter:1,road:0,wp:0,resupply:0}};
   let r=document.getElementById('tmNocRoot');
   if(!r){ r=document.createElement('div'); r.id='tmNocRoot'; document.body.appendChild(r); }
   document.body.style.overflow='hidden';
