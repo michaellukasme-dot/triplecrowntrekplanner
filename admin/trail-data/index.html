@@ -249,6 +249,7 @@
 .tm-tag.soon{background:#eef1f4;color:#5b6b7b;border:1px solid #d4ddd4;cursor:pointer}
 /* From/To segment picker */
 .tm-fromto{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--stone);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:12px}
+.tm-segcard{margin-bottom:12px}
 .tm-ft{display:flex;align-items:center;gap:7px}
 .tm-ft-lbl{font-size:.6rem;letter-spacing:.06em;font-weight:800;padding:3px 7px;border-radius:6px;color:#fff}
 .tm-ft-lbl.from{background:var(--tm-pine)}
@@ -789,6 +790,17 @@ function tmPaint(){
     farrah=tmFarrah(s,cum,cum+s.mi);
   }
 
+  // [parity] Always-visible SEGMENT elevation card when no state is drilled in.
+  // Mirrors the main app's home rule: with no state selected the elevation card sits on
+  // top and the From/To filter drops below it; drill into a state and the From/To bar
+  // returns to the top while that state's card shows in the accordion. Aggregate only.
+  let segCard='';
+  if(tmOpenState==null){
+    const full=(tmSeg.from===0 && tmSeg.to===wp.length-1);
+    const segName=full ? (TM_NAME[tmTrail]+' \u2014 full route') : (fromWp.name+' \u2192 '+toWp.name);
+    segCard='<div class="tm-cardbox tm-segcard">'+tmFarrah({n:segName}, fromMile, toMile)+'</div>';
+  }
+
   const maxDay=Math.max.apply(null,list.map(x=>x.day));
   const bars=list.map((x,i)=>'<div class="tm-bar'+(i===tmOpenState?' me':'')+'" data-i="'+i+'"><span class="lab">'+esc(x.n)+'</span><span class="tr"><span class="fl" style="width:'+Math.round(x.day/maxDay*100)+'%"></span></span><span class="v">'+x.day+'</span></div>').join('');
   const trailbtns=['AT','PCT','CDT','All'].map(t=>'<button data-t="'+t+'" class="'+(t===tmTrail?'on':'')+'">'+t+'</button>').join('');
@@ -807,6 +819,8 @@ function tmPaint(){
   +   '<span class="tm-lbl">Window</span><div class="tm-seg tm-win">'+winbtns+'</div>'
   +   '<span class="tm-note">click-to-act disabled \u00B7 counts &amp; trends only</span></div>'
 
+  // [parity] segment card on top when no state is open; '' (bar on top) when one is
+  + segCard
   // From / To waypoint segment picker
   + '<div class="tm-fromto">'
   +   '<div class="tm-ft"><span class="tm-ft-lbl from">FROM</span><select class="tm-ft-sel" id="tm-from">'+opt(tmSeg.from)+'</select></div>'
