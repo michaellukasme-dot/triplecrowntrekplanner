@@ -222,12 +222,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--stone);color:var(--text);
 .sb-label{font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--subtle);margin-bottom:6px;display:flex;align-items:center;gap:5px}
 .sb-label-icon{font-size:.75rem}
 
-/* FROM / TO blocks */
-.from-to-block{background:var(--stone);border-radius:8px;padding:10px 12px;border:1px solid var(--border)}
-.from-to-title{font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--pine);margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.from-to-title .ft-badge{background:var(--pine);color:white;border-radius:4px;padding:1px 5px;font-size:.6rem}
-.ft-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.ft-col label{font-size:.62rem;font-weight:600;color:var(--subtle);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:3px}
 select,input[type="number"],input[type="date"],input[type="time"]{width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:5px;font-size:.8rem;font-family:inherit;background:var(--white);color:var(--text);appearance:none;-webkit-appearance:none}
 select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7b6b'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;padding-right:20px}
 select:focus,input:focus{outline:none;border-color:var(--pine);box-shadow:0 0 0 2px var(--focus-ring)}
@@ -1099,7 +1093,7 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 
 /* A5 From/To waypoint-filter bar (state comes from accordion) */
 .a5-ft-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;margin-bottom:14px}
-.a5-ft-bar .ft-badge{flex:none}
+.a5-ft-bar .ft-badge{flex:none;background:var(--pine);color:#fff;border-radius:4px;padding:1px 6px;font-size:.6rem;font-weight:700;letter-spacing:.04em}
 .a5-ft-bar select{flex:1 1 220px;min-width:150px}
 .a5-oab{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--subtle);cursor:pointer;white-space:nowrap;font-weight:500}
 .a5-kanon-bar{flex:1 1 100%;text-align:right;font-size:.72rem;color:var(--pine);font-weight:700;margin-top:2px}
@@ -1340,6 +1334,21 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
   <!-- Trail alerts — second mount point so conservancy alerts surface on the main planner, not only the expanded view -->
   <div class="trail-alert-stack" id="trailAlertStackMain"></div>
 
+  <!-- A5 From/To waypoint-filter bar — leg-only; state comes from the accordion.
+       Lives ABOVE the elevation card so the filter is always on top (under any advisory),
+       whether a state is open (card in the band) or collapsed (card in home below). -->
+  <div class="card a5-ft-bar" id="a5FtBar">
+    <span class="ft-badge">FROM</span>
+    <select id="fromTrek" onchange="onFromTrekChange()"></select>
+    <span class="ft-badge" style="background:var(--rust)">TO</span>
+    <select id="toTrek" onchange="recalc()"></select>
+    <label class="a5-oab"><input type="checkbox" id="outAndBack" onchange="onOutAndBackChange()"> Out &amp; Back</label>
+    <label class="a5-oab"><input type="checkbox" id="a5ShowAll" onchange="a5OnShowAll()"> Show all waypoints</label>
+    <div class="a5-kanon-bar" id="a5KanonBar"></div>
+    <select id="fromState" style="display:none" aria-hidden="true"></select>
+    <select id="toState" style="display:none" aria-hidden="true"></select>
+  </div>
+
   <!-- Elevation Profile Card -->
   <div class="card" id="elevCard">
     <div class="card-head">
@@ -1384,19 +1393,6 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
     <div id="tab-cal" style="display:none">
       <div class="hike-cal-placeholder">📅 Hike Calendar coming soon — will show a Gantt-style view of your trek days and zero days.</div>
     </div>
-  </div>
-
-    <!-- A5 From/To waypoint-filter bar — leg-only; state comes from the accordion -->
-  <div class="card a5-ft-bar" id="a5FtBar">
-    <span class="ft-badge">FROM</span>
-    <select id="fromTrek" onchange="onFromTrekChange()"></select>
-    <span class="ft-badge" style="background:var(--rust)">TO</span>
-    <select id="toTrek" onchange="recalc()"></select>
-    <label class="a5-oab"><input type="checkbox" id="outAndBack" onchange="onOutAndBackChange()"> Out &amp; Back</label>
-    <label class="a5-oab"><input type="checkbox" id="a5ShowAll" onchange="a5OnShowAll()"> Show all waypoints</label>
-    <div class="a5-kanon-bar" id="a5KanonBar"></div>
-    <select id="fromState" style="display:none" aria-hidden="true"></select>
-    <select id="toState" style="display:none" aria-hidden="true"></select>
   </div>
 
   <!-- A5 curtain accordion (state filter + the relocating live card) -->
@@ -2082,6 +2078,34 @@ function drawElevation(startMile, endMile, waypoints, rows) {
   // Y axis labels
   document.getElementById('elevYmax').textContent = maxE.toLocaleString()+' ft';
   document.getElementById('elevYmin').textContent = minE.toLocaleString()+' ft';
+
+  // [b] Sparse-GIS shading — CDT ONLY. Built for the NM Lordsburg->Grants hole,
+  // where mapped waypoints are genuinely far apart. Shades any waypoint gap
+  // > SPGAP miles as "provisional · GIS sparse". Scoped to CDT so the AT's
+  // legitimate long shelter gaps (NJ ~31mi, NY ~33mi) never false-fire.
+  if((window.ACTIVE_TRAIL_ID || 'AT') === 'CDT'){
+    const _spWps = (window.ACTIVE_WAYPOINTS || []).filter(w => w[0] >= startMile && w[0] <= endMile);
+    const SPGAP = 30;
+    let _spPrev = null;
+    ctx.save();
+    ctx.font = '600 10px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    _spWps.forEach(w => {
+      if(_spPrev !== null && (w[0] - _spPrev) > SPGAP){
+        const sx = xPos(_spPrev), ex = xPos(w[0]);
+        const rx = Math.max(PAD.left, sx);
+        const rw = Math.min(PAD.left + cW, ex) - rx;
+        if(rw > 0){
+          ctx.fillStyle = 'rgba(154,106,28,0.10)';   // #9a6a1c wash
+          ctx.fillRect(rx, PAD.top, rw, cH);
+          ctx.fillStyle = 'rgba(154,106,28,0.85)';
+          ctx.fillText('provisional · GIS sparse', rx + rw/2, PAD.top + 12);
+        }
+      }
+      _spPrev = w[0];
+    });
+    ctx.restore();
+  }
 
   // Waypoint tick marks (major ones, non-detail)
   rows.filter(r=>!r.isDetail).forEach(r => {
