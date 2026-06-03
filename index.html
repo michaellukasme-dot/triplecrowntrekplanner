@@ -1064,6 +1064,25 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .trail-alert-stack{display:flex;flex-direction:column;gap:4px}
 /* ══ end TRAIL DATA OVERLAY v1 CSS ══ */
 
+
+/* ===== A5 curtain accordion (state filter + relocating live card) ===== */
+.a5-acc-card{margin-bottom:14px}
+.a5-acc-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.a5-acc-head:hover{background:var(--stone)}
+.a5-acc-title{font-family:'Playfair Display',Georgia,serif;font-size:1.05rem;font-weight:700;color:var(--text)}
+.a5-acc-sub{font-size:.62rem;color:var(--subtle);text-transform:uppercase;letter-spacing:.06em;padding:7px 16px 0}
+.a5-acc{position:relative}
+.a5-band{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-top:1px solid var(--border);cursor:pointer;background:transparent;transition:background .15s}
+.a5-band:hover{background:var(--stone)}
+.a5-band.open{background:#e7efe3}
+.a5-band-name{font-family:'Playfair Display',Georgia,serif;font-size:1.02rem;color:#5c6b58;font-weight:600}
+.a5-band.open .a5-band-name{color:var(--text)}
+.a5-you{font-size:.7rem;color:var(--pine);font-weight:700}
+.a5-band-mi{font-size:.72rem;color:var(--subtle)}
+.a5-band-body{display:none;border-top:1px solid var(--border);background:var(--white)}
+.a5-kanon{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:.72rem;color:var(--pine);font-weight:600;padding:9px 14px 2px}
+.a5-kanon .muted{color:var(--subtle);font-style:italic;font-weight:400}
+.a5-foot{font-size:.64rem;color:var(--subtle);padding:9px 16px;border-top:1px solid var(--border)}
 </style>
 <style id="pb-redesign-css">
 .sp-board-top{display:flex;justify-content:flex-end;align-items:center;padding:8px 14px 0}
@@ -1145,7 +1164,7 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
           <span class="trail-option-icon">⛰</span>
           <div class="trail-option-info">
             <div class="trail-option-name">Continental Divide Trail</div>
-            <div class="trail-option-detail">3,043 mi · NM → MT · 5 states</div>
+            <div class="trail-option-detail">3,100 mi · NM → MT · 5 states</div>
           </div>
           <span class="trail-option-badge">Coming Soon</span>
         </div>
@@ -1385,25 +1404,14 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
     </div>
   </div>
 
-  <!-- State Highlights Card -->
-  <div class="card" id="hlCard">
-    <div class="card-head">
-      <span class="card-title" id="hlCardTitle">🏔 State Highlights</span>
+    <!-- A5 curtain accordion (state filter + the relocating live card) -->
+  <div class="card a5-acc-card" id="a5AccCard">
+    <div class="a5-acc-head" id="a5AccHead" onclick="a5CollapseAll()" title="Show all states">
+      <span class="a5-acc-title" id="a5AccTitle">Trail</span>
     </div>
-    <div class="highlights-wrap">
-      <button class="hl-arrow" id="hlPrev" onclick="hlNav(-1)">‹</button>
-      <div class="hl-card" id="hlCardInner">
-        <div class="hl-img" id="hlEmoji">🌲</div>
-        <div>
-          <div class="hl-state-name" id="hlStateName">—</div>
-          <div class="hl-meta" id="hlMeta">—</div>
-          <div class="hl-desc" id="hlDesc">—</div>
-          <div class="hl-tags" id="hlTags"></div>
-        </div>
-      </div>
-      <button class="hl-arrow" id="hlNext" onclick="hlNav(1)">›</button>
-    </div>
-    <div class="hl-dot-row" id="hlDots"></div>
+    <div class="a5-acc-sub" id="a5AccSub">Segment</div>
+    <div class="a5-acc" id="a5Accordion"></div>
+    <div class="a5-foot">Trail centerline · You (this device) · others shown anon · aggregate</div>
   </div>
 
   <!-- Itinerary Card -->
@@ -1512,14 +1520,12 @@ function tctpIsIOS(){
   return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
 }
 window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); window._deferredInstallPrompt = e; });
-window.addEventListener('appinstalled', function(){ try { localStorage.setItem('tctp_app_installed','1'); } catch(_){} try { tctpCloseRow('wt-row-install'); } catch(_){} window._deferredInstallPrompt = null; });
 
 function showGpsToast(){
   if (document.getElementById('gps-aware-toast')) return;
   var showFindMe = (localStorage.getItem('tctp_gps_off') !== '1');
   var showInstall = !tctpIsStandalone()
-                 && (localStorage.getItem('tctp_app_installed') !== '1')
-                 && (sessionStorage.getItem('tctp_install_snooze') !== '1');
+                 && (localStorage.getItem('tctp_install_dismissed') !== '1');
   if (!showFindMe && !showInstall) return;
 
   var icon = '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="22" fill="#1e3a1e"/>'+
@@ -1571,20 +1577,20 @@ function dismissGpsToast(turnOff){
 function tctpInstallYes(){
   if (tctpIsIOS()){
     var st = document.getElementById('wt-ios-steps'); if (st) st.classList.add('show');
-    try { sessionStorage.setItem('tctp_install_snooze','1'); } catch(_){}
+    try { localStorage.setItem('tctp_install_dismissed','1'); } catch(_){}
     return;
   }
   var pr = window._deferredInstallPrompt;
   if (pr && pr.prompt){
     try { pr.prompt(); } catch(_){} window._deferredInstallPrompt = null;
-    try { sessionStorage.setItem('tctp_install_snooze','1'); } catch(_){}
+    try { localStorage.setItem('tctp_install_dismissed','1'); } catch(_){}
     tctpCloseRow('wt-row-install');
   } else {
     try { window.open('quick-start-guide.html','_blank','noopener'); } catch(_){}
   }
 }
 function tctpInstallNo(){
-  try { sessionStorage.setItem('tctp_install_snooze','1'); } catch(_){}
+  try { localStorage.setItem('tctp_install_dismissed','1'); } catch(_){}
   tctpCloseRow('wt-row-install');
 }
 
@@ -1800,7 +1806,7 @@ function selectTrail(trail, e) {
   const subTexts = {
     AT: 'Appalachian Trail · 2,185 mi · GA → ME',
     PCT: 'Pacific Crest Trail · 2,653 mi · CA → WA',
-    CDT: 'Continental Divide Trail · 3,043 mi · NM → MT'
+    CDT: 'Continental Divide Trail · 3,100 mi · NM → MT'
   };
 
   // Switch the active data pointers
@@ -2019,6 +2025,7 @@ function recalc() {
   renderItinerary();
   drawElevation(from.cumMileStart, to.cumMileEnd, waypoints, rows);
   updateTrekTitle(segTreks);
+  if(window.a5Render) window.a5Render();
 }
 
 function addHours(date, hrs) {
@@ -2239,6 +2246,7 @@ function handleElevHover(e) {
 // HIGHLIGHTS
 // ═══════════════════════════════════════════
 function renderHighlights() {
+  if(!document.getElementById('hlTags')) return; /* A5: carousel removed */
   if(!hlStateList.length) return;
   const code = hlStateList[hlIndex];
   const si = (window.ACTIVE_TRAIL||AT).stateInfo[code] || {};
@@ -8431,6 +8439,72 @@ function postSlackPackRequest(){
   if(typeof submitPost==='function') submitPost();
   else { openPostForm(); }
 }
+</script>
+
+<script>
+/* ===== A5 curtain accordion — state filter + relocating live card ===== */
+(function(){
+  var A5 = { open:null };
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m];});}
+  function trail(){ return (window.ACTIVE_TRAIL || (typeof AT!=='undefined'?AT:null)); }
+  function dir(){ return (typeof direction!=='undefined'? direction : 'NOBO'); }
+  function trailLabel(){ return ({AT:'Appalachian Trail',PCT:'Pacific Crest Trail',CDT:'Continental Divide Trail'})[window.ACTIVE_TRAIL_ID] || 'Trail'; }
+  function sName(code,t){ if(code==='NC/TN') return 'North Carolina / Tennessee'; var si=t&&t.stateInfo&&t.stateInfo[code]; return (si&&si.name)||code; }
+  function bands(){
+    var t=trail(); if(!t||!t.treks) return [];
+    var legs=t.treks[dir().toLowerCase()]||[]; var out=[],cur=null;
+    legs.forEach(function(l){
+      if(!cur||cur.code!==l.state){ cur={code:l.state,name:sName(l.state,t),lo:l.cumMileStart,hi:l.cumMileEnd}; out.push(cur); }
+      else { cur.hi=Math.max(cur.hi,l.cumMileEnd); cur.lo=Math.min(cur.lo,l.cumMileStart); }
+    });
+    return out;
+  }
+  function youMile(){ try{ if(typeof lastGpsPos!=='undefined'&&lastGpsPos&&lastGpsPos.mile!=null) return +lastGpsPos.mile; }catch(_){} return null; }
+  function wpsIn(lo,hi){ var wp=window.ACTIVE_WAYPOINTS||(typeof AT_WAYPOINTS!=='undefined'?AT_WAYPOINTS:[])||[]; return wp.filter(function(w){return w[0]>=lo&&w[0]<=hi;}); }
+  function cardHome(){ var card=document.getElementById('elevCard'), acc=document.getElementById('a5AccCard'); if(card&&acc&&card.nextElementSibling!==acc){ acc.parentNode.insertBefore(card,acc); } }
+  function redrawTop(){ try{ var f=getFromTrekObj&&getFromTrekObj(), t=getToTrekObj&&getToTrekObj(); if(f&&t&&typeof drawElevation==='function') drawElevation(f.cumMileStart,t.cumMileEnd,[],(typeof currentItinerary!=='undefined'?currentItinerary:[])); }catch(_){} }
+
+  window.a5Render = function(){
+    var host=document.getElementById('a5Accordion'); if(!host) return;
+    cardHome(); A5.open=null;
+    var bs=bands(), you=youMile();
+    var total=(typeof window.ACTIVE_TOTAL_MILES!=='undefined'?window.ACTIVE_TOTAL_MILES:(bs.length?bs[bs.length-1].hi:0));
+    var tt=document.getElementById('a5AccTitle'); if(tt) tt.textContent=trailLabel()+' · '+Number(total).toLocaleString()+' mi';
+    var sub=document.getElementById('a5AccSub'); if(sub) sub.textContent='Segment · '+dir();
+    var order=bs.slice().reverse(); // high-mile (north) at top for NOBO
+    host.innerHTML=order.map(function(b){
+      var i=bs.indexOf(b), isYou=(you!=null&&you>=b.lo&&you<=b.hi);
+      return '<div class="a5-band" data-i="'+i+'" onclick="a5Toggle('+i+')">'
+        +'<span class="a5-band-name">'+esc(b.name)+(isYou?' <span class="a5-you">\u00B7 you</span>':'')+'</span>'
+        +'<span class="a5-band-mi">mi '+Math.round(b.lo)+'\u2013'+Math.round(b.hi)+'</span></div>'
+        +'<div class="a5-band-body" id="a5-body-'+i+'"></div>';
+    }).join('');
+  };
+
+  window.a5Toggle = function(i){
+    var bs=bands(), b=bs[i]; if(!b) return;
+    var card=document.getElementById('elevCard');
+    var be=document.querySelector('.a5-band[data-i="'+i+'"]'), body=document.getElementById('a5-body-'+i);
+    if(A5.open===i){ cardHome(); if(body) body.style.display='none'; if(be) be.classList.remove('open'); A5.open=null; redrawTop(); return; }
+    if(A5.open!=null){ var pb=document.getElementById('a5-body-'+A5.open), pe=document.querySelector('.a5-band[data-i="'+A5.open+'"]'); if(pb){pb.innerHTML='';pb.style.display='none';} if(pe) pe.classList.remove('open'); }
+    cardHome();
+    var n=wpsIn(b.lo,b.hi).length, K=(typeof TM_K!=='undefined'?TM_K:5), ym=youMile();
+    body.innerHTML='<div class="a5-kanon"><span>Mile '+(ym!=null?Math.round(ym):Math.round((b.lo+b.hi)/2))+' \u00B7 '+esc(b.name)+' \u00B7 '+n+' shelters/water</span><span class="muted">others near you: &lt;'+K+' \u00B7 anon \u00B7 aggregate \u00B7 sample</span></div>';
+    body.appendChild(card); body.style.display='block'; if(be) be.classList.add('open'); A5.open=i;
+    requestAnimationFrame(function(){ try{ if(typeof drawElevation==='function') drawElevation(b.lo,b.hi,wpsIn(b.lo,b.hi),(typeof currentItinerary!=='undefined'?currentItinerary:[])); }catch(_){} });
+  };
+
+  window.a5CollapseAll = function(){
+    if(A5.open==null) return;
+    var pb=document.getElementById('a5-body-'+A5.open), pe=document.querySelector('.a5-band[data-i="'+A5.open+'"]');
+    cardHome();
+    if(pb){ pb.innerHTML=''; pb.style.display='none'; }
+    if(pe) pe.classList.remove('open');
+    A5.open=null; redrawTop();
+  };
+
+  document.addEventListener('DOMContentLoaded', function(){ try{ window.a5Render(); }catch(_){} });
+})();
 </script>
 </body>
 </html>
