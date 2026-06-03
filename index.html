@@ -1145,7 +1145,7 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
           <span class="trail-option-icon">⛰</span>
           <div class="trail-option-info">
             <div class="trail-option-name">Continental Divide Trail</div>
-            <div class="trail-option-detail">3,100 mi · NM → MT · 5 states</div>
+            <div class="trail-option-detail">3,043 mi · NM → MT · 5 states</div>
           </div>
           <span class="trail-option-badge">Coming Soon</span>
         </div>
@@ -1512,12 +1512,14 @@ function tctpIsIOS(){
   return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
 }
 window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); window._deferredInstallPrompt = e; });
+window.addEventListener('appinstalled', function(){ try { localStorage.setItem('tctp_app_installed','1'); } catch(_){} try { tctpCloseRow('wt-row-install'); } catch(_){} window._deferredInstallPrompt = null; });
 
 function showGpsToast(){
   if (document.getElementById('gps-aware-toast')) return;
   var showFindMe = (localStorage.getItem('tctp_gps_off') !== '1');
   var showInstall = !tctpIsStandalone()
-                 && (localStorage.getItem('tctp_install_dismissed') !== '1');
+                 && (localStorage.getItem('tctp_app_installed') !== '1')
+                 && (sessionStorage.getItem('tctp_install_snooze') !== '1');
   if (!showFindMe && !showInstall) return;
 
   var icon = '<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="22" fill="#1e3a1e"/>'+
@@ -1569,20 +1571,20 @@ function dismissGpsToast(turnOff){
 function tctpInstallYes(){
   if (tctpIsIOS()){
     var st = document.getElementById('wt-ios-steps'); if (st) st.classList.add('show');
-    try { localStorage.setItem('tctp_install_dismissed','1'); } catch(_){}
+    try { sessionStorage.setItem('tctp_install_snooze','1'); } catch(_){}
     return;
   }
   var pr = window._deferredInstallPrompt;
   if (pr && pr.prompt){
     try { pr.prompt(); } catch(_){} window._deferredInstallPrompt = null;
-    try { localStorage.setItem('tctp_install_dismissed','1'); } catch(_){}
+    try { sessionStorage.setItem('tctp_install_snooze','1'); } catch(_){}
     tctpCloseRow('wt-row-install');
   } else {
     try { window.open('quick-start-guide.html','_blank','noopener'); } catch(_){}
   }
 }
 function tctpInstallNo(){
-  try { localStorage.setItem('tctp_install_dismissed','1'); } catch(_){}
+  try { sessionStorage.setItem('tctp_install_snooze','1'); } catch(_){}
   tctpCloseRow('wt-row-install');
 }
 
@@ -1798,7 +1800,7 @@ function selectTrail(trail, e) {
   const subTexts = {
     AT: 'Appalachian Trail · 2,185 mi · GA → ME',
     PCT: 'Pacific Crest Trail · 2,653 mi · CA → WA',
-    CDT: 'Continental Divide Trail · 3,100 mi · NM → MT'
+    CDT: 'Continental Divide Trail · 3,043 mi · NM → MT'
   };
 
   // Switch the active data pointers
