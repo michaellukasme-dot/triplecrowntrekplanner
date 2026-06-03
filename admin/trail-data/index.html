@@ -688,7 +688,9 @@ function tmSegStats(fromMile,toMile){
 function tmElevProfile(fromMile,toMile){
   const W=1040,H=210,L=10,R=56,T=22,B=20;
   let lo=Math.min(fromMile,toMile),hi=Math.max(fromMile,toMile); if(hi-lo<2) hi=lo+2;
-  const N=240, pts=tmTerrain(lo,hi,N); let emin=1,emax=0;
+  const N=240; let pts=tmTerrain(lo,hi,N);
+  if(fromMile>toMile) pts=pts.slice().reverse(); // [dir] descending segment (SOBO) reads north->south
+  let emin=1,emax=0;
   for(const e of pts){ if(e<emin)emin=e; if(e>emax)emax=e; }
   const jit=m=>{ const s=Math.sin(m*12.9898)*43758.5453; return s-Math.floor(s); };
   const x=i=>L+(W-L-R)*i/N, y=v=>T+(H-T-B)*(1-v);
@@ -710,10 +712,12 @@ function tmElevProfile(fromMile,toMile){
 // No individual markers: density is the anon/aggregate read, never per-hiker positions.
 function tmSegMapSvg(fromMile,toMile){
   const W=1040,H=200,L=12,R=56,T=20,B=26;
+  const desc=(fromMile>toMile); // [dir] descending = SOBO read
   let lo=Math.min(fromMile,toMile),hi=Math.max(fromMile,toMile); if(hi-lo<2) hi=lo+2;
   const N=120, midY=T+(H-T-B)*0.5; const jit=m=>{ const s=Math.sin(m*7.13)*9871.23; return s-Math.floor(s); };
   const x=i=>L+(W-L-R)*i/N; let dmax=1e-6, dv=[];
   for(let i=0;i<=N;i++){ const d=tmDensityAt(lo+(hi-lo)*i/N); dv.push(d); if(d>dmax)dmax=d; }
+  if(desc) dv.reverse(); // mirror density band to travel direction
   let cl='M'+x(0).toFixed(1)+','+midY.toFixed(1);
   for(let i=1;i<=N;i++){ const m=lo+(hi-lo)*i/N; cl+=' L'+x(i).toFixed(1)+','+(midY+Math.sin(m*0.05)*9+(jit(m)-0.5)*5).toFixed(1); }
   let top=''; for(let i=0;i<=N;i++){ const dy=midY-(dv[i]/dmax)*48; top+=(i?'L':'M')+x(i).toFixed(1)+','+dy.toFixed(1)+' '; }
@@ -723,8 +727,8 @@ function tmSegMapSvg(fromMile,toMile){
   return '<svg viewBox="0 0 '+W+' '+H+'" class="tm-fsvg" role="img" aria-label="Segment map (aggregate density)">'
     +'<defs><linearGradient id="tmDgrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b8fa8" stop-opacity="0.42"/><stop offset="1" stop-color="#5b8fa8" stop-opacity="0.05"/></linearGradient></defs>'
     +'<path d="'+dband+'" fill="url(#tmDgrad)"/><path d="'+cl+'" class="tm-line"/>'+gold
-    +'<text x="'+L+'" y="'+(H-9)+'" class="tm-fax">mi '+lo+'</text>'
-    +'<text x="'+(W-R)+'" y="'+(H-9)+'" class="tm-fax" text-anchor="end">mi '+hi+'</text>'
+    +'<text x="'+L+'" y="'+(H-9)+'" class="tm-fax">mi '+(desc?hi:lo)+'</text>'
+    +'<text x="'+(W-R)+'" y="'+(H-9)+'" class="tm-fax" text-anchor="end">mi '+(desc?lo:hi)+'</text>'
     +'<text x="'+(W-R+6)+'" y="'+(T+8)+'" class="tm-fax">density</text></svg>';
 }
 function tmFarrah(s,sFrom,sTo){
@@ -861,15 +865,22 @@ function tmAttach(){
     if(tmOpenState!=null){
       const wp=tmWaypoints();
       let f=wp.findIndex(w=>w.stateIdx===i), t=-1; for(let j=wp.length-1;j>=0;j--){ if(wp[j].stateIdx===i){ t=j; break; } }
-      if(f>=0&&t>=0){ tmSeg.from=f; tmSeg.to=t; }
+      if(f>=0&&t>=0){ if(tmSeg.dir==='SOBO'){ tmSeg.from=t; tmSeg.to=f; } else { tmSeg.from=f; tmSeg.to=t; } }
     }
     tmPaint();
   });
   q('.tm-bar').forEach(el=>el.onclick=()=>{ const i=+el.dataset.i; tmOpenState=(tmOpenState===i)?null:i;
-    if(tmOpenState!=null){ const wp=tmWaypoints(); let f=wp.findIndex(w=>w.stateIdx===i),t=-1; for(let j=wp.length-1;j>=0;j--){ if(wp[j].stateIdx===i){t=j;break;} } if(f>=0&&t>=0){tmSeg.from=f;tmSeg.to=t;} }
+    if(tmOpenState!=null){ const wp=tmWaypoints(); let f=wp.findIndex(w=>w.stateIdx===i),t=-1; for(let j=wp.length-1;j>=0;j--){ if(wp[j].stateIdx===i){t=j;break;} } if(f>=0&&t>=0){ if(tmSeg.dir==='SOBO'){tmSeg.from=t;tmSeg.to=f;}else{tmSeg.from=f;tmSeg.to=t;} } }
     tmPaint(); });
   q('.tm-trailsw button').forEach(el=>el.onclick=()=>{ const t=el.dataset.t; if(t==='All'){ tmToast('Combined all-trails view \u2014 coming soon'); return; } tmTrail=t; tmResetSeg(); tmPaint(); });
-  q('.tm-dir button').forEach(el=>el.onclick=()=>{ tmSeg.dir=el.dataset.dir; tmPaint(); });
+  q('.tm-dir button').forEach(el=>el.onclick=()=>{
+    const d=el.dataset.dir;
+    // [dir] NOBO reads south->north (ascending mile); SOBO reads north->south (descending).
+    // Flipping the direction flips the From/To so the segment reads in travel order.
+    if(d==='NOBO' && tmSeg.from>tmSeg.to){ const t=tmSeg.from; tmSeg.from=tmSeg.to; tmSeg.to=t; }
+    else if(d==='SOBO' && tmSeg.from<tmSeg.to){ const t=tmSeg.from; tmSeg.from=tmSeg.to; tmSeg.to=t; }
+    tmSeg.dir=d; tmPaint();
+  });
   q('.tm-win button').forEach(el=>el.onclick=()=>{ tmSeg.win=el.dataset.win; tmPaint(); });
   q('.tm-ftab[data-ftab]').forEach(el=>el.onclick=()=>{ tmFarrahTab=el.dataset.ftab; tmPaint(); });
   q('[data-soon]').forEach(el=>el.onclick=()=>tmToast(el.dataset.soon||'Coming soon'));
