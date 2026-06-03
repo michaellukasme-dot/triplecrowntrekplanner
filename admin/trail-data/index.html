@@ -851,11 +851,19 @@ function tmPaint(){
   tmAttach();
 }
 
+// [dir] The NOBO/SOBO indicator reflects the segment's travel direction: a From->To that
+// runs up-mile is NOBO (south->north), down-mile is SOBO (north->south). Flip the segment
+// and the indicator follows. (Equal endpoints leave the current choice untouched.)
+function tmSyncDir(){
+  if(tmSeg.from<tmSeg.to) tmSeg.dir='NOBO';
+  else if(tmSeg.from>tmSeg.to) tmSeg.dir='SOBO';
+}
+
 function tmAttach(){
   const q=(sel)=>Array.prototype.slice.call(tmMain.querySelectorAll(sel));
   const from=tmMain.querySelector('#tm-from'), to=tmMain.querySelector('#tm-to');
-  if(from) from.onchange=()=>{ tmSeg.from=+from.value; tmPaint(); };
-  if(to) to.onchange=()=>{ tmSeg.to=+to.value; tmPaint(); };
+  if(from) from.onchange=()=>{ tmSeg.from=+from.value; tmSyncDir(); tmPaint(); };
+  if(to) to.onchange=()=>{ tmSeg.to=+to.value; tmSyncDir(); tmPaint(); };
   const sa=tmMain.querySelector('#tm-showall');
   if(sa) sa.onchange=()=>{ tmShowAll=sa.checked; tmResetSeg(); tmPaint(); };
   // the curtain: clicking a state row opens its elevation card beneath it + syncs From/To
@@ -867,11 +875,12 @@ function tmAttach(){
       let f=wp.findIndex(w=>w.stateIdx===i), t=-1; for(let j=wp.length-1;j>=0;j--){ if(wp[j].stateIdx===i){ t=j; break; } }
       if(f>=0&&t>=0){ if(tmSeg.dir==='SOBO'){ tmSeg.from=t; tmSeg.to=f; } else { tmSeg.from=f; tmSeg.to=t; } }
     }
+    tmSyncDir();
     tmPaint();
   });
   q('.tm-bar').forEach(el=>el.onclick=()=>{ const i=+el.dataset.i; tmOpenState=(tmOpenState===i)?null:i;
     if(tmOpenState!=null){ const wp=tmWaypoints(); let f=wp.findIndex(w=>w.stateIdx===i),t=-1; for(let j=wp.length-1;j>=0;j--){ if(wp[j].stateIdx===i){t=j;break;} } if(f>=0&&t>=0){ if(tmSeg.dir==='SOBO'){tmSeg.from=t;tmSeg.to=f;}else{tmSeg.from=f;tmSeg.to=t;} } }
-    tmPaint(); });
+    tmSyncDir(); tmPaint(); });
   q('.tm-trailsw button').forEach(el=>el.onclick=()=>{ const t=el.dataset.t; if(t==='All'){ tmToast('Combined all-trails view \u2014 coming soon'); return; } tmTrail=t; tmResetSeg(); tmPaint(); });
   q('.tm-dir button').forEach(el=>el.onclick=()=>{
     const d=el.dataset.dir;
