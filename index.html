@@ -2507,7 +2507,7 @@ function toggleFsRouteView() {
   fsShowFullRoute = !fsShowFullRoute;
   const btn = document.getElementById('fsRouteBtn');
   btn.classList.toggle('active', fsShowFullRoute);
-  btn.textContent = fsShowFullRoute ? '🔍 Near Me' : '🗺 Full Route';
+  btn.textContent = fsShowFullRoute ? '🔍 This Section' : '🗺 Full Route';
   drawFsElevation();
 }
 
@@ -2563,17 +2563,19 @@ function drawFsElevation() {
   const wrap = canvas.parentElement;
   if (!wrap || wrap.clientWidth === 0) return;
 
-  // [v15] Robust source: window the FULL active-trail elevation around the hiker's
-  // position, independent of whatever segment the planner card is showing. (Previously
-  // read #elevCanvas._elevMeta, which the relocating card can narrow to a single state —
-  // leaving the On-Trail view blank whenever the GPS mile fell outside that segment.)
+  // [v16] Points come from the FULL active trail (robust — never blank); the VIEW RANGE
+  // comes from the state/segment the planner card is showing, so expanding a state shows
+  // THAT state. Full Route zooms out to the whole trail. (v15 windowed only around GPS,
+  // which made every state expand to the same ±10mi view regardless of what was tapped.)
   const _fsTrail = (typeof tdGetTrail === 'function')
     ? (tdGetTrail(window.ACTIVE_TRAIL_ID || 'AT') || window.ACTIVE_TRAIL || AT)
     : (window.ACTIVE_TRAIL || AT);
   const allPts = (_fsTrail && _fsTrail.elevation && _fsTrail.elevation.length) ? _fsTrail.elevation : null;
   if (!allPts) return;
-  const routeStart = allPts[0][0];
-  const routeEnd   = allPts[allPts.length - 1][0];
+  const fullStart = allPts[0][0], fullEnd = allPts[allPts.length - 1][0];
+  const _im = (document.getElementById('elevCanvas') || {})._elevMeta;
+  const segStart = (_im && _im.startMile != null) ? _im.startMile : fullStart;
+  const segEnd   = (_im && _im.endMile   != null) ? _im.endMile   : fullEnd;
   const rows = (typeof currentItinerary !== 'undefined') ? currentItinerary : [];
 
   const dpr = window.devicePixelRatio || 1;
@@ -2593,24 +2595,14 @@ function drawFsElevation() {
   // (view source defined above — full active-trail elevation)
 
   // ── Determine view window ──
+  // Expand shows the selected state/segment; Full Route zooms out to the whole trail.
   let viewStart, viewEnd;
-  const WINDOW = 10; // miles each side = 20mi total
+  if (fsShowFullRoute) { viewStart = fullStart; viewEnd = fullEnd; }
+  else                 { viewStart = segStart;  viewEnd = segEnd;  }
+  if (!(viewEnd > viewStart)) { viewStart = fullStart; viewEnd = fullEnd; } // guard inverted/empty
 
-  if (!fsShowFullRoute && lastGpsPos && lastGpsPos.mile !== undefined) {
-    viewStart = Math.max(routeStart, lastGpsPos.mile - WINDOW);
-    viewEnd   = Math.min(routeEnd,   lastGpsPos.mile + WINDOW);
-    // ensure minimum 4mi window
-    if (viewEnd - viewStart < 4) {
-      viewStart = Math.max(routeStart, lastGpsPos.mile - 2);
-      viewEnd   = Math.min(routeEnd,   lastGpsPos.mile + 2);
-    }
-  } else {
-    viewStart = routeStart;
-    viewEnd   = routeEnd;
-  }
-
-  const pts = allPts.filter(p => p[0] >= Math.floor(viewStart) && p[0] <= Math.ceil(viewEnd));
-  if (!pts.length) return;
+  let pts = allPts.filter(p => p[0] >= Math.floor(viewStart) && p[0] <= Math.ceil(viewEnd));
+  if (!pts.length) { viewStart = fullStart; viewEnd = fullEnd; pts = allPts.slice(); } // never blank
 
   const minE = Math.min(...pts.map(p => p[1]));
   const maxE = Math.max(...pts.map(p => p[1]));
@@ -2759,9 +2751,10 @@ function drawFsElevation() {
   // ── Range label ──
   const rangeEl = document.getElementById('fsRangeLabel');
   if (rangeEl) {
-    rangeEl.textContent = fsShowFullRoute || !lastGpsPos
-      ? `Mile ${Math.round(viewStart)}–${Math.round(viewEnd)}`
-      : `±${WINDOW}mi of you  ·  Mile ${Math.round(viewStart)}–${Math.round(viewEnd)}`;
+    const youOnView = lastGpsPos && lastGpsPos.mile != null
+      && lastGpsPos.mile >= viewStart && lastGpsPos.mile <= viewEnd;
+    rangeEl.textContent = `Mile ${Math.round(viewStart)}–${Math.round(viewEnd)}`
+      + (youOnView ? `  ·  you at mi ${Math.round(lastGpsPos.mile)}` : '');
   }
 
   // Store meta for hover/touch
