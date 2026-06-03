@@ -1102,6 +1102,8 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .a5-ft-bar .ft-badge{flex:none}
 .a5-ft-bar select{flex:1 1 220px;min-width:150px}
 .a5-oab{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--subtle);cursor:pointer;white-space:nowrap;font-weight:500}
+.a5-kanon-bar{flex:1 1 100%;text-align:right;font-size:.72rem;color:var(--pine);font-weight:700;margin-top:2px}
+.a5-kanon-bar .muted{color:var(--subtle);font-weight:400;font-style:italic;margin-left:6px}
 </style>
 <style id="pb-redesign-css">
 .sp-board-top{display:flex;justify-content:flex-end;align-items:center;padding:8px 14px 0}
@@ -1391,6 +1393,8 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
     <span class="ft-badge" style="background:var(--rust)">TO</span>
     <select id="toTrek" onchange="recalc()"></select>
     <label class="a5-oab"><input type="checkbox" id="outAndBack" onchange="onOutAndBackChange()"> Out &amp; Back</label>
+    <label class="a5-oab"><input type="checkbox" id="a5ShowAll" onchange="a5OnShowAll()"> Show all waypoints</label>
+    <div class="a5-kanon-bar" id="a5KanonBar"></div>
     <select id="fromState" style="display:none" aria-hidden="true"></select>
     <select id="toState" style="display:none" aria-hidden="true"></select>
   </div>
@@ -8461,21 +8465,51 @@ function postSlackPackRequest(){
   function a5FillDropdowns(b){
     if(typeof getTreks!=='function') return;
     var all = getTreks() || [];
-    var scoped = b ? all.filter(function(t){ return t.state === b.code; }) : all;
-    if(b && !scoped.length) scoped = all;
+    var legs = b ? all.filter(function(t){ return t.state === b.code; }) : all;
+    if(b && !legs.length) legs = all;
+    var sa = document.getElementById('a5ShowAll'); var showAll = !!(sa && sa.checked);
+    var items=[];
+    if(showAll){
+      var wps = window.ACTIVE_WAYPOINTS || [];
+      var lo = b ? b.lo : -Infinity, hi = b ? b.hi : Infinity;
+      wps.forEach(function(w, wi){
+        var m = w[0]; if(m < lo || m > hi) return;
+        var leg=null; for(var j=0;j<all.length;j++){ if(m>=all[j].cumMileStart && m<=all[j].cumMileEnd){ leg=all[j]; break; } }
+        if(!leg) return;
+        items.push({ value: leg.id+':'+wi, label: w[1]+' · mi '+Math.round(m) }); // parseInt(value) -> leg id (snap)
+      });
+      if(!items.length) showAll=false;
+    }
+    if(!showAll){
+      items = legs.map(function(t){ return { value:String(t.id), label:t.name+' · mi '+Math.round(t.cumMileStart) }; });
+    }
     ['fromTrek','toTrek'].forEach(function(id){
       var el=document.getElementById(id); if(!el) return;
       var prev=el.value;
       el.innerHTML='';
-      scoped.forEach(function(t){ var o=document.createElement('option'); o.value=String(t.id); o.textContent=t.name+' \u00B7 mi '+Math.round(t.cumMileStart); el.appendChild(o); });
+      items.forEach(function(it){ var o=document.createElement('option'); o.value=it.value; o.textContent=it.label; el.appendChild(o); });
       if(Array.prototype.some.call(el.options,function(o){return o.value===prev;})) el.value=prev;
-      else el.value=(id==='toTrek'&&scoped.length)?String(scoped[scoped.length-1].id):(scoped.length?String(scoped[0].id):'');
+      else el.value=(id==='toTrek'&&items.length)?items[items.length-1].value:(items.length?items[0].value:'');
     });
   }
 
+  function updateKanonBadge(){
+    var el=document.getElementById('a5KanonBar'); if(!el) return;
+    var f=(typeof getFromTrekObj==='function')?getFromTrekObj():null, t=(typeof getToTrekObj==='function')?getToTrekObj():null;
+    if(!f||!t){ el.innerHTML=''; return; }
+    var lo=Math.min(f.cumMileStart,t.cumMileStart), hi=Math.max(f.cumMileEnd,t.cumMileEnd);
+    var K=(typeof TM_K!=='undefined'?TM_K:5);
+    el.innerHTML='<strong>Between these points: &lt;'+K+' hikers</strong><span class="muted">anon · aggregate · sample · mi '+Math.round(lo)+'–'+Math.round(hi)+'</span>';
+  }
+
+  window.a5OnShowAll = function(){
+    var b = (A5.open!=null) ? bands()[A5.open] : null;
+    a5FillDropdowns(b); updateKanonBadge();
+  };
+
   window.a5Render = function(){
     var host=document.getElementById('a5Accordion'); if(!host) return;
-    cardHome(); A5.open=null; window._a5BandRange=null; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner(); a5FillDropdowns(null);
+    cardHome(); A5.open=null; window._a5BandRange=null; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner(); a5FillDropdowns(null); updateKanonBadge();
     var bs=bands(), you=youMile();
     var total=(typeof window.ACTIVE_TOTAL_MILES!=='undefined'?window.ACTIVE_TOTAL_MILES:(bs.length?bs[bs.length-1].hi:0));
     var tt=document.getElementById('a5AccTitle'); if(tt) tt.textContent=trailLabel()+' · '+Number(total).toLocaleString()+' mi';
@@ -8505,12 +8539,12 @@ function postSlackPackRequest(){
     var bs=bands(), b=bs[i]; if(!b) return;
     var card=document.getElementById('elevCard');
     var be=document.querySelector('.a5-band[data-i="'+i+'"]'), body=document.getElementById('a5-body-'+i);
-    if(A5.open===i){ cardHome(); if(body) body.style.display='none'; if(be) be.classList.remove('open'); A5.open=null; window._a5BandRange=null; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner(); a5FillDropdowns(null); redrawTop(); return; }
+    if(A5.open===i){ cardHome(); if(body) body.style.display='none'; if(be) be.classList.remove('open'); A5.open=null; window._a5BandRange=null; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner(); a5FillDropdowns(null); updateKanonBadge(); redrawTop(); return; }
     if(A5.open!=null){ var pb=document.getElementById('a5-body-'+A5.open), pe=document.querySelector('.a5-band[data-i="'+A5.open+'"]'); if(pb){pb.innerHTML='';pb.style.display='none';} if(pe) pe.classList.remove('open'); }
     cardHome();
     var n=wpsIn(b.lo,b.hi).length, K=(typeof TM_K!=='undefined'?TM_K:5), ym=youMile();
     body.innerHTML='<div class="a5-kanon"><span>Mile '+(ym!=null?Math.round(ym):Math.round((b.lo+b.hi)/2))+' \u00B7 '+esc(b.name)+' \u00B7 '+n+' shelters/water</span><span class="muted">others near you: &lt;'+K+' \u00B7 anon \u00B7 aggregate \u00B7 sample</span></div>';
-    body.appendChild(card); body.style.display='block'; if(be) be.classList.add('open'); A5.open=i; window._a5BandRange={lo:b.lo,hi:b.hi}; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner(); a5FillDropdowns(b);
+    body.appendChild(card); body.style.display='block'; if(be) be.classList.add('open'); A5.open=i; window._a5BandRange={lo:b.lo,hi:b.hi}; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner(); a5FillDropdowns(b); updateKanonBadge();
     requestAnimationFrame(function(){ try{ if(typeof drawElevation==='function') drawElevation(b.lo,b.hi,wpsIn(b.lo,b.hi),(typeof currentItinerary!=='undefined'?currentItinerary:[])); }catch(_){} });
   };
 
@@ -8520,7 +8554,7 @@ function postSlackPackRequest(){
     cardHome();
     if(pb){ pb.innerHTML=''; pb.style.display='none'; }
     if(pe) pe.classList.remove('open');
-    A5.open=null; window._a5BandRange=null; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner(); a5FillDropdowns(null); redrawTop();
+    A5.open=null; window._a5BandRange=null; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner(); a5FillDropdowns(null); updateKanonBadge(); redrawTop();
   };
 
   document.addEventListener('DOMContentLoaded', function(){ try{ window.a5Render(); }catch(_){} });
