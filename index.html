@@ -2079,17 +2079,21 @@ function drawElevation(startMile, endMile, waypoints, rows) {
   document.getElementById('elevYmax').textContent = maxE.toLocaleString()+' ft';
   document.getElementById('elevYmin').textContent = minE.toLocaleString()+' ft';
 
-  // [b] Sparse-GIS shading — CDT ONLY. Built for the NM Lordsburg->Grants hole,
-  // where mapped waypoints are genuinely far apart. Shades any waypoint gap
-  // > SPGAP miles as "provisional · GIS sparse". Scoped to CDT so the AT's
-  // legitimate long shelter gaps (NJ ~31mi, NY ~33mi) never false-fire.
-  if((window.ACTIVE_TRAIL_ID || 'AT') === 'CDT'){
+  // [b] Sparse-GIS shading — CDT ONLY, and ONLY when a single state band is open
+  // (window._a5BandRange set = card drilled into one state). The CDT's waypoints are
+  // genuinely sparse end to end, so on the full-trail overview a >SPGAP gap lands on
+  // nearly every segment — that carpet-bombed the chart and stacked the labels into an
+  // illegible smear. Showing it one-state-at-a-time keeps the holes wide enough to read.
+  // Within a band we still never let two labels overlap. Built for NM (Lordsburg->Grants).
+  if((window.ACTIVE_TRAIL_ID || 'AT') === 'CDT' && window._a5BandRange){
     const _spWps = (window.ACTIVE_WAYPOINTS || []).filter(w => w[0] >= startMile && w[0] <= endMile);
     const SPGAP = 30;
-    let _spPrev = null;
+    let _spPrev = null, _spLastR = -Infinity;
     ctx.save();
     ctx.font = '600 10px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'center';
+    const _spTxt = 'provisional · GIS sparse';
+    const _spTxtW = ctx.measureText(_spTxt).width;
     _spWps.forEach(w => {
       if(_spPrev !== null && (w[0] - _spPrev) > SPGAP){
         const sx = xPos(_spPrev), ex = xPos(w[0]);
@@ -2098,8 +2102,12 @@ function drawElevation(startMile, endMile, waypoints, rows) {
         if(rw > 0){
           ctx.fillStyle = 'rgba(154,106,28,0.10)';   // #9a6a1c wash
           ctx.fillRect(rx, PAD.top, rw, cH);
-          ctx.fillStyle = 'rgba(154,106,28,0.85)';
-          ctx.fillText('provisional · GIS sparse', rx + rw/2, PAD.top + 12);
+          // Label only when it fits inside the band AND clears the previous label.
+          if(rw >= _spTxtW + 10 && rx >= _spLastR + 8){
+            ctx.fillStyle = 'rgba(154,106,28,0.9)';
+            ctx.fillText(_spTxt, rx + rw/2, PAD.top + 12);
+            _spLastR = rx + rw/2 + _spTxtW/2;
+          }
         }
       }
       _spPrev = w[0];
