@@ -698,7 +698,8 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .atcs-banner b{color:#4d3a08}
 .atcs-deck{position:relative}
 .atcs-svg{width:100%;display:block;filter:drop-shadow(0 7px 14px rgba(20,35,18,.3))}
-.atcs-reel{transform-box:fill-box;transform-origin:center}
+.atcs-reel{transform-box:view-box;transform-origin:170px 208px}
+.atcs-reel.atcs-rev{transform-origin:390px 208px}
 .atcs-playing .atcs-reel{animation:atcsSpin 2.2s linear infinite}
 .atcs-playing .atcs-reel.atcs-rev{animation-direction:reverse}
 @keyframes atcsSpin{to{transform:rotate(360deg)}}
@@ -7590,9 +7591,9 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
               <text x="514" y="80" text-anchor="end" font-weight="800" font-size="13" letter-spacing="3" fill="#9fb89a">SIDE</text>
             </g>
             <g>
-              <rect x="34" y="206" width="86" height="30" rx="4" fill="none" stroke="#eaf2e6" stroke-width="2"/>
-              <rect x="40" y="212" width="12" height="18" rx="2" fill="#e8761e" id="atcsBlzSwatch" stroke="#eaf2e6" stroke-width=".8"/>
-              <text x="58" y="226" font-weight="800" font-size="12" letter-spacing="1.5" fill="#eaf2e6" id="atcsBlzTxt">BLAZE</text>
+              <rect x="34" y="252" width="86" height="30" rx="4" fill="none" stroke="#eaf2e6" stroke-width="2"/>
+              <rect x="40" y="258" width="12" height="18" rx="2" fill="#e8761e" id="atcsBlzSwatch" stroke="#eaf2e6" stroke-width=".8"/>
+              <text x="58" y="272" font-weight="800" font-size="12" letter-spacing="1.5" fill="#eaf2e6" id="atcsBlzTxt">BLAZE</text>
             </g>
             <rect x="60" y="96" width="440" height="150" rx="10" fill="#f7f4ea" stroke="#142810" stroke-width="2.5"/>
             <rect x="60" y="96" width="440" height="16" rx="6" fill="#e8761e" id="atcsBlzStripe"/>
@@ -7603,11 +7604,11 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
             <g>
               <circle cx="170" cy="208" r="24" fill="#fff" stroke="#142810" stroke-width="3"/>
               <g class="atcs-reel"><g stroke="#142810" stroke-width="4" stroke-linecap="round">
-                <path d="M170 190v11M170 215v11M152 208h11M187 208h11M157 195l8 8M175 213l8 8M183 195l-8 8M165 213l-8 8"/>
+                <path d="M170 190v11M170 215v11M152 208h11M177 208h11M157 195l8 8M175 213l8 8M183 195l-8 8M165 213l-8 8"/>
               </g><circle cx="170" cy="208" r="6.5" fill="#142810"/></g>
               <circle cx="390" cy="208" r="24" fill="#fff" stroke="#142810" stroke-width="3"/>
               <g class="atcs-reel atcs-rev"><g stroke="#142810" stroke-width="4" stroke-linecap="round">
-                <path d="M390 190v11M390 215v11M372 208h11M407 208h11M377 195l8 8M395 213l8 8M403 195l-8 8M385 213l-8 8"/>
+                <path d="M390 190v11M390 215v11M372 208h11M397 208h11M377 195l8 8M395 213l8 8M403 195l-8 8M385 213l-8 8"/>
               </g><circle cx="390" cy="208" r="6.5" fill="#142810"/></g>
               <rect x="218" y="194" width="124" height="28" rx="5" fill="#142810"/>
               <text x="280" y="214" text-anchor="middle" font-weight="800" font-size="16" fill="#c8a84b" letter-spacing="3" id="atcsCounter">0000.0</text>
