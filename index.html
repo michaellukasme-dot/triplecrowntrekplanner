@@ -7629,9 +7629,9 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
         </div>
         <div class="atcs-chips" id="atcsChips"></div>
         <div class="atcs-blank" id="atcsBlank">
-          <b>Blank tape.</b> Nobody has recorded this trail yet &#8212; no elevation profile or centerline on
-          file. Hike it with GPS on and <span class="atcs-recw">your trek writes Side A</span> for every hiker
-          after you.
+          <b>Blank tape.</b> The trailhead and terminus are pinned on the map, but no one has recorded the
+          profile yet &#8212; the elevation view stays empty until it is real. Hike it with GPS on and
+          <span class="atcs-recw">your trek writes Side A</span> for every hiker after you.
         </div>
         <button class="atcs-go" id="atcsGo"><span class="atcs-tri">&#9654;</span>&nbsp; GO ON THE HIKE</button>
         <button class="atcs-eject" id="atcsEject">&#9632; EJECT &#8212; back to the Big 3</button>
@@ -8737,21 +8737,21 @@ function postSlackPackRequest(){
    Geometry is honestly absent (geom_status:"unmapped"): the adapter below is live code but
    self-gates until trailhead/terminus coords land (pilot prompt A1). Never fake a curve. */
 var ATCS_SEED={PA:{name:"Pennsylvania",hikes:[
- {id:"PA-appalachian-trail-pa-section",name:"Appalachian Trail (PA Section)",blaze:"White",dif:"easy",feat:"dog-friendly \uD83D\uDC36",len:null,th:null,tm:null},
- {id:"PA-black-forest-trail",name:"Black Forest Trail",blaze:"Orange",dif:"moderate",feat:"accessible \u267F",len:null,th:null,tm:null},
- {id:"PA-chuck-keiper-trail",name:"Chuck Keiper Trail",blaze:"Orange",dif:"hard",feat:"waterfalls \u2652",len:null,th:null,tm:null},
- {id:"PA-donut-hole-trail",name:"Donut Hole Trail",blaze:"Orange",dif:"easy",feat:"scenic views \uD83C\uDF04",len:null,th:null,tm:null},
- {id:"PA-gerrity-score-trail-pinchot-trail",name:"Gerrity Score / Pinchot Trail",blaze:"Orange",dif:"moderate",feat:"dog-friendly \uD83D\uDC36",len:null,th:null,tm:null},
- {id:"PA-horse-shoe-trail",name:"Horse-Shoe Trail",blaze:"Yellow",dif:"hard",feat:"accessible \u267F",len:null,th:null,tm:null},
- {id:"PA-laurel-highlands-hiking-trail",name:"Laurel Highlands Hiking Trail",blaze:"Yellow",dif:"easy",feat:"waterfalls \u2652",len:null,th:null,tm:null},
- {id:"PA-loyalsock-trail",name:"Loyalsock Trail",blaze:"Yellow/Red Stripe",dif:"moderate",feat:"scenic views \uD83C\uDF04",len:null,th:null,tm:null},
- {id:"PA-mid-state-trail",name:"Mid State Trail",blaze:"Orange",dif:"hard",feat:"dog-friendly \uD83D\uDC36",len:null,th:null,tm:null},
- {id:"PA-north-country-national-scenic-trail-pa-segments",name:"North Country NST (PA Segments)",blaze:"Blue",dif:"easy",feat:"accessible \u267F",len:null,th:null,tm:null},
- {id:"PA-old-loggers-path",name:"Old Loggers Path",blaze:"Orange",dif:"moderate",feat:"waterfalls \u2652",len:null,th:null,tm:null},
- {id:"PA-quehanna-trail",name:"Quehanna Trail",blaze:"Orange",dif:"hard",feat:"scenic views \uD83C\uDF04",len:null,th:null,tm:null},
- {id:"PA-standing-stone-trail",name:"Standing Stone Trail",blaze:"Orange",dif:"easy",feat:"dog-friendly \uD83D\uDC36",len:null,th:null,tm:null},
- {id:"PA-susquehannock-trail-system-sts",name:"Susquehannock Trail System (STS)",blaze:"Orange",dif:"moderate",feat:"accessible \u267F",len:null,th:null,tm:null},
- {id:"PA-tuscarora-trail",name:"Tuscarora Trail",blaze:"Blue",dif:"hard",feat:"waterfalls \u2652",len:null,th:null,tm:null}
+ {id:"PA-appalachian-trail-pa-section",name:"Appalachian Trail (PA Section)",blaze:"White",dif:"easy",feat:"dog-friendly \ud83d\udc36",len:229.6,loop:false,th:{lat:39.7199,lon:-77.5047,conf:"approx"},tm:{lat:40.9714,lon:-75.1255,conf:"approx"}},
+ {id:"PA-black-forest-trail",name:"Black Forest Trail",blaze:"Orange",dif:"moderate",feat:"accessible \u267f",len:42.8,loop:true,th:{lat:41.4719,lon:-77.5031,conf:"approx"},tm:{lat:41.4719,lon:-77.5031,conf:"approx"}},
+ {id:"PA-chuck-keiper-trail",name:"Chuck Keiper Trail",blaze:"Orange",dif:"hard",feat:"waterfalls \u2652",len:50.6,loop:true,th:{lat:41.236116,lon:-77.782252,conf:"exact"},tm:{lat:41.236116,lon:-77.782252,conf:"exact"}},
+ {id:"PA-donut-hole-trail",name:"Donut Hole Trail",blaze:"Orange",dif:"easy",feat:"scenic views \ud83c\udf04",len:94.2,loop:false,th:{lat:41.3173,lon:-78.0664,conf:"approx"},tm:{lat:41.184,lon:-77.494,conf:"approx"}},
+ {id:"PA-gerrity-score-trail-pinchot-trail",name:"Gerrity Score / Pinchot Trail",blaze:"Orange",dif:"moderate",feat:"dog-friendly \ud83d\udc36",len:22.2,loop:true,th:{lat:41.21935,lon:-75.63123,conf:"exact"},tm:{lat:41.21935,lon:-75.63123,conf:"exact"}},
+ {id:"PA-horse-shoe-trail",name:"Horse-Shoe Trail",blaze:"Yellow",dif:"hard",feat:"accessible \u267f",len:140.0,loop:false,th:{lat:40.1006,lon:-75.4596,conf:"approx"},tm:{lat:40.4477,lon:-76.5985,conf:"approx"}},
+ {id:"PA-laurel-highlands-hiking-trail",name:"Laurel Highlands Hiking Trail",blaze:"Yellow",dif:"easy",feat:"waterfalls \u2652",len:70.1,loop:false,th:{lat:39.87243,lon:-79.494002,conf:"exact"},tm:{lat:40.408911,lon:-79.005835,conf:"exact"}},
+ {id:"PA-loyalsock-trail",name:"Loyalsock Trail",blaze:"Yellow/Red Stripe",dif:"moderate",feat:"scenic views \ud83c\udf04",len:59.2,loop:false,th:{lat:41.3461,lon:-76.9068,conf:"approx"},tm:{lat:41.4439,lon:-76.4443,conf:"approx"}},
+ {id:"PA-mid-state-trail",name:"Mid State Trail",blaze:"Orange",dif:"hard",feat:"dog-friendly \ud83d\udc36",len:327.0,loop:false,th:{lat:39.7235,lon:-78.4664,conf:"approx"},tm:{lat:41.9988,lon:-77.131,conf:"approx"}},
+ {id:"PA-north-country-national-scenic-trail-pa-segments",name:"North Country NST (PA Segments)",blaze:"Blue",dif:"easy",feat:"accessible \u267f",len:284.8,loop:false,th:{lat:40.804,lon:-80.519,conf:"approx"},tm:{lat:41.9986,lon:-78.931,conf:"approx"}},
+ {id:"PA-old-loggers-path",name:"Old Loggers Path",blaze:"Orange",dif:"moderate",feat:"waterfalls \u2652",len:27.8,loop:true,th:{lat:41.507255,lon:-76.820776,conf:"exact"},tm:{lat:41.507255,lon:-76.820776,conf:"exact"}},
+ {id:"PA-quehanna-trail",name:"Quehanna Trail",blaze:"Orange",dif:"hard",feat:"scenic views \ud83c\udf04",len:73.7,loop:true,th:{lat:41.193825,lon:-78.506585,conf:"exact"},tm:{lat:41.193825,lon:-78.506585,conf:"exact"}},
+ {id:"PA-standing-stone-trail",name:"Standing Stone Trail",blaze:"Orange",dif:"easy",feat:"dog-friendly \ud83d\udc36",len:84.2,loop:false,th:{lat:39.998,lon:-77.923,conf:"approx"},tm:{lat:40.703,lon:-77.751,conf:"approx"}},
+ {id:"PA-susquehannock-trail-system-sts",name:"Susquehannock Trail System (STS)",blaze:"Orange",dif:"moderate",feat:"accessible \u267f",len:83.4,loop:true,th:{lat:41.7687,lon:-77.8686,conf:"exact"},tm:{lat:41.7687,lon:-77.8686,conf:"exact"}},
+ {id:"PA-tuscarora-trail",name:"Tuscarora Trail",blaze:"Blue",dif:"hard",feat:"waterfalls \u2652",len:95.0,loop:false,th:{lat:39.7197,lon:-78.075,conf:"approx"},tm:{lat:40.294417,lon:-77.090806,conf:"exact"}}
 ]}};
 var ATCS_COMING=["Alabama","Colorado","Maine","New York","Vermont","Virginia","West Virginia"];
 var ATCS_BLAZE={"White":{c:"#f4f1ea"},"Orange":{c:"#e8761e"},"Yellow":{c:"#f2c200"},"Blue":{c:"#2563a8"},"Yellow/Red Stripe":{c:"url(#atcsYR)",flat:"#d23b2f"}};
@@ -8803,7 +8803,7 @@ function atcsLoadLabel(i){
     '<span class="atcs-chip atcs-blz" style="background:'+flat+'">'+atcsEsc(h.blaze)+' blaze</span>'+
     '<span class="atcs-chip">'+atcsEsc(h.dif)+'</span>'+
     '<span class="atcs-chip">'+atcsEsc(h.feat)+'</span>'+
-    '<span class="atcs-chip atcs-warn">unmapped \u00B7 blank tape</span>';
+    '<span class="atcs-chip atcs-warn">profile unrecorded \u00B7 blank tape</span>'+((h.th&&h.th.conf==='approx')?'<span class="atcs-chip">endpoints approx</span>':'');
   atcsEl('atcsBlank').classList.remove('atcs-show');
 }
 function atcsFlip(){
