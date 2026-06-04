@@ -122,7 +122,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --forest:   #1e3a1e;
@@ -689,6 +689,44 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .at-subtabs .at-subtab.active{color:var(--pine);background:var(--white);border-bottom-color:transparent;
   box-shadow:0 1px 3px rgba(0,0,0,.08)}
 #at-tab-alltreks{flex:1;flex-direction:column;min-height:0}
+/* ══ ALLTREKS CASSETTE DECK (ships 2026-06-03, tag ALLTREKS) ══ */
+#at-tab-alltreks{overflow-y:auto}
+.atcs-wrap{flex:1;display:flex;flex-direction:column;gap:11px;padding:12px 16px 16px;min-height:0}
+.atcs-banner{display:flex;gap:10px;align-items:center;background:#fdf8ec;border:1px solid #efe0bb;border-radius:10px;padding:8px 12px}
+.atcs-banner .atcs-face{flex:0 0 36px;width:36px;height:36px;border-radius:50%;background:var(--mist,#e8f0e8);border:2px solid #6ba368;display:flex;align-items:center;justify-content:center;font-family:'Caveat',cursive;font-weight:700;color:#2d5a27;font-size:.95rem}
+.atcs-banner p{margin:0;font-size:.72rem;line-height:1.4;color:#6b5318}
+.atcs-banner b{color:#4d3a08}
+.atcs-deck{position:relative}
+.atcs-svg{width:100%;display:block;filter:drop-shadow(0 7px 14px rgba(20,35,18,.3))}
+.atcs-reel{transform-box:fill-box;transform-origin:center}
+.atcs-playing .atcs-reel{animation:atcsSpin 2.2s linear infinite}
+.atcs-playing .atcs-reel.atcs-rev{animation-direction:reverse}
+@keyframes atcsSpin{to{transform:rotate(360deg)}}
+.atcs-scroll{transform-box:fill-box;animation:atcsMarquee 9s linear infinite}
+@keyframes atcsMarquee{from{transform:translateX(424px)}to{transform:translateX(-110%)}}
+@media (prefers-reduced-motion:reduce){.atcs-playing .atcs-reel,.atcs-scroll{animation:none}}
+.atcs-flip .atcs-svg{animation:atcsFlip .5s ease}
+@keyframes atcsFlip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+.atcs-pickers{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.atcs-leg{display:flex;align-items:center;gap:6px;flex:1;min-width:150px}
+.atcs-lbl{font-size:.58rem;font-weight:800;letter-spacing:.1em;color:#fff;background:#1e3a1e;border-radius:6px;padding:4px 8px}
+.atcs-lbl.atcs-hk{background:#b5451b}
+.atcs-leg select{flex:1;font:inherit;font-size:.8rem;font-weight:600;color:var(--ink,#23302a);background:#fff;border:1.5px solid var(--border,#dbe4da);border-radius:8px;padding:7px 9px;min-width:0}
+.atcs-chips{display:flex;gap:6px;flex-wrap:wrap}
+.atcs-chip{font-size:.66rem;font-weight:700;border-radius:99px;padding:4px 10px;background:var(--mist,#e8f0e8);color:#2d5a27;border:1px solid var(--border,#dbe4da)}
+.atcs-chip.atcs-blz{color:#fff;border:0}
+.atcs-chip.atcs-warn{background:#fdf3ee;color:#b5451b;border-color:#eccdbd}
+.atcs-blank{display:none;background:var(--stone,#f3f6f2);border:1.5px dashed #4a7c59;border-radius:10px;padding:9px 12px;font-size:.74rem;line-height:1.45;color:#2d5a27}
+.atcs-blank.atcs-show{display:block;animation:atcsFade .4s ease}
+@keyframes atcsFade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.atcs-blank b{color:#1e3a1e}.atcs-blank .atcs-recw{color:#d23b2f;font-weight:800}
+.atcs-go{width:100%;border:0;border-radius:10px;background:#1e3a1e;color:#fff;font:inherit;font-weight:800;font-size:.98rem;letter-spacing:.05em;padding:13px;cursor:pointer;box-shadow:0 4px 0 #122610;transition:transform .08s,box-shadow .08s}
+.atcs-go:active{transform:translateY(3px);box-shadow:0 1px 0 #122610}
+.atcs-go .atcs-tri{color:#c8a84b}
+.atcs-eject{display:none;width:100%;border:1.5px solid var(--border,#dbe4da);border-radius:10px;background:#fff;color:#2d5a27;font:inherit;font-weight:700;font-size:.84rem;padding:9px;cursor:pointer}
+.atcs-on .atcs-eject{display:block}
+.atcs-foot{font-size:.64rem;color:var(--subtle,#7c8a7c);text-align:center;line-height:1.5}
+
 .at-coming-wrap{position:relative;flex:1;display:flex;align-items:center;justify-content:center;
   min-height:360px;padding:36px 26px;text-align:center;overflow:hidden}
 .at-coming-watermark{position:absolute;top:50%;left:50%;
@@ -1817,7 +1855,7 @@ function openAllTreks(e){
   const dd = document.getElementById('trailDropdown');
   if (dd) dd.classList.remove('open');
   openModal('modal-tracker');
-  allTreksTab('log');
+  allTreksTab('alltreks');
 }
 
 // Toggle the two TOP tabs of the All Treks modal: My Trek Log | All Treks.
@@ -7516,16 +7554,87 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
     </div>
     </div><!-- end at-tab-log -->
 
-    <!-- ===== TOP TAB 2: ALL TREKS (Coming Soon) ===== -->
+
+    <!-- ===== TOP TAB 2: ALL TREKS — the cassette deck (ALLTREKS pilot, PA) ===== -->
     <div id="at-tab-alltreks" style="display:none">
-      <div class="at-coming-wrap">
-        <div class="at-coming-watermark">Coming Soon</div>
-        <div class="at-coming-copy">
-          <div class="at-coming-flag">🇺🇸</div>
-          <h3>All Treks</h3>
-          <p>Thousands of miles across all 50 states — every named trek, not just the Big&nbsp;3. Plan it, log it, and find your trail family anywhere in the country.</p>
-          <p class="at-coming-note">The Appalachian, Pacific Crest &amp; Continental Divide trails stay free, forever. All&nbsp;Treks is on its way.</p>
+      <div class="atcs-wrap" id="atcsWrap">
+        <div class="atcs-banner">
+          <span class="atcs-face">SL</span>
+          <p><b>The Big 3 stay free. Forever.</b> All Treks runs on supporters &#8212; your first 50 miles a
+          year are on us, and <b>$15/year</b> after that keeps the lights on. Honor system, like the donation
+          box at the hostel. Pick a trek and go on that hike.</p>
         </div>
+        <div class="atcs-deck" id="atcsDeck">
+          <svg class="atcs-svg" viewBox="0 0 560 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cassette: selected hike">
+            <defs>
+              <clipPath id="atcsNameClip"><rect x="68" y="114" width="424" height="44" rx="4"/></clipPath>
+              <linearGradient id="atcsYR" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#f2c200"/><stop offset=".5" stop-color="#f2c200"/>
+                <stop offset=".5" stop-color="#d23b2f"/><stop offset="1" stop-color="#d23b2f"/>
+              </linearGradient>
+            </defs>
+            <rect x="6" y="6" width="548" height="328" rx="22" fill="#1e3a1e"/>
+            <rect x="6" y="6" width="548" height="328" rx="22" fill="none" stroke="#142810" stroke-width="3"/>
+            <rect x="14" y="14" width="532" height="312" rx="16" fill="none" stroke="#3b5c33" stroke-width="1.5" opacity=".7"/>
+            <g fill="#0f1f0c" stroke="#5a7a50" stroke-width="1.2">
+              <circle cx="30" cy="30" r="7"/><circle cx="530" cy="30" r="7"/>
+              <circle cx="30" cy="310" r="7"/><circle cx="530" cy="310" r="7"/>
+            </g>
+            <g stroke="#5a7a50" stroke-width="1.4"><path d="M25 30h10M530 25v10M25 310h10M530 305v10"/></g>
+            <g id="atcsLenBadge" style="cursor:pointer">
+              <text x="46" y="64" font-family="Playfair Display,serif" font-weight="800" font-size="34" fill="#eaf2e6" font-style="italic" id="atcsLenTxt">&#8212; mi</text>
+              <path d="M46 72 L210 72" stroke="#eaf2e6" stroke-width="2" opacity=".5"/>
+            </g>
+            <g id="atcsSideBtn" style="cursor:pointer">
+              <text x="514" y="62" text-anchor="end" font-family="Playfair Display,serif" font-weight="800" font-size="40" fill="#eaf2e6" id="atcsSideTxt">A</text>
+              <text x="514" y="80" text-anchor="end" font-weight="800" font-size="13" letter-spacing="3" fill="#9fb89a">SIDE</text>
+            </g>
+            <g>
+              <rect x="34" y="206" width="86" height="30" rx="4" fill="none" stroke="#eaf2e6" stroke-width="2"/>
+              <rect x="40" y="212" width="12" height="18" rx="2" fill="#e8761e" id="atcsBlzSwatch" stroke="#eaf2e6" stroke-width=".8"/>
+              <text x="58" y="226" font-weight="800" font-size="12" letter-spacing="1.5" fill="#eaf2e6" id="atcsBlzTxt">BLAZE</text>
+            </g>
+            <rect x="60" y="96" width="440" height="150" rx="10" fill="#f7f4ea" stroke="#142810" stroke-width="2.5"/>
+            <rect x="60" y="96" width="440" height="16" rx="6" fill="#e8761e" id="atcsBlzStripe"/>
+            <g clip-path="url(#atcsNameClip)">
+              <text x="280" y="146" text-anchor="middle" font-family="Caveat,cursive" font-weight="700" font-size="30" fill="#23302a" id="atcsName">Pick a hike&#8230;</text>
+            </g>
+            <text x="280" y="170" text-anchor="middle" font-weight="700" font-size="13" fill="#7c8a7c" id="atcsSub">Pennsylvania &#183; All Treks</text>
+            <g>
+              <circle cx="170" cy="208" r="24" fill="#fff" stroke="#142810" stroke-width="3"/>
+              <g class="atcs-reel"><g stroke="#142810" stroke-width="4" stroke-linecap="round">
+                <path d="M170 190v11M170 215v11M152 208h11M187 208h11M157 195l8 8M175 213l8 8M183 195l-8 8M165 213l-8 8"/>
+              </g><circle cx="170" cy="208" r="6.5" fill="#142810"/></g>
+              <circle cx="390" cy="208" r="24" fill="#fff" stroke="#142810" stroke-width="3"/>
+              <g class="atcs-reel atcs-rev"><g stroke="#142810" stroke-width="4" stroke-linecap="round">
+                <path d="M390 190v11M390 215v11M372 208h11M407 208h11M377 195l8 8M395 213l8 8M403 195l-8 8M385 213l-8 8"/>
+              </g><circle cx="390" cy="208" r="6.5" fill="#142810"/></g>
+              <rect x="218" y="194" width="124" height="28" rx="5" fill="#142810"/>
+              <text x="280" y="214" text-anchor="middle" font-weight="800" font-size="16" fill="#c8a84b" letter-spacing="3" id="atcsCounter">0000.0</text>
+            </g>
+            <circle cx="466" cy="223" r="6" fill="#3a4d36" id="atcsDeckRec"/>
+            <text x="478" y="228" font-weight="800" font-size="11" letter-spacing="2" fill="#9fb89a">REC</text>
+            <path d="M150 262 L410 262 L444 322 L116 322 Z" fill="none" stroke="#0f1f0c" stroke-width="3"/>
+            <g fill="#0f1f0c">
+              <circle cx="176" cy="295" r="9"/><circle cx="384" cy="295" r="9"/>
+              <rect x="222" y="284" width="22" height="24" rx="5"/><rect x="316" y="284" width="22" height="24" rx="5"/>
+              <rect x="258" y="290" width="44" height="18" rx="7"/>
+            </g>
+          </svg>
+        </div>
+        <div class="atcs-pickers">
+          <div class="atcs-leg"><span class="atcs-lbl">STATE</span><select id="atcsSelState" aria-label="State"></select></div>
+          <div class="atcs-leg"><span class="atcs-lbl atcs-hk">HIKE</span><select id="atcsSelHike" aria-label="Hike"></select></div>
+        </div>
+        <div class="atcs-chips" id="atcsChips"></div>
+        <div class="atcs-blank" id="atcsBlank">
+          <b>Blank tape.</b> Nobody has recorded this trail yet &#8212; no elevation profile or centerline on
+          file. Hike it with GPS on and <span class="atcs-recw">your trek writes Side A</span> for every hiker
+          after you.
+        </div>
+        <button class="atcs-go" id="atcsGo"><span class="atcs-tri">&#9654;</span>&nbsp; GO ON THE HIKE</button>
+        <button class="atcs-eject" id="atcsEject">&#9632; EJECT &#8212; back to the Big 3</button>
+        <div class="atcs-foot">15 Pennsylvania treks live in the pilot &#183; 49 states on the way &#183; No ads &#183; No account &#183; Your data stays on your device</div>
       </div>
     </div>
   </div>
@@ -8620,5 +8729,137 @@ function postSlackPackRequest(){
   });
 })();
 </script>
+
+<script>
+"use strict";
+/* ══ ALLTREKS CASSETTE DECK · embedded PA pilot seed (all_treks_PA_pilot_v1.json) ══
+   Geometry is honestly absent (geom_status:"unmapped"): the adapter below is live code but
+   self-gates until trailhead/terminus coords land (pilot prompt A1). Never fake a curve. */
+var ATCS_SEED={PA:{name:"Pennsylvania",hikes:[
+ {id:"PA-appalachian-trail-pa-section",name:"Appalachian Trail (PA Section)",blaze:"White",dif:"easy",feat:"dog-friendly \uD83D\uDC36",len:null,th:null,tm:null},
+ {id:"PA-black-forest-trail",name:"Black Forest Trail",blaze:"Orange",dif:"moderate",feat:"accessible \u267F",len:null,th:null,tm:null},
+ {id:"PA-chuck-keiper-trail",name:"Chuck Keiper Trail",blaze:"Orange",dif:"hard",feat:"waterfalls \u2652",len:null,th:null,tm:null},
+ {id:"PA-donut-hole-trail",name:"Donut Hole Trail",blaze:"Orange",dif:"easy",feat:"scenic views \uD83C\uDF04",len:null,th:null,tm:null},
+ {id:"PA-gerrity-score-trail-pinchot-trail",name:"Gerrity Score / Pinchot Trail",blaze:"Orange",dif:"moderate",feat:"dog-friendly \uD83D\uDC36",len:null,th:null,tm:null},
+ {id:"PA-horse-shoe-trail",name:"Horse-Shoe Trail",blaze:"Yellow",dif:"hard",feat:"accessible \u267F",len:null,th:null,tm:null},
+ {id:"PA-laurel-highlands-hiking-trail",name:"Laurel Highlands Hiking Trail",blaze:"Yellow",dif:"easy",feat:"waterfalls \u2652",len:null,th:null,tm:null},
+ {id:"PA-loyalsock-trail",name:"Loyalsock Trail",blaze:"Yellow/Red Stripe",dif:"moderate",feat:"scenic views \uD83C\uDF04",len:null,th:null,tm:null},
+ {id:"PA-mid-state-trail",name:"Mid State Trail",blaze:"Orange",dif:"hard",feat:"dog-friendly \uD83D\uDC36",len:null,th:null,tm:null},
+ {id:"PA-north-country-national-scenic-trail-pa-segments",name:"North Country NST (PA Segments)",blaze:"Blue",dif:"easy",feat:"accessible \u267F",len:null,th:null,tm:null},
+ {id:"PA-old-loggers-path",name:"Old Loggers Path",blaze:"Orange",dif:"moderate",feat:"waterfalls \u2652",len:null,th:null,tm:null},
+ {id:"PA-quehanna-trail",name:"Quehanna Trail",blaze:"Orange",dif:"hard",feat:"scenic views \uD83C\uDF04",len:null,th:null,tm:null},
+ {id:"PA-standing-stone-trail",name:"Standing Stone Trail",blaze:"Orange",dif:"easy",feat:"dog-friendly \uD83D\uDC36",len:null,th:null,tm:null},
+ {id:"PA-susquehannock-trail-system-sts",name:"Susquehannock Trail System (STS)",blaze:"Orange",dif:"moderate",feat:"accessible \u267F",len:null,th:null,tm:null},
+ {id:"PA-tuscarora-trail",name:"Tuscarora Trail",blaze:"Blue",dif:"hard",feat:"waterfalls \u2652",len:null,th:null,tm:null}
+]}};
+var ATCS_COMING=["Alabama","Colorado","Maine","New York","Vermont","Virginia","West Virginia"];
+var ATCS_BLAZE={"White":{c:"#f4f1ea"},"Orange":{c:"#e8761e"},"Yellow":{c:"#f2c200"},"Blue":{c:"#2563a8"},"Yellow/Red Stripe":{c:"url(#atcsYR)",flat:"#d23b2f"}};
+var atcs={hike:null,side:"A",on:false,counter:0,timer:null,recTimer:null,prevTrail:null};
+function atcsEl(id){return document.getElementById(id);}
+function atcsEsc(s){return String(s).replace(/[&<>"']/g,function(m){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m];});}
+function atcsInit(){
+  var st=atcsEl('atcsSelState'),hk=atcsEl('atcsSelHike');
+  if(!st||st.options.length)return;
+  st.innerHTML='<option value="PA">Pennsylvania \u00B7 15 treks</option>'+ATCS_COMING.map(function(n){return '<option disabled>'+atcsEsc(n)+' \u00B7 coming soon</option>';}).join('');
+  hk.innerHTML='<option value="">\u2014 pick your trek \u2014</option>'+ATCS_SEED.PA.hikes.map(function(h,i){return '<option value="'+i+'">'+atcsEsc(h.name)+'</option>';}).join('');
+  hk.onchange=function(){atcsLoadLabel(parseInt(hk.value,10));};
+  atcsEl('atcsGo').onclick=atcsPlay;
+  atcsEl('atcsEject').onclick=function(){atcsStop(false);};
+  atcsEl('atcsSideBtn').addEventListener('click',atcsFlip);
+  atcsEl('atcsLenBadge').addEventListener('click',function(){showToast('Length fills in once trail research lands');});
+  if(!atcs.recTimer)atcs.recTimer=setInterval(atcsSyncRec,3000);
+  atcsSyncRec();
+}
+function atcsSyncRec(){
+  var live=!!document.querySelector('#rec-indicator-hdr .rec-dot');
+  var d=atcsEl('atcsDeckRec'); if(d)d.setAttribute('fill',(live||atcs.on)?'#d23b2f':'#3a4d36');
+}
+function atcsPaintBlaze(b){
+  var z=ATCS_BLAZE[b]||ATCS_BLAZE.Orange;
+  atcsEl('atcsBlzStripe').setAttribute('fill',z.c);
+  atcsEl('atcsBlzSwatch').setAttribute('fill',z.c);
+  atcsEl('atcsBlzTxt').textContent=b.toUpperCase().replace('/','\u00B7').slice(0,12);
+}
+function atcsSetName(t,scroll){
+  var el=atcsEl('atcsName');el.textContent=t;
+  if(scroll){el.setAttribute('text-anchor','start');el.setAttribute('x','68');el.setAttribute('font-size','30');el.classList.add('atcs-scroll');}
+  else{el.classList.remove('atcs-scroll');el.setAttribute('text-anchor','middle');el.setAttribute('x','280');el.setAttribute('font-size',t.length>26?'22':'30');}
+}
+function atcsLoadLabel(i){
+  atcsStop(true);
+  if(isNaN(i)||i<0){atcs.hike=null;atcsSetName('Pick a hike\u2026',false);
+    atcsEl('atcsSub').textContent='Pennsylvania \u00B7 All Treks';
+    atcsEl('atcsLenTxt').textContent='\u2014 mi';atcsEl('atcsChips').innerHTML='';
+    atcsEl('atcsBlank').classList.remove('atcs-show');return;}
+  var h=ATCS_SEED.PA.hikes[i];atcs.hike=h;
+  atcsSetName(h.name,true); /* the label crawl */
+  atcsEl('atcsSub').textContent='Pennsylvania \u00B7 '+(atcs.side==='A'?'trailhead \u2192 terminus':'terminus \u2192 trailhead');
+  atcsEl('atcsLenTxt').textContent=(h.len!=null?h.len+' mi':'\u2014 mi');
+  atcsPaintBlaze(h.blaze);
+  var flat=(ATCS_BLAZE[h.blaze]&&ATCS_BLAZE[h.blaze].flat)||(ATCS_BLAZE[h.blaze]&&ATCS_BLAZE[h.blaze].c)||'#e8761e';
+  if(flat.indexOf('url(')===0)flat='#d23b2f';
+  atcsEl('atcsChips').innerHTML=
+    '<span class="atcs-chip atcs-blz" style="background:'+flat+'">'+atcsEsc(h.blaze)+' blaze</span>'+
+    '<span class="atcs-chip">'+atcsEsc(h.dif)+'</span>'+
+    '<span class="atcs-chip">'+atcsEsc(h.feat)+'</span>'+
+    '<span class="atcs-chip atcs-warn">unmapped \u00B7 blank tape</span>';
+  atcsEl('atcsBlank').classList.remove('atcs-show');
+}
+function atcsFlip(){
+  atcs.side=(atcs.side==='A')?'B':'A';
+  var d=atcsEl('atcsDeck');d.classList.add('atcs-flip');setTimeout(function(){d.classList.remove('atcs-flip');},520);
+  atcsEl('atcsSideTxt').textContent=atcs.side;
+  if(atcs.hike)atcsEl('atcsSub').textContent='Pennsylvania \u00B7 '+(atcs.side==='A'?'trailhead \u2192 terminus':'terminus \u2192 trailhead');
+  showToast('Side '+atcs.side+' \u2014 '+(atcs.side==='A'?'standard direction':'reverse direction'));
+}
+/* ── the adapter (D-AT-1/3/4): real path, self-gated until geometry exists ── */
+function atcsBuildTrail(h){
+  if(!h||!h.th||!h.tm||h.th.lat==null)return null; /* unmapped: no synthetic trail, no fake curve */
+  var L=h.len||0;
+  return {trail:{treks:{nobo:[{id:h.id,name:h.name,state:'PA',cumMileStart:0,cumMileEnd:L,miles:L,ascentFtPerMi:0,descentFtPerMi:0}],sobo:[]},
+    stateInfo:{PA:{name:'Pennsylvania',code:'PA',miles:L,description:h.name,elevLow:null,elevHigh:null}},
+    highlights:{PA:[h.name]},elevation:[]},
+    waypoints:[[0,h.name+' Trailhead','PA',h.th.lat,h.th.lon,0,0],[L,h.name+' Terminus','PA',h.tm.lat,h.tm.lon,0,0]]};
+}
+function atcsLoadHike(h){
+  var built=atcsBuildTrail(h);
+  if(!built)return false;
+  atcs.prevTrail={t:window.ACTIVE_TRAIL,w:window.ACTIVE_WAYPOINTS,id:window.ACTIVE_TRAIL_ID};
+  window.ACTIVE_TRAIL=built.trail;window.ACTIVE_WAYPOINTS=built.waypoints;window.ACTIVE_TRAIL_ID='ALLTREKS:'+h.id;
+  try{if(typeof openCardFullscreen==='function')openCardFullscreen();}catch(_){}
+  return true;
+}
+function atcsRestore(){
+  if(!atcs.prevTrail)return;
+  window.ACTIVE_TRAIL=atcs.prevTrail.t;window.ACTIVE_WAYPOINTS=atcs.prevTrail.w;window.ACTIVE_TRAIL_ID=atcs.prevTrail.id;
+  atcs.prevTrail=null;
+}
+function atcsPlay(){
+  if(!atcs.hike){showToast('Pick a trek first \u2014 the deck is empty');return;}
+  atcs.on=true;atcsEl('atcsDeck').classList.add('atcs-playing');
+  var w=atcsEl('atcsWrap');if(w)w.classList.add('atcs-on');
+  atcsSyncRec();
+  atcsEl('atcsBlank').classList.add('atcs-show');
+  atcsEl('atcsGo').innerHTML='<span class="atcs-tri">&#9654;</span>&nbsp; ON THE HIKE \u2014 '+atcsEsc(atcs.hike.name);
+  atcs.counter=0;clearInterval(atcs.timer);
+  atcs.timer=setInterval(function(){atcs.counter+=0.1;atcsEl('atcsCounter').textContent=('0000'+atcs.counter.toFixed(1)).slice(-6);},300);
+  if(atcsLoadHike(atcs.hike)){showToast('Loaded: '+atcs.hike.name);}
+  else{showToast(atcs.hike.name+' \u00B7 blank tape \u2014 your GPS records this trail');}
+}
+function atcsStop(silent){
+  if(!atcs.on)return;
+  atcs.on=false;atcsEl('atcsDeck').classList.remove('atcs-playing');
+  var w=atcsEl('atcsWrap');if(w)w.classList.remove('atcs-on');
+  atcsSyncRec();clearInterval(atcs.timer);
+  atcsEl('atcsCounter').textContent='0000.0';
+  atcsEl('atcsGo').innerHTML='<span class="atcs-tri">&#9654;</span>&nbsp; GO ON THE HIKE';
+  atcsEl('atcsBlank').classList.remove('atcs-show');
+  atcsRestore();
+  if(!silent)showToast('Ejected \u00B7 back to the Big 3');
+}
+document.addEventListener('DOMContentLoaded',atcsInit);
+if(document.readyState!=='loading')atcsInit();
+</script>
+
 </body>
 </html>
