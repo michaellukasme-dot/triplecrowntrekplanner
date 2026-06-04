@@ -1129,6 +1129,17 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 @media (prefers-reduced-motion:reduce){.a5-pulse{display:none}.gps-pulse{animation:none;opacity:.25}.a5-dot{animation:none}}
 @keyframes a5dot{0%,100%{opacity:.30}50%{opacity:.62}}
 .a5-acc-hint{font-size:.72rem;color:var(--subtle);font-style:italic}
+.a5-rowicons{position:absolute;right:96px;top:0;height:46px;z-index:1;display:inline-flex;align-items:center;gap:10px}
+.a5-ic{display:inline-flex;align-items:center;gap:2px;min-width:22px;font-size:.68rem;font-weight:700;color:#5d6b5d;cursor:pointer;border-radius:5px;padding:2px 3px;transition:background .12s}
+.a5-ic:hover{background:rgba(90,143,168,.16)}
+.a5-ic .a5-ge{font-size:.95rem;line-height:1}
+.a5-ic.z{opacity:.3}
+.a5-ic.bear{color:#a5562b}
+.a5-ic.alert{color:#b8860b}
+.a5-agg{display:inline-flex;align-items:center;flex-wrap:wrap;gap:12px;margin:6px 0 0;padding:4px 14px;background:var(--mist);border-radius:999px;font-size:.7rem;font-weight:700;color:#5d6b5d;width:fit-content}
+.a5-agg .a5-ge{font-size:.95rem;line-height:1;margin-right:1px}
+.a5-agg .z{opacity:.35}
+@media (max-width:430px){.a5-rowicons{right:88px;gap:7px}.a5-ic{font-size:.62rem;min-width:18px}.a5-ic .a5-ge{font-size:.85rem}}
 .a5-sample-badge{font-size:.6rem;font-weight:700;letter-spacing:.05em;background:#fdf3e3;color:#9a6a1c;border:1px solid #f0dcb4;border-radius:20px;padding:3px 9px;white-space:nowrap}
 .a5-leg-ln{display:inline-block;width:16px;height:3px;border-radius:2px;background:var(--rust);vertical-align:middle;margin-right:6px}
 .a5-leg-sw{display:inline-block;width:10px;height:10px;border-radius:50%;background:#5b8fa8;vertical-align:middle;margin:0 6px 0 14px}
@@ -1448,6 +1459,7 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
       <span class="a5-sample-badge">SAMPLE DENSITY</span>
     </div>
     <div class="a5-acc-sub" id="a5AccSub">Segment</div>
+    <div class="a5-agg" id="a5Rollup" title="Trail-wide tallies" style="display:none"></div>
     <div class="a5-acc" id="a5Accordion"></div>
     <div class="a5-foot"><span class="a5-leg-ln"></span>Trail centerline<span class="a5-leg-sw"></span>Hiker density <em>(anon · aggregate)</em></div>
   </div>
@@ -8654,6 +8666,33 @@ function postSlackPackRequest(){
     a5FillDropdowns(b); updateKanonBadge();
   };
 
+  // [UXCATCH-2] Per-band waypoint tallies, admin-console parity ("same icons, rolled up").
+  // Water + shelters are REAL (counted from the trail's typed waypoints, w[5]/w[6]); bear
+  // sightings + active alerts have no live feed in the hiker console yet, so they use the
+  // admin's deterministic sample formula and are labeled sample in the tap-toast. Honest-state
+  // rule: real counted as real, sample marked sample, never blended silently.
+  function a5WpCounts(b,idx){
+    var wps=(window.ACTIVE_WAYPOINTS||(typeof AT_WAYPOINTS!=='undefined'?AT_WAYPOINTS:[]))||[];
+    var water=0,shelter=0,k;
+    for(k=0;k<wps.length;k++){var w=wps[k];
+      if(w[0]>=b.lo&&w[0]<b.hi){ if(w[5]===1)water++; if(w[6]===1)shelter++; }}
+    var h=function(n){var x=Math.sin((idx+1)*12.9898+n*7.77)*43758.5453;return x-Math.floor(x);};
+    var bear=(h(3)<0.55)?0:Math.round(0.5+h(4)*2.5);
+    var alert=(h(5)<0.72)?0:1;
+    return {bear:bear,water:water,alert:alert,shelter:shelter};
+  }
+  function a5IcChips(c){
+    var al=c.alert===1?'alert':'alerts';
+    var tally='\uD83D\uDC3B '+c.bear+' bear (sample)   \uD83D\uDCA7 '+c.water+' water   \u26A0\uFE0F '+c.alert+' '+al+' (sample)   \u26FA\uFE0F '+c.shelter+' shelters \u2014 water & shelters counted from trail waypoints';
+    var ic=function(g,n,t,k){return '<span class="a5-ic'+(n?'':' z')+(k?' '+k:'')+'" title="'+t+'"><span class="a5-ge">'+g+'</span>'+n+'</span>';};
+    return '<span class="a5-rowicons" data-tally="'+tally.replace(/"/g,'&quot;')+'" onclick="a5IcTap(event,this)">'
+      +ic('\uD83D\uDC3B',c.bear,'Bear sightings (sample)','bear')
+      +ic('\uD83D\uDCA7',c.water,'Water sources','')
+      +ic('\u26A0\uFE0F',c.alert,'Active alerts (sample)','alert')
+      +ic('\u26FA\uFE0F',c.shelter,'Shelters','')+'</span>';
+  }
+  window.a5IcTap=function(e,el){ e.stopPropagation(); if(el&&el.dataset.tally&&typeof showToast==='function') showToast(el.dataset.tally); };
+
   window.a5Render = function(){
     var host=document.getElementById('a5Accordion'); if(!host) return;
     cardHome(); A5.open=null; window._a5BandRange=null; if(typeof tdRenderAlertBanner==='function') tdRenderAlertBanner(); a5FillDropdowns(null); updateKanonBadge();
@@ -8675,12 +8714,20 @@ function postSlackPackRequest(){
         var dcx=nx[i]+Math.cos(ang)*rr, dcy=RH/2+Math.sin(ang)*rr*0.42, dr=2.4+(k%2);
         dots+='<circle class="a5-dot" cx="'+dcx.toFixed(0)+'" cy="'+dcy.toFixed(0)+'" r="'+dr.toFixed(1)+'" fill="#5b8fa8" style="animation-delay:'+((k*0.41)%3).toFixed(2)+'s"/>'; }
       if(isYou){ dots+='<circle class="a5-pulse" cx="'+nx[i].toFixed(0)+'" cy="'+(RH/2)+'" r="5" fill="#5b8fa8"><animate attributeName="r" values="5;12;5" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.7;0;0.7" dur="2.4s" repeatCount="indefinite"/></circle><circle cx="'+nx[i].toFixed(0)+'" cy="'+(RH/2)+'" r="4.5" fill="#5b8fa8" stroke="#fff" stroke-width="1.5"/>'; }
+      var ic=a5IcChips(a5WpCounts(b,i));
       return '<div class="a5-band" data-i="'+i+'" onclick="a5Toggle('+i+')">'
         +'<svg class="a5-cl-svg" viewBox="0 0 '+W+' '+RH+'" preserveAspectRatio="none" aria-hidden="true"><path d="'+path+'" class="a5-cl" vector-effect="non-scaling-stroke"/>'+dots+'</svg>'
         +'<span class="a5-band-name">'+esc(b.name)+(isYou?' <span class="a5-you">\u00B7 you</span>':'')+'</span>'
-        +'<span class="a5-band-mi">mi '+Math.round(b.lo)+'\u2013'+Math.round(b.hi)+'</span></div>'
+        +'<span class="a5-band-mi">mi '+Math.round(b.lo)+'\u2013'+Math.round(b.hi)+'</span>'+ic+'</div>'
         +'<div class="a5-band-body" id="a5-body-'+i+'"></div>';
     }).join('');
+    var agg=bs.reduce(function(a,b,i){var c=a5WpCounts(b,i);for(var k in c)a[k]=(a[k]||0)+c[k];return a;},{});
+    var ru=document.getElementById('a5Rollup');
+    if(ru){var seg=function(g,n,lbl){return '<span'+(n?'':' class="z"')+'><span class="a5-ge">'+g+'</span>'+n+' '+lbl+'</span>';};
+      ru.style.display=bs.length?'inline-flex':'none';
+      ru.innerHTML=seg('\uD83D\uDC3B',agg.bear||0,'bear')+seg('\uD83D\uDCA7',agg.water||0,'water')
+        +seg('\u26A0\uFE0F',agg.alert||0,(agg.alert===1?'alert':'alerts'))+seg('\u26FA\uFE0F',agg.shelter||0,'shelters')
+        +'<span style="font-weight:600;font-style:italic;opacity:.7">bear &amp; alerts sample</span>';}
   };
 
   window.a5Toggle = function(i){
