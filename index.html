@@ -7651,7 +7651,7 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
         </div>
         <button class="atcs-go" id="atcsGo"><span class="atcs-tri">&#9654;</span>&nbsp; GO ON THE HIKE</button>
         <button class="atcs-eject" id="atcsEject">&#9632; EJECT &#8212; back to the Big 3</button>
-        <div class="atcs-foot">27 treks across PA &#183; NJ &#183; NY &#183; MD &#183; 46 states on the way &#183; No ads &#183; No account &#183; Your data stays on your device</div>
+        <div class="atcs-foot">All 50 states on deck &#183; 76 treks named &#183; lengths &amp; pins land as they are verified &#183; No ads &#183; No account &#183; Your data stays on your device</div>
       </div>
     </div>
   </div>
@@ -8788,7 +8788,129 @@ function postSlackPackRequest(){
 /* ══ ALLTREKS CASSETTE DECK · embedded PA pilot seed (all_treks_PA_pilot_v1.json) ══
    Geometry is honestly absent (geom_status:"unmapped"): the adapter below is live code but
    self-gates until trailhead/terminus coords land (pilot prompt A1). Never fake a curve. */
-var ATCS_SEED={PA:{name:"Pennsylvania",hikes:[
+var ATCS_SEED={AL:{name:"Alabama",hikes:[
+ {id:"AL-pinhoti-trail-al",name:"Pinhoti Trail (AL Section)",blaze:"Light Blue",dif:"moderate",feat:"scenic views \ud83c\udf04",len:171.0,loop:false,th:{lat:32.978,lon:-86.352,conf:"approx"},tm:{lat:34.207,lon:-85.43,conf:"approx"}}
+]},
+AK:{name:"Alaska",hikes:[
+ {id:"AK-resurrection-pass-trail",name:"Resurrection Pass Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+AZ:{name:"Arizona",hikes:[
+ {id:"AZ-arizona-trail",name:"Arizona Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+AR:{name:"Arkansas",hikes:[
+ {id:"AR-ozark-highlands-trail",name:"Ozark Highlands Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null},
+ {id:"AR-ouachita-trail-ar",name:"Ouachita Trail (AR)",blaze:"Blue",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+CA:{name:"California",hikes:[
+ {id:"CA-john-muir-trail",name:"John Muir Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null},
+ {id:"CA-tahoe-rim-trail",name:"Tahoe Rim Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+CO:{name:"Colorado",hikes:[
+ {id:"CO-colorado-trail",name:"Colorado Trail",blaze:"None",dif:"hard",feat:"scenic views \ud83c\udf04",len:486.0,loop:false,th:{lat:39.490956,lon:-105.094007,conf:"exact"},tm:{lat:37.334108,lon:-107.892838,conf:"exact"}}
+]},
+CT:{name:"Connecticut",hikes:[
+ {id:"CT-new-england-trail-ct",name:"New England Trail (CT)",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+DE:{name:"Delaware",hikes:[
+ {id:"DE-mason-dixon-trail-de",name:"Mason-Dixon Trail (DE)",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+FL:{name:"Florida",hikes:[
+ {id:"FL-florida-trail",name:"Florida Trail",blaze:"Orange",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+GA:{name:"Georgia",hikes:[
+ {id:"GA-benton-mackaye-trail",name:"Benton MacKaye Trail",blaze:"White",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+HI:{name:"Hawaii",hikes:[
+ {id:"HI-kalalau-trail",name:"Kalalau Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+ID:{name:"Idaho",hikes:[
+ {id:"ID-idaho-centennial-trail",name:"Idaho Centennial Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+IL:{name:"Illinois",hikes:[
+ {id:"IL-river-to-river-trail",name:"River to River Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+IN:{name:"Indiana",hikes:[
+ {id:"IN-knobstone-trail",name:"Knobstone Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+IA:{name:"Iowa",hikes:[
+ {id:"IA-wabash-trace-nature-trail",name:"Wabash Trace Nature Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+KS:{name:"Kansas",hikes:[
+ {id:"KS-flint-hills-nature-trail",name:"Flint Hills Nature Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+KY:{name:"Kentucky",hikes:[
+ {id:"KY-sheltowee-trace",name:"Sheltowee Trace",blaze:"White",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+LA:{name:"Louisiana",hikes:[
+ {id:"LA-wild-azalea-trail",name:"Wild Azalea Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+ME:{name:"Maine",hikes:[
+ {id:"ME-appalachian-trail-me-section",name:"Appalachian Trail (ME Section)",blaze:"White",dif:"hard",feat:"scenic views \ud83c\udf04",len:281.0,loop:false,th:{lat:45.9044,lon:-68.9213,conf:"approx"},tm:{lat:44.474,lon:-71.037,conf:"approx"}}
+]},
+MD:{name:"Maryland",hikes:[
+ {id:"MD-appalachian-trail-md-section",name:"Appalachian Trail (MD Section)",blaze:"White",dif:"moderate",feat:"scenic views \ud83c\udf04",len:41.0,loop:false,th:{lat:39.7199,lon:-77.5047,conf:"approx"},tm:{lat:39.324,lon:-77.732,conf:"approx"}},
+ {id:"MD-co-canal-towpath",name:"C&O Canal Towpath",blaze:"None",dif:"easy",feat:"accessible \u267f",len:184.5,loop:false,th:{lat:38.9,lon:-77.063,conf:"approx"},tm:{lat:39.652,lon:-78.765,conf:"approx"}},
+ {id:"MD-catoctin-trail",name:"Catoctin Trail",blaze:"Blue",dif:"moderate",feat:"waterfalls \u2652",len:26.6,loop:false,th:{lat:39.462167,lon:-77.49125,conf:"exact"},tm:{lat:39.672194,lon:-77.498306,conf:"exact"}}
+]},
+MA:{name:"Massachusetts",hikes:[
+ {id:"MA-midstate-trail-ma",name:"Midstate Trail (MA)",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+MI:{name:"Michigan",hikes:[
+ {id:"MI-shore-to-shore-trail",name:"Shore-to-Shore Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+MN:{name:"Minnesota",hikes:[
+ {id:"MN-superior-hiking-trail",name:"Superior Hiking Trail",blaze:"Blue",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+MS:{name:"Mississippi",hikes:[
+ {id:"MS-black-creek-trail",name:"Black Creek Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+MO:{name:"Missouri",hikes:[
+ {id:"MO-ozark-trail",name:"Ozark Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+MT:{name:"Montana",hikes:[
+ {id:"MT-highline-trail-glacier-np",name:"Highline Trail (Glacier NP)",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+NE:{name:"Nebraska",hikes:[
+ {id:"NE-cowboy-trail",name:"Cowboy Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+NV:{name:"Nevada",hikes:[
+ {id:"NV-ruby-crest-trail",name:"Ruby Crest Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+NH:{name:"New Hampshire",hikes:[
+ {id:"NH-cohos-trail",name:"Cohos Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+NJ:{name:"New Jersey",hikes:[
+ {id:"NJ-appalachian-trail-nj-section",name:"Appalachian Trail (NJ Section)",blaze:"White",dif:"moderate",feat:"scenic views \ud83c\udf04",len:72.0,loop:false,th:{lat:40.9714,lon:-75.1255,conf:"approx"},tm:{lat:41.2459,lon:-74.292,conf:"approx"}},
+ {id:"NJ-batona-trail",name:"Batona Trail",blaze:"Pink",dif:"easy",feat:"dog-friendly \ud83d\udc36",len:53.5,loop:false,th:{lat:39.961,lon:-74.592,conf:"approx"},tm:{lat:39.624,lon:-74.441,conf:"approx"}},
+ {id:"NJ-highlands-trail-nj",name:"Highlands Trail (NJ)",blaze:"Teal Diamond",dif:"moderate",feat:"scenic views \ud83c\udf04",len:null,loop:false,th:{lat:40.595,lon:-75.19,conf:"approx"},tm:{lat:41.171,lon:-74.366,conf:"approx"}},
+ {id:"NJ-delaware-raritan-canal-trail",name:"Delaware & Raritan Canal Trail",blaze:"None",dif:"easy",feat:"accessible \u267f",len:null,loop:false,th:{lat:40.526,lon:-75.062,conf:"approx"},tm:{lat:40.486,lon:-74.444,conf:"approx"}}
+]},
+NM:{name:"New Mexico",hikes:[
+ {id:"NM-sandia-crest-trail-130",name:"Sandia Crest Trail (#130)",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+NY:{name:"New York",hikes:[
+ {id:"NY-appalachian-trail-ny-section",name:"Appalachian Trail (NY Section)",blaze:"White",dif:"moderate",feat:"scenic views \ud83c\udf04",len:88.4,loop:false,th:{lat:41.2459,lon:-74.292,conf:"approx"},tm:{lat:41.642,lon:-73.518,conf:"approx"}},
+ {id:"NY-long-path",name:"Long Path",blaze:"Aqua",dif:"hard",feat:"scenic views \ud83c\udf04",len:357.0,loop:false,th:{lat:40.8476,lon:-73.9396,conf:"approx"},tm:{lat:42.708,lon:-74.034,conf:"approx"}},
+ {id:"NY-northville-placid-trail",name:"Northville-Placid Trail",blaze:"Blue",dif:"moderate",feat:"dog-friendly \ud83d\udc36",len:138.6,loop:false,th:{lat:43.21361,lon:-74.20806,conf:"exact"},tm:{lat:44.26278,lon:-74.01361,conf:"exact"}},
+ {id:"NY-finger-lakes-trail",name:"Finger Lakes Trail (Main)",blaze:"White",dif:"hard",feat:"waterfalls \u2652",len:580.0,loop:false,th:{lat:42.079,lon:-78.753,conf:"approx"},tm:{lat:42.03,lon:-74.35,conf:"approx"}},
+ {id:"NY-devils-path",name:"Devil's Path",blaze:"Red",dif:"hard",feat:"waterfalls \u2652",len:null,loop:false,th:{lat:42.133,lon:-74.101,conf:"approx"},tm:{lat:42.174,lon:-74.287,conf:"approx"}}
+]},
+NC:{name:"North Carolina",hikes:[
+ {id:"NC-mountains-to-sea-trail",name:"Mountains-to-Sea Trail",blaze:"White",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+ND:{name:"North Dakota",hikes:[
+ {id:"ND-north-country-nst-nd",name:"North Country NST (ND)",blaze:"Blue",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+OH:{name:"Ohio",hikes:[
+ {id:"OH-buckeye-trail",name:"Buckeye Trail",blaze:"Blue",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+OK:{name:"Oklahoma",hikes:[
+ {id:"OK-ouachita-trail-ok",name:"Ouachita Trail (OK)",blaze:"Blue",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+OR:{name:"Oregon",hikes:[
+ {id:"OR-timberline-trail",name:"Timberline Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+PA:{name:"Pennsylvania",hikes:[
  {id:"PA-appalachian-trail-pa-section",name:"Appalachian Trail (PA Section)",blaze:"White",dif:"easy",feat:"dog-friendly \ud83d\udc36",len:229.6,loop:false,th:{lat:39.7199,lon:-77.5047,conf:"approx"},tm:{lat:40.9714,lon:-75.1255,conf:"approx"}},
  {id:"PA-black-forest-trail",name:"Black Forest Trail",blaze:"Orange",dif:"moderate",feat:"accessible \u267f",len:42.8,loop:true,th:{lat:41.4719,lon:-77.5031,conf:"approx"},tm:{lat:41.4719,lon:-77.5031,conf:"approx"}},
  {id:"PA-chuck-keiper-trail",name:"Chuck Keiper Trail",blaze:"Orange",dif:"hard",feat:"waterfalls \u2652",len:50.6,loop:true,th:{lat:41.236116,lon:-77.782252,conf:"exact"},tm:{lat:41.236116,lon:-77.782252,conf:"exact"}},
@@ -8805,26 +8927,45 @@ var ATCS_SEED={PA:{name:"Pennsylvania",hikes:[
  {id:"PA-susquehannock-trail-system-sts",name:"Susquehannock Trail System (STS)",blaze:"Orange",dif:"moderate",feat:"accessible \u267f",len:83.4,loop:true,th:{lat:41.7687,lon:-77.8686,conf:"exact"},tm:{lat:41.7687,lon:-77.8686,conf:"exact"}},
  {id:"PA-tuscarora-trail",name:"Tuscarora Trail",blaze:"Blue",dif:"hard",feat:"waterfalls \u2652",len:95.0,loop:false,th:{lat:39.7197,lon:-78.075,conf:"approx"},tm:{lat:40.294417,lon:-77.090806,conf:"exact"}}
 ]},
-NJ:{name:"New Jersey",hikes:[
- {id:"NJ-appalachian-trail-nj-section",name:"Appalachian Trail (NJ Section)",blaze:"White",dif:"moderate",feat:"scenic views \uD83C\uDF04",len:72.0,loop:false,th:{lat:40.9714,lon:-75.1255,conf:"approx"},tm:{lat:41.2459,lon:-74.2920,conf:"approx"}},
- {id:"NJ-batona-trail",name:"Batona Trail",blaze:"Pink",dif:"easy",feat:"dog-friendly \uD83D\uDC36",len:53.5,loop:false,th:{lat:39.9610,lon:-74.5920,conf:"approx"},tm:{lat:39.6240,lon:-74.4410,conf:"approx"}},
- {id:"NJ-highlands-trail-nj",name:"Highlands Trail (NJ)",blaze:"Teal Diamond",dif:"moderate",feat:"scenic views \uD83C\uDF04",len:null,loop:false,th:{lat:40.5950,lon:-75.1900,conf:"approx"},tm:{lat:41.1710,lon:-74.3660,conf:"approx"}},
- {id:"NJ-delaware-raritan-canal-trail",name:"Delaware & Raritan Canal Trail",blaze:"None",dif:"easy",feat:"accessible \u267F",len:null,loop:false,th:{lat:40.5260,lon:-75.0620,conf:"approx"},tm:{lat:40.4860,lon:-74.4440,conf:"approx"}}
+RI:{name:"Rhode Island",hikes:[
+ {id:"RI-north-south-trail",name:"North South Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
 ]},
-NY:{name:"New York",hikes:[
- {id:"NY-appalachian-trail-ny-section",name:"Appalachian Trail (NY Section)",blaze:"White",dif:"moderate",feat:"scenic views \uD83C\uDF04",len:88.4,loop:false,th:{lat:41.2459,lon:-74.2920,conf:"approx"},tm:{lat:41.6420,lon:-73.5180,conf:"approx"}},
- {id:"NY-long-path",name:"Long Path",blaze:"Aqua",dif:"hard",feat:"scenic views \uD83C\uDF04",len:357.0,loop:false,th:{lat:40.8476,lon:-73.9396,conf:"approx"},tm:{lat:42.7080,lon:-74.0340,conf:"approx"}},
- {id:"NY-northville-placid-trail",name:"Northville-Placid Trail",blaze:"Blue",dif:"moderate",feat:"dog-friendly \uD83D\uDC36",len:138.6,loop:false,th:{lat:43.21361,lon:-74.20806,conf:"exact"},tm:{lat:44.26278,lon:-74.01361,conf:"exact"}},
- {id:"NY-finger-lakes-trail",name:"Finger Lakes Trail (Main)",blaze:"White",dif:"hard",feat:"waterfalls \u2652",len:580.0,loop:false,th:{lat:42.0790,lon:-78.7530,conf:"approx"},tm:{lat:42.0300,lon:-74.3500,conf:"approx"}},
- {id:"NY-devils-path",name:"Devil's Path",blaze:"Red",dif:"hard",feat:"waterfalls \u2652",len:null,loop:false,th:{lat:42.1330,lon:-74.1010,conf:"approx"},tm:{lat:42.1740,lon:-74.2870,conf:"approx"}}
+SC:{name:"South Carolina",hikes:[
+ {id:"SC-foothills-trail",name:"Foothills Trail",blaze:"White",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null},
+ {id:"SC-palmetto-trail",name:"Palmetto Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
 ]},
-MD:{name:"Maryland",hikes:[
- {id:"MD-appalachian-trail-md-section",name:"Appalachian Trail (MD Section)",blaze:"White",dif:"moderate",feat:"scenic views \uD83C\uDF04",len:41.0,loop:false,th:{lat:39.7199,lon:-77.5047,conf:"approx"},tm:{lat:39.3240,lon:-77.7320,conf:"approx"}},
- {id:"MD-co-canal-towpath",name:"C&O Canal Towpath",blaze:"None",dif:"easy",feat:"accessible \u267F",len:184.5,loop:false,th:{lat:38.9000,lon:-77.0630,conf:"approx"},tm:{lat:39.6520,lon:-78.7650,conf:"approx"}},
- {id:"MD-catoctin-trail",name:"Catoctin Trail",blaze:"Blue",dif:"moderate",feat:"waterfalls \u2652",len:26.6,loop:false,th:{lat:39.462167,lon:-77.491250,conf:"exact"},tm:{lat:39.672194,lon:-77.498306,conf:"exact"}}
+SD:{name:"South Dakota",hikes:[
+ {id:"SD-centennial-trail",name:"Centennial Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+TN:{name:"Tennessee",hikes:[
+ {id:"TN-cumberland-trail",name:"Cumberland Trail",blaze:"White",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+TX:{name:"Texas",hikes:[
+ {id:"TX-lone-star-hiking-trail",name:"Lone Star Hiking Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+UT:{name:"Utah",hikes:[
+ {id:"UT-highline-trail-uinta",name:"Highline Trail (Uinta)",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+VT:{name:"Vermont",hikes:[
+ {id:"VT-long-trail",name:"Long Trail",blaze:"White",dif:"hard",feat:"scenic views \ud83c\udf04",len:272.0,loop:false,th:{lat:42.7445,lon:-73.153,conf:"approx"},tm:{lat:45.014,lon:-72.456,conf:"approx"}}
+]},
+VA:{name:"Virginia",hikes:[
+ {id:"VA-appalachian-trail-va-section",name:"Appalachian Trail (VA Section)",blaze:"White",dif:"moderate",feat:"scenic views \ud83c\udf04",len:550.0,loop:false,th:{lat:36.594,lon:-81.836,conf:"approx"},tm:{lat:39.285,lon:-77.778,conf:"approx"}}
+]},
+WA:{name:"Washington",hikes:[
+ {id:"WA-wonderland-trail",name:"Wonderland Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+WV:{name:"West Virginia",hikes:[
+ {id:"WV-allegheny-trail",name:"Allegheny Trail",blaze:"Yellow",dif:"moderate",feat:"waterfalls \u2652",len:311.0,loop:false,th:{lat:39.7208,lon:-79.625,conf:"approx"},tm:{lat:37.3957,lon:-80.553,conf:"approx"}}
+]},
+WI:{name:"Wisconsin",hikes:[
+ {id:"WI-ice-age-trail",name:"Ice Age Trail",blaze:"Yellow",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
+]},
+WY:{name:"Wyoming",hikes:[
+ {id:"WY-teton-crest-trail",name:"Teton Crest Trail",blaze:"None",dif:"unrated",feat:null,len:null,loop:false,th:null,tm:null}
 ]}};
-var ATCS_COMING=["Alabama","Colorado","Maine","Vermont","Virginia","West Virginia"];
-var ATCS_BLAZE={"White":{c:"#f4f1ea"},"Orange":{c:"#e8761e"},"Yellow":{c:"#f2c200"},"Blue":{c:"#2563a8"},"Yellow/Red Stripe":{c:"url(#atcsYR)",flat:"#d23b2f"},"Pink":{c:"#e0639e"},"Aqua":{c:"#2fb0aa"},"Teal Diamond":{c:"#1f8f8a"},"Red":{c:"#d23b2f"},"None":{c:"#9aa49a"}};
+var ATCS_COMING=[];
+var ATCS_BLAZE={"White":{c:"#f4f1ea"},"Orange":{c:"#e8761e"},"Yellow":{c:"#f2c200"},"Blue":{c:"#2563a8"},"Yellow/Red Stripe":{c:"url(#atcsYR)",flat:"#d23b2f"},"Pink":{c:"#e0639e"},"Aqua":{c:"#2fb0aa"},"Teal Diamond":{c:"#1f8f8a"},"Red":{c:"#d23b2f"},"Light Blue":{c:"#7db8d9"},"None":{c:"#9aa49a"}};
 var atcs={hike:null,side:"A",on:false,counter:0,timer:null,recTimer:null,prevTrail:null};
 function atcsEl(id){return document.getElementById(id);}
 function atcsEsc(s){return String(s).replace(/[&<>"']/g,function(m){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m];});}
@@ -8873,12 +9014,12 @@ function atcsLoadLabel(i){
   atcsEl('atcsSub').textContent=ATCS_SEED[atcs.state].name+' \u00B7 '+(atcs.side==='A'?'trailhead \u2192 terminus':'terminus \u2192 trailhead');
   atcsEl('atcsLenTxt').textContent=(h.len!=null?h.len+' mi':'\u2014 mi');
   atcsPaintBlaze(h.blaze);
-  var flat=(ATCS_BLAZE[h.blaze]&&ATCS_BLAZE[h.blaze].flat)||(ATCS_BLAZE[h.blaze]&&ATCS_BLAZE[h.blaze].c)||'#e8761e';
+  var flat=((ATCS_BLAZE[h.blaze]||ATCS_BLAZE.None)&&(ATCS_BLAZE[h.blaze]||ATCS_BLAZE.None).flat)||((ATCS_BLAZE[h.blaze]||ATCS_BLAZE.None)&&(ATCS_BLAZE[h.blaze]||ATCS_BLAZE.None).c)||'#e8761e';
   if(flat.indexOf('url(')===0)flat='#d23b2f';
   atcsEl('atcsChips').innerHTML=
     '<span class="atcs-chip atcs-blz" style="background:'+flat+'">'+atcsEsc(h.blaze)+' blaze</span>'+
     '<span class="atcs-chip">'+atcsEsc(h.dif)+'</span>'+
-    '<span class="atcs-chip">'+atcsEsc(h.feat)+'</span>'+
+    (h.feat?'<span class="atcs-chip">'+atcsEsc(h.feat)+'</span>':'')+
     '<span class="atcs-chip atcs-warn">profile unrecorded \u00B7 blank tape</span>'+((h.th&&h.th.conf==='approx')?'<span class="atcs-chip">endpoints approx</span>':'');
   atcsEl('atcsBlank').classList.remove('atcs-show');
 }
@@ -8893,10 +9034,13 @@ function atcsFlip(){
 function atcsBuildTrail(h){
   if(!h||!h.th||!h.tm||h.th.lat==null)return null; /* unmapped: no synthetic trail, no fake curve */
   var L=h.len||0;
-  return {trail:{treks:{nobo:[{id:h.id,name:h.name,state:'PA',cumMileStart:0,cumMileEnd:L,miles:L,ascentFtPerMi:0,descentFtPerMi:0}],sobo:[]},
-    stateInfo:{PA:{name:'Pennsylvania',code:'PA',miles:L,description:h.name,elevLow:null,elevHigh:null}},
-    highlights:{PA:[h.name]},elevation:[]},
-    waypoints:[[0,h.name+' Trailhead','PA',h.th.lat,h.th.lon,0,0],[L,h.name+' Terminus','PA',h.tm.lat,h.tm.lon,0,0]]};
+  var ab=(h.id||'XX').split('-')[0]; /* state abbr from the hike id */
+  var sn=(typeof ATCS_SEED!=='undefined'&&ATCS_SEED[ab])?ATCS_SEED[ab].name:ab;
+  var si={};si[ab]={name:sn,code:ab,miles:L,description:h.name,elevLow:null,elevHigh:null};
+  var hl={};hl[ab]=[h.name];
+  return {trail:{treks:{nobo:[{id:h.id,name:h.name,state:ab,cumMileStart:0,cumMileEnd:L,miles:L,ascentFtPerMi:0,descentFtPerMi:0}],sobo:[]},
+    stateInfo:si,highlights:hl,elevation:[]},
+    waypoints:[[0,h.name+' Trailhead',ab,h.th.lat,h.th.lon,0,0],[L,h.name+' Terminus',ab,h.tm.lat,h.tm.lon,0,0]]};
 }
 function atcsLoadHike(h){
   var built=atcsBuildTrail(h);
