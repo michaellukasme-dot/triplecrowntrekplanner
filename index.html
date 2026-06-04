@@ -8974,7 +8974,7 @@ function atcsInit(){
   if(!st||st.options.length)return;
   atcs.state=atcs.state||'PA';
   st.innerHTML=Object.keys(ATCS_SEED).map(function(c){var s=ATCS_SEED[c];
-    return '<option value="'+c+'"'+(c===atcs.state?' selected':'')+'>'+atcsEsc(s.name)+' \u00B7 '+s.hikes.length+' treks</option>';}).join('')+
+    return '<option value="'+c+'"'+(c===atcs.state?' selected':'')+'>'+atcsEsc(s.name)+' \u00B7 '+s.hikes.length+(s.hikes.length===1?' trek':' treks')+'</option>';}).join('')+
     ATCS_COMING.map(function(n){return '<option disabled>'+atcsEsc(n)+' \u00B7 coming soon</option>';}).join('');
   function fillHikes(){hk.innerHTML='<option value="">\u2014 pick your trek \u2014</option>'+
     ATCS_SEED[atcs.state].hikes.map(function(h,i){return '<option value="'+i+'">'+atcsEsc(h.name)+'</option>';}).join('');}
