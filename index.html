@@ -1108,7 +1108,8 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .a5-acc-sub{font-size:.62rem;color:var(--subtle);text-transform:uppercase;letter-spacing:.06em;padding:7px 16px 0}
 .a5-acc{position:relative}
 .a5-band{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-top:1px solid var(--border);cursor:pointer;background:transparent;transition:background .15s}
-.a5-band:hover{background:var(--stone)}
+.a5-band:hover{background:#e6efe4}
+.a5-band:hover .a5-band-name{color:var(--forest,#1e3a1e)}
 .a5-band.open{background:#e7efe3}
 .a5-band-name{font-family:'Playfair Display',Georgia,serif;font-size:1.02rem;color:#5c6b58;font-weight:600}
 .a5-band.open .a5-band-name{color:var(--text)}
@@ -1123,6 +1124,9 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .a5-cl-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .a5-cl{fill:none;stroke:var(--rust);stroke-width:3.2;stroke-linecap:round;opacity:.9}
 .a5-dot{animation:a5dot 3.4s ease-in-out infinite}
+.gps-pulse{transform-box:fill-box;transform-origin:center;animation:gpsPulse 2.4s ease-out infinite}
+@keyframes gpsPulse{0%{transform:scale(.5);opacity:.8}100%{transform:scale(1.7);opacity:0}}
+@media (prefers-reduced-motion:reduce){.a5-pulse{display:none}.gps-pulse{animation:none;opacity:.25}.a5-dot{animation:none}}
 @keyframes a5dot{0%,100%{opacity:.30}50%{opacity:.62}}
 .a5-acc-hint{font-size:.72rem;color:var(--subtle);font-style:italic}
 .a5-sample-badge{font-size:.6rem;font-weight:700;letter-spacing:.05em;background:#fdf3e3;color:#9a6a1c;border:1px solid #f0dcb4;border-radius:20px;padding:3px 9px;white-space:nowrap}
@@ -3184,7 +3188,7 @@ function initFsMap() {
   // ── Your position: large pulsing blue dot ──
   if (lastGpsPos && lastGpsPos.lat && lastGpsPos.lon) {
     L.circleMarker([lastGpsPos.lat, lastGpsPos.lon], {
-      radius:14, color:'#4a90d9', fillColor:'#4a90d9', fillOpacity:.25, weight:2
+      radius:14, color:'#4a90d9', fillColor:'#4a90d9', fillOpacity:.25, weight:2, className:'gps-pulse'
     }).addTo(fsLeafletMap);
     L.circleMarker([lastGpsPos.lat, lastGpsPos.lon], {
       radius:7, color:'#4a90d9', fillColor:'#4a90d9', fillOpacity:.9, weight:2
@@ -7600,7 +7604,7 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
             <g clip-path="url(#atcsNameClip)">
               <text x="280" y="146" text-anchor="middle" font-family="Caveat,cursive" font-weight="700" font-size="30" fill="#23302a" id="atcsName">Pick a hike&#8230;</text>
             </g>
-            <text x="280" y="170" text-anchor="middle" font-weight="700" font-size="13" fill="#7c8a7c" id="atcsSub">Pennsylvania &#183; All Treks</text>
+            <text x="280" y="170" text-anchor="middle" font-weight="700" font-size="13" fill="#7c8a7c" id="atcsSub">Pick a state &#183; All Treks</text>
             <g>
               <circle cx="170" cy="208" r="24" fill="#fff" stroke="#142810" stroke-width="3"/>
               <g class="atcs-reel"><g stroke="#142810" stroke-width="4" stroke-linecap="round">
@@ -7635,7 +7639,7 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
         </div>
         <button class="atcs-go" id="atcsGo"><span class="atcs-tri">&#9654;</span>&nbsp; GO ON THE HIKE</button>
         <button class="atcs-eject" id="atcsEject">&#9632; EJECT &#8212; back to the Big 3</button>
-        <div class="atcs-foot">15 Pennsylvania treks live in the pilot &#183; 49 states on the way &#183; No ads &#183; No account &#183; Your data stays on your device</div>
+        <div class="atcs-foot">27 treks across PA &#183; NJ &#183; NY &#183; MD &#183; 46 states on the way &#183; No ads &#183; No account &#183; Your data stays on your device</div>
       </div>
     </div>
   </div>
@@ -8670,6 +8674,7 @@ function postSlackPackRequest(){
       for(k=0;k<dn;k++){ var ang=jit(i*9+k*2)*6.2832, rr=7+jit(i*5+k)*15;
         var dcx=nx[i]+Math.cos(ang)*rr, dcy=RH/2+Math.sin(ang)*rr*0.42, dr=2.4+(k%2);
         dots+='<circle class="a5-dot" cx="'+dcx.toFixed(0)+'" cy="'+dcy.toFixed(0)+'" r="'+dr.toFixed(1)+'" fill="#5b8fa8" style="animation-delay:'+((k*0.41)%3).toFixed(2)+'s"/>'; }
+      if(isYou){ dots+='<circle class="a5-pulse" cx="'+nx[i].toFixed(0)+'" cy="'+(RH/2)+'" r="5" fill="#5b8fa8"><animate attributeName="r" values="5;12;5" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.7;0;0.7" dur="2.4s" repeatCount="indefinite"/></circle><circle cx="'+nx[i].toFixed(0)+'" cy="'+(RH/2)+'" r="4.5" fill="#5b8fa8" stroke="#fff" stroke-width="1.5"/>'; }
       return '<div class="a5-band" data-i="'+i+'" onclick="a5Toggle('+i+')">'
         +'<svg class="a5-cl-svg" viewBox="0 0 '+W+' '+RH+'" preserveAspectRatio="none" aria-hidden="true"><path d="'+path+'" class="a5-cl" vector-effect="non-scaling-stroke"/>'+dots+'</svg>'
         +'<span class="a5-band-name">'+esc(b.name)+(isYou?' <span class="a5-you">\u00B7 you</span>':'')+'</span>'
@@ -8752,17 +8757,41 @@ var ATCS_SEED={PA:{name:"Pennsylvania",hikes:[
  {id:"PA-standing-stone-trail",name:"Standing Stone Trail",blaze:"Orange",dif:"easy",feat:"dog-friendly \ud83d\udc36",len:84.2,loop:false,th:{lat:39.998,lon:-77.923,conf:"approx"},tm:{lat:40.703,lon:-77.751,conf:"approx"}},
  {id:"PA-susquehannock-trail-system-sts",name:"Susquehannock Trail System (STS)",blaze:"Orange",dif:"moderate",feat:"accessible \u267f",len:83.4,loop:true,th:{lat:41.7687,lon:-77.8686,conf:"exact"},tm:{lat:41.7687,lon:-77.8686,conf:"exact"}},
  {id:"PA-tuscarora-trail",name:"Tuscarora Trail",blaze:"Blue",dif:"hard",feat:"waterfalls \u2652",len:95.0,loop:false,th:{lat:39.7197,lon:-78.075,conf:"approx"},tm:{lat:40.294417,lon:-77.090806,conf:"exact"}}
+]},
+NJ:{name:"New Jersey",hikes:[
+ {id:"NJ-appalachian-trail-nj-section",name:"Appalachian Trail (NJ Section)",blaze:"White",dif:"moderate",feat:"scenic views \uD83C\uDF04",len:72.0,loop:false,th:{lat:40.9714,lon:-75.1255,conf:"approx"},tm:{lat:41.2459,lon:-74.2920,conf:"approx"}},
+ {id:"NJ-batona-trail",name:"Batona Trail",blaze:"Pink",dif:"easy",feat:"dog-friendly \uD83D\uDC36",len:53.5,loop:false,th:{lat:39.9610,lon:-74.5920,conf:"approx"},tm:{lat:39.6240,lon:-74.4410,conf:"approx"}},
+ {id:"NJ-highlands-trail-nj",name:"Highlands Trail (NJ)",blaze:"Teal Diamond",dif:"moderate",feat:"scenic views \uD83C\uDF04",len:null,loop:false,th:{lat:40.5950,lon:-75.1900,conf:"approx"},tm:{lat:41.1710,lon:-74.3660,conf:"approx"}},
+ {id:"NJ-delaware-raritan-canal-trail",name:"Delaware & Raritan Canal Trail",blaze:"None",dif:"easy",feat:"accessible \u267F",len:null,loop:false,th:{lat:40.5260,lon:-75.0620,conf:"approx"},tm:{lat:40.4860,lon:-74.4440,conf:"approx"}}
+]},
+NY:{name:"New York",hikes:[
+ {id:"NY-appalachian-trail-ny-section",name:"Appalachian Trail (NY Section)",blaze:"White",dif:"moderate",feat:"scenic views \uD83C\uDF04",len:88.4,loop:false,th:{lat:41.2459,lon:-74.2920,conf:"approx"},tm:{lat:41.6420,lon:-73.5180,conf:"approx"}},
+ {id:"NY-long-path",name:"Long Path",blaze:"Aqua",dif:"hard",feat:"scenic views \uD83C\uDF04",len:357.0,loop:false,th:{lat:40.8476,lon:-73.9396,conf:"approx"},tm:{lat:42.7080,lon:-74.0340,conf:"approx"}},
+ {id:"NY-northville-placid-trail",name:"Northville-Placid Trail",blaze:"Blue",dif:"moderate",feat:"dog-friendly \uD83D\uDC36",len:138.6,loop:false,th:{lat:43.21361,lon:-74.20806,conf:"exact"},tm:{lat:44.26278,lon:-74.01361,conf:"exact"}},
+ {id:"NY-finger-lakes-trail",name:"Finger Lakes Trail (Main)",blaze:"White",dif:"hard",feat:"waterfalls \u2652",len:580.0,loop:false,th:{lat:42.0790,lon:-78.7530,conf:"approx"},tm:{lat:42.0300,lon:-74.3500,conf:"approx"}},
+ {id:"NY-devils-path",name:"Devil's Path",blaze:"Red",dif:"hard",feat:"waterfalls \u2652",len:null,loop:false,th:{lat:42.1330,lon:-74.1010,conf:"approx"},tm:{lat:42.1740,lon:-74.2870,conf:"approx"}}
+]},
+MD:{name:"Maryland",hikes:[
+ {id:"MD-appalachian-trail-md-section",name:"Appalachian Trail (MD Section)",blaze:"White",dif:"moderate",feat:"scenic views \uD83C\uDF04",len:41.0,loop:false,th:{lat:39.7199,lon:-77.5047,conf:"approx"},tm:{lat:39.3240,lon:-77.7320,conf:"approx"}},
+ {id:"MD-co-canal-towpath",name:"C&O Canal Towpath",blaze:"None",dif:"easy",feat:"accessible \u267F",len:184.5,loop:false,th:{lat:38.9000,lon:-77.0630,conf:"approx"},tm:{lat:39.6520,lon:-78.7650,conf:"approx"}},
+ {id:"MD-catoctin-trail",name:"Catoctin Trail",blaze:"Blue",dif:"moderate",feat:"waterfalls \u2652",len:26.6,loop:false,th:{lat:39.462167,lon:-77.491250,conf:"exact"},tm:{lat:39.672194,lon:-77.498306,conf:"exact"}}
 ]}};
-var ATCS_COMING=["Alabama","Colorado","Maine","New York","Vermont","Virginia","West Virginia"];
-var ATCS_BLAZE={"White":{c:"#f4f1ea"},"Orange":{c:"#e8761e"},"Yellow":{c:"#f2c200"},"Blue":{c:"#2563a8"},"Yellow/Red Stripe":{c:"url(#atcsYR)",flat:"#d23b2f"}};
+var ATCS_COMING=["Alabama","Colorado","Maine","Vermont","Virginia","West Virginia"];
+var ATCS_BLAZE={"White":{c:"#f4f1ea"},"Orange":{c:"#e8761e"},"Yellow":{c:"#f2c200"},"Blue":{c:"#2563a8"},"Yellow/Red Stripe":{c:"url(#atcsYR)",flat:"#d23b2f"},"Pink":{c:"#e0639e"},"Aqua":{c:"#2fb0aa"},"Teal Diamond":{c:"#1f8f8a"},"Red":{c:"#d23b2f"},"None":{c:"#9aa49a"}};
 var atcs={hike:null,side:"A",on:false,counter:0,timer:null,recTimer:null,prevTrail:null};
 function atcsEl(id){return document.getElementById(id);}
 function atcsEsc(s){return String(s).replace(/[&<>"']/g,function(m){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m];});}
 function atcsInit(){
   var st=atcsEl('atcsSelState'),hk=atcsEl('atcsSelHike');
   if(!st||st.options.length)return;
-  st.innerHTML='<option value="PA">Pennsylvania \u00B7 15 treks</option>'+ATCS_COMING.map(function(n){return '<option disabled>'+atcsEsc(n)+' \u00B7 coming soon</option>';}).join('');
-  hk.innerHTML='<option value="">\u2014 pick your trek \u2014</option>'+ATCS_SEED.PA.hikes.map(function(h,i){return '<option value="'+i+'">'+atcsEsc(h.name)+'</option>';}).join('');
+  atcs.state=atcs.state||'PA';
+  st.innerHTML=Object.keys(ATCS_SEED).map(function(c){var s=ATCS_SEED[c];
+    return '<option value="'+c+'"'+(c===atcs.state?' selected':'')+'>'+atcsEsc(s.name)+' \u00B7 '+s.hikes.length+' treks</option>';}).join('')+
+    ATCS_COMING.map(function(n){return '<option disabled>'+atcsEsc(n)+' \u00B7 coming soon</option>';}).join('');
+  function fillHikes(){hk.innerHTML='<option value="">\u2014 pick your trek \u2014</option>'+
+    ATCS_SEED[atcs.state].hikes.map(function(h,i){return '<option value="'+i+'">'+atcsEsc(h.name)+'</option>';}).join('');}
+  fillHikes();
+  st.onchange=function(){atcs.state=st.value;fillHikes();atcsLoadLabel(NaN);};
   hk.onchange=function(){atcsLoadLabel(parseInt(hk.value,10));};
   atcsEl('atcsGo').onclick=atcsPlay;
   atcsEl('atcsEject').onclick=function(){atcsStop(false);};
@@ -8789,12 +8818,12 @@ function atcsSetName(t,scroll){
 function atcsLoadLabel(i){
   atcsStop(true);
   if(isNaN(i)||i<0){atcs.hike=null;atcsSetName('Pick a hike\u2026',false);
-    atcsEl('atcsSub').textContent='Pennsylvania \u00B7 All Treks';
+    atcsEl('atcsSub').textContent=ATCS_SEED[atcs.state].name+' \u00B7 All Treks';
     atcsEl('atcsLenTxt').textContent='\u2014 mi';atcsEl('atcsChips').innerHTML='';
     atcsEl('atcsBlank').classList.remove('atcs-show');return;}
-  var h=ATCS_SEED.PA.hikes[i];atcs.hike=h;
+  var h=ATCS_SEED[atcs.state].hikes[i];atcs.hike=h;
   atcsSetName(h.name,true); /* the label crawl */
-  atcsEl('atcsSub').textContent='Pennsylvania \u00B7 '+(atcs.side==='A'?'trailhead \u2192 terminus':'terminus \u2192 trailhead');
+  atcsEl('atcsSub').textContent=ATCS_SEED[atcs.state].name+' \u00B7 '+(atcs.side==='A'?'trailhead \u2192 terminus':'terminus \u2192 trailhead');
   atcsEl('atcsLenTxt').textContent=(h.len!=null?h.len+' mi':'\u2014 mi');
   atcsPaintBlaze(h.blaze);
   var flat=(ATCS_BLAZE[h.blaze]&&ATCS_BLAZE[h.blaze].flat)||(ATCS_BLAZE[h.blaze]&&ATCS_BLAZE[h.blaze].c)||'#e8761e';
@@ -8810,7 +8839,7 @@ function atcsFlip(){
   atcs.side=(atcs.side==='A')?'B':'A';
   var d=atcsEl('atcsDeck');d.classList.add('atcs-flip');setTimeout(function(){d.classList.remove('atcs-flip');},520);
   atcsEl('atcsSideTxt').textContent=atcs.side;
-  if(atcs.hike)atcsEl('atcsSub').textContent='Pennsylvania \u00B7 '+(atcs.side==='A'?'trailhead \u2192 terminus':'terminus \u2192 trailhead');
+  if(atcs.hike)atcsEl('atcsSub').textContent=ATCS_SEED[atcs.state].name+' \u00B7 '+(atcs.side==='A'?'trailhead \u2192 terminus':'terminus \u2192 trailhead');
   showToast('Side '+atcs.side+' \u2014 '+(atcs.side==='A'?'standard direction':'reverse direction'));
 }
 /* ── the adapter (D-AT-1/3/4): real path, self-gated until geometry exists ── */
