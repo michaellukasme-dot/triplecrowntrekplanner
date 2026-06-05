@@ -4168,6 +4168,25 @@ function donMarkShown(trigger) {
   localStorage.setItem(DON_KEY_LAST_FIRED, String(Date.now()));
 }
 
+/* [ALLTREKS-FU v30] All Treks supporter cadence — deliberately FASTER than the main app's
+   once-a-year moments (All Treks IS the honor-system supporter tier), but never rude:
+   at most once per 24h, only on GO, still respects donated / "never again" / the 6h global
+   cooldown so it can't stack on a main-app moment. */
+const DON_KEY_AT_LAST = 'tctp_don_at_last';
+function donCanShowAT() {
+  if (parseInt(localStorage.getItem(DON_KEY_NEVER)||'0') >= 2) return false;
+  if (localStorage.getItem(DON_KEY_DONATED)) return false;
+  const last = parseInt(localStorage.getItem(DON_KEY_AT_LAST)||'0');
+  if (last && (Date.now() - last) < 24*60*60*1000) return false;
+  const lastFired = parseInt(localStorage.getItem(DON_KEY_LAST_FIRED)||'0');
+  if (lastFired && (Date.now() - lastFired) < DON_COOLDOWN_MS) return false;
+  return true;
+}
+function donMarkShownAT() {
+  localStorage.setItem(DON_KEY_AT_LAST, String(Date.now()));
+  localStorage.setItem(DON_KEY_LAST_FIRED, String(Date.now()));
+}
+
 let _donActiveConsChoice = null;
 let donTipAmt = 5;
 
@@ -4196,8 +4215,11 @@ function openDonationFromUser(){
 
 function showDonationMoment(trigger) {
   donCheckPeriod();
-  if (!donCanShow(trigger)) return;
-  donMarkShown(trigger);
+  if (trigger === 'alltreks_go') { /* [ALLTREKS-FU v30] own, faster cadence */
+    if (!donCanShowAT()) return; donMarkShownAT();
+  } else {
+    if (!donCanShow(trigger)) return; donMarkShown(trigger);
+  }
   const cons = getDonCons();
   _donActiveConsChoice = cons.short;
 
@@ -4210,6 +4232,8 @@ function showDonationMoment(trigger) {
       body:"This screen was built for exactly this moment — when you need information and can\'t afford clicks.<br><br>The trail is free because people fund it. So is this app." },
     return:       { icon:'🌲', title:"You came back.",
       body:"This is the last time we\'ll ask this year. If the app has earned a contribution, here\'s how to send it directly to the trail." },
+    alltreks_go:  { icon:'\ud83d\udcfc', title:'All Treks runs on the honor system.',
+      body:'The Big 3 stay free forever \u2014 this tape deck is the <b>supporter tier</b>. Your first 50 miles a year are on the house; past that it\u2019s <b>$15/year</b>, scout\u2019s honor.<br><br>No paywall, no lockout \u2014 just the hostel donation box, and you\u2019re standing in front of it. $15 is less than one town burger. If All Treks is earning its keep, today\u2019s the day. \ud83c\udf54' },
   };
   const msg = msgs[trigger]||msgs.welcome;
 
@@ -7598,6 +7622,12 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
     <div id="at-tab-alltreks" style="display:none">
       <div class="atcs-wrap" id="atcsWrap">
         <!-- [ALLTREKS-FU v29] supporter banner moved to a once-per-session toast (room for the On-Trail View card; no modal scroll) -->
+        <!-- [ALLTREKS-FU v31] shelf-above-deck: choose first, then watch the tape load -->
+        <div class="atcs-pickers">
+          <div class="atcs-leg"><span class="atcs-lbl">STATE</span><select id="atcsSelState" aria-label="State"></select></div>
+          <div class="atcs-leg"><span class="atcs-lbl atcs-hk">HIKE</span><select id="atcsSelHike" aria-label="Hike"></select></div>
+        </div>
+        <div class="atcs-chips" id="atcsChips"></div>
         <div class="atcs-deck" id="atcsDeck">
           <svg class="atcs-svg" viewBox="0 0 560 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cassette: selected hike">
             <defs>
@@ -7656,11 +7686,6 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
             </g>
           </svg>
         </div>
-        <div class="atcs-pickers">
-          <div class="atcs-leg"><span class="atcs-lbl">STATE</span><select id="atcsSelState" aria-label="State"></select></div>
-          <div class="atcs-leg"><span class="atcs-lbl atcs-hk">HIKE</span><select id="atcsSelHike" aria-label="Hike"></select></div>
-        </div>
-        <div class="atcs-chips" id="atcsChips"></div>
         <div class="atcs-blank" id="atcsBlank">
           <b>Blank tape.</b> The trailhead and terminus are pinned on the map, but no one has recorded the
           profile yet &#8212; the elevation view stays empty until it is real. Hike it with GPS on and
@@ -9206,6 +9231,7 @@ function atcsPlay(){
   atcs.timer=setInterval(function(){atcs.counter+=0.1;atcsEl('atcsCounter').textContent=('0000'+atcs.counter.toFixed(1)).slice(-6);},300);
   if(atcsLoadHike(atcs.hike)){showToast('Loaded: '+atcs.hike.name);}
   else{showToast(atcs.hike.name+' \u00B7 blank tape \u2014 your GPS records this trail');}
+  try{ if(typeof showDonationMoment==='function') setTimeout(function(){showDonationMoment('alltreks_go');}, 1600); }catch(_){} /* [ALLTREKS-FU v30] */
 }
 function atcsStop(silent){
   if(!atcs.on)return;

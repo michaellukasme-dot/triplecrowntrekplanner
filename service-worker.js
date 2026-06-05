@@ -14,7 +14,7 @@
  * ----------------------------------------------------------------------------
  */
 
-const CACHE_VERSION = 'v29';                       // ⬅ bump on meaningful asset changes (v29: no-scroll All Treks + supporter toast + blaze chip legibility)
+const CACHE_VERSION = 'v31';                       // ⬅ bump on meaningful asset changes (v31: selectors+chips above the deck)
 const SHELL_CACHE  = 'tctp-shell-'  + CACHE_VERSION;
 const ASSET_CACHE  = 'tctp-assets-' + CACHE_VERSION;
 
