@@ -747,6 +747,22 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .atcs-card-blanktxt{font-size:.74rem;line-height:1.45;color:#2d5a27;margin:8px 0 0}
 .atcs-card-blanktxt b{color:#1e3a1e}.atcs-card-blanktxt .atcs-recw{color:#d23b2f;font-weight:800}
 .atcs-card-pins{font-size:.64rem;color:#7c8a7c;margin:5px 0 0}
+/* ── [H2HC P2] hiker identity spine: sign-in UI ── */
+.h2hc-auth-box{max-width:420px}
+.h2hc-step{display:none}.h2hc-step.on{display:block;animation:atcsFade .3s ease}
+.h2hc-q{font-family:'Playfair Display',serif;font-weight:800;font-size:1.15rem;color:#1e3a1e;margin:0 0 10px}
+.h2hc-p{font-size:.82rem;line-height:1.5;color:#444;margin:0 0 12px}
+.h2hc-row{display:flex;gap:8px}
+.h2hc-in{flex:1;font:inherit;font-size:.9rem;padding:10px 12px;border:1.5px solid #c9d2c9;border-radius:9px}
+.h2hc-btn{border:0;border-radius:9px;background:#1e3a1e;color:#fff;font:inherit;font-weight:800;font-size:.85rem;padding:11px 16px;cursor:pointer}
+.h2hc-btn.ghost{background:#eef2ee;color:#1e3a1e}
+.h2hc-btn.warn{background:#fff;color:#7c8a7c;border:1.5px solid #d8ded8;font-weight:600}
+.h2hc-note{font-size:.66rem;color:#7c8a7c;margin-top:10px;line-height:1.5}
+.h2hc-prof{border:1.5px solid #c9d2c9;border-radius:11px;padding:11px 13px;margin:0 0 12px;background:#f6f9f6}
+.h2hc-prof .h2hc-prof-hd{font-weight:800;font-size:.78rem;letter-spacing:.04em;color:#1e3a1e;margin-bottom:3px}
+.h2hc-prof .h2hc-prof-tx{font-size:.74rem;color:#555;line-height:1.45}
+.h2hc-prof .h2hc-prof-tx b{color:#1e3a1e}
+.h2hc-prof button{margin-top:8px}
 .atcs-go{width:100%;border:0;border-radius:10px;background:#1e3a1e;color:#fff;font:inherit;font-weight:800;font-size:.98rem;letter-spacing:.05em;padding:13px;cursor:pointer;box-shadow:0 4px 0 #122610;transition:transform .08s,box-shadow .08s}
 .atcs-go:active{transform:translateY(3px);box-shadow:0 1px 0 #122610}
 .atcs-go .atcs-tri{color:#c8a84b}
@@ -5072,6 +5088,134 @@ function getSupaClient() {
   return supaClient;
 }
 
+/* ══════ [H2HC P2] HIKER IDENTITY SPINE ══════
+   One passwordless magic-link identity (Supabase Auth signInWithOtp) backing:
+   the Slack Pack profile (durable, cross-device) · H2HC chat posting (D24) ·
+   GPS Genius consent/access (downstream — same hash).
+   Server does ALL the sensitive work: chat_upsert_identity() derives the email
+   from the session and stores only SHA-256(email+pepper) via chat_email_hash().
+   The client never sees, sends, or stores a hash — and NEVER shows an email.
+   Safety (D21, non-negotiable): one-time 18+ attestation gates identity creation;
+   a minor self-ID hard-disables sign-in on this device, persisted, no bypass,
+   never re-prompted. Trail Angel stays separate. */
+const H2HC_KEY_MINOR  = 'tctp_minor_lock';     // '1' = self-identified minor: sign-in/chat OFF, persisted
+const H2HC_KEY_ATTEST = 'tctp_age18_attested'; // timestamp of the one-time 18+ attestation
+const H2HC_KEY_ID     = 'tctp_hiker_identity'; // {id, trail_name} — non-sensitive cache
+
+function h2hcMinorLocked(){ try{return localStorage.getItem(H2HC_KEY_MINOR)==='1';}catch(_){return false;} }
+function h2hcAttested(){ try{return !!localStorage.getItem(H2HC_KEY_ATTEST);}catch(_){return false;} }
+function h2hcIdentity(){ try{return JSON.parse(localStorage.getItem(H2HC_KEY_ID)||'null');}catch(_){return null;} }
+
+function h2hcShowStep(step){
+  ['attest','minor','email','sent','name'].forEach(function(k){
+    var el=document.getElementById('h2hc-step-'+k);
+    if(el)el.classList.toggle('on',k===step);
+  });
+}
+/* Entry point — also the seam P3's composer will call before first post. */
+function h2hcOpenAuth(){
+  if(h2hcMinorLocked()){ h2hcShowStep('minor'); openModal('modal-h2hc-auth'); return; } // never re-promptable
+  if(h2hcIdentity()){ showToast('Signed in as '+(h2hcIdentity().trail_name||'hiker')+' \u00B7 you\u2019re set'); return; }
+  var sb=getSupaClient();
+  if(!sb){ showToast('Sign-in needs a connection \u2014 try again with signal'); return; }
+  sb.auth.getSession().then(function(r){
+    var sess=r&&r.data&&r.data.session;
+    if(sess){ h2hcPrefillName(); h2hcShowStep('name'); }
+    else if(!h2hcAttested()){ h2hcShowStep('attest'); }
+    else { h2hcShowStep('email'); }
+    openModal('modal-h2hc-auth');
+  });
+}
+function h2hcAttestYes(){
+  try{localStorage.setItem(H2HC_KEY_ATTEST,String(Date.now()));}catch(_){}
+  h2hcShowStep('email');
+}
+function h2hcAttestNo(){
+  /* D21: hard-disable, persist, youth-safe guidance, no bypass. This sticks. */
+  try{localStorage.setItem(H2HC_KEY_MINOR,'1');localStorage.removeItem(H2HC_KEY_ATTEST);}catch(_){}
+  h2hcShowStep('minor');
+  h2hcRenderProfileCard();
+}
+function h2hcSendLink(){
+  if(h2hcMinorLocked())return;
+  var em=(document.getElementById('h2hc-email').value||'').trim();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){ showToast('That email doesn\u2019t look right \u2014 check it?'); return; }
+  var btn=document.getElementById('h2hc-send-btn'); btn.disabled=true; btn.textContent='Sending\u2026';
+  var sb=getSupaClient();
+  sb.auth.signInWithOtp({ email: em, options:{ emailRedirectTo: location.origin + '/' } })
+    .then(function(r){
+      btn.disabled=false; btn.textContent='Email my link';
+      if(r.error){ showToast('Couldn\u2019t send the link \u2014 '+(r.error.message||'try again')); return; }
+      var to=document.getElementById('h2hc-sent-to'); if(to)to.textContent=em; // shown to its owner only, never stored
+      document.getElementById('h2hc-email').value='';
+      h2hcShowStep('sent');
+    });
+}
+function h2hcPrefillName(){
+  var nm='';
+  try{ var hp=JSON.parse(localStorage.getItem('tctp_hiker_profile')||'null')||{}; nm=hp.name||''; }catch(_){}
+  var inp=document.getElementById('h2hc-trailname'); if(inp&&!inp.value)inp.value=nm;
+}
+function h2hcFinishIdentity(){
+  if(h2hcMinorLocked())return;
+  var nm=(document.getElementById('h2hc-trailname').value||'').trim();
+  if(nm.length<2){ showToast('Give us a trail name \u2014 2 characters or more'); return; }
+  var btn=document.getElementById('h2hc-name-btn'); btn.disabled=true; btn.textContent='Saving\u2026';
+  var sb=getSupaClient();
+  sb.rpc('chat_upsert_identity',{ p_trail_name:nm, p_display_name:nm })
+    .then(function(r){
+      btn.disabled=false; btn.textContent='That\u2019s me';
+      if(r.error||!r.data){ showToast('Couldn\u2019t finish sign-in \u2014 '+((r.error&&r.error.message)||'try again')); return; }
+      var ident={ id:r.data, trail_name:nm };
+      try{ localStorage.setItem(H2HC_KEY_ID, JSON.stringify(ident)); }catch(_){}
+      /* bind the on-device Slack Pack profile to the durable identity (two tiers, one spine) */
+      try{ var hp=JSON.parse(localStorage.getItem('tctp_hiker_profile')||'null')||{};
+           hp.identity_id=r.data; if(!hp.name)hp.name=nm;
+           localStorage.setItem('tctp_hiker_profile', JSON.stringify(hp)); }catch(_){}
+      closeModal('modal-h2hc-auth');
+      showToast('Signed in as '+nm+' \u00B7 your profile now travels with you \u26F0');
+      h2hcRenderProfileCard();
+    });
+}
+function h2hcSignOut(){
+  var sb=getSupaClient();
+  try{ if(sb) sb.auth.signOut(); }catch(_){}
+  try{ localStorage.removeItem(H2HC_KEY_ID); }catch(_){}
+  showToast('Signed out \u00B7 your on-device profile stays put');
+  h2hcRenderProfileCard();
+}
+/* The profile-view card: the spine's visible home (states: minor / signed-in / signed-out). */
+function h2hcRenderProfileCard(){
+  var el=document.getElementById('h2hc-prof-card'); if(!el)return;
+  if(h2hcMinorLocked()){
+    el.innerHTML='<div class="h2hc-prof-hd">HIKER SIGN-IN</div><div class="h2hc-prof-tx">Sign-in and chat are for hikers 18+, so they\u2019re off on this device. Everything else in the app is yours.</div>';
+    return;
+  }
+  var id=h2hcIdentity();
+  if(id){
+    el.innerHTML='<div class="h2hc-prof-hd">SIGNED IN \u00B7 '+(id.trail_name||'hiker').replace(/[&<>"']/g,'')+'</div>'+
+      '<div class="h2hc-prof-tx">Your profile is <b>durable and cross-device</b>. Same sign-in will unlock <b>Hiker-to-Hiker Chat</b> when the rooms open. Email never shown \u2014 to anyone.</div>'+
+      '<button class="h2hc-btn ghost" onclick="h2hcSignOut()">Sign out on this device</button>';
+  } else {
+    el.innerHTML='<div class="h2hc-prof-hd">MAKE YOUR PROFILE TRAVEL</div>'+
+      '<div class="h2hc-prof-tx">Right now your profile lives on this device only. A 30-second <b>magic-link sign-in</b> (18+) makes it durable and cross-device \u2014 and it\u2019s the same sign-in that will unlock <b>Hiker-to-Hiker Chat</b>.</div>'+
+      '<button class="h2hc-btn" onclick="h2hcOpenAuth()">\u2709 Sign in with a magic link</button>';
+  }
+}
+/* Returning from the magic link: supabase-js picks the session out of the URL.
+   If a session lands and no identity row exists yet, walk them to the trail-name step. */
+function h2hcInit(){
+  var sb=getSupaClient(); if(!sb||!sb.auth)return;
+  try{
+    sb.auth.onAuthStateChange(function(evt,sess){
+      if(evt==='SIGNED_IN'&&sess&&!h2hcIdentity()&&!h2hcMinorLocked()){
+        h2hcPrefillName(); h2hcShowStep('name'); openModal('modal-h2hc-auth');
+      }
+    });
+  }catch(_){}
+}
+document.addEventListener('DOMContentLoaded', function(){ setTimeout(h2hcInit, 400); });
+
 function initSocialModal() {
   initSlackPack(); // keep existing planner working
   prefillPostForm();
@@ -7986,6 +8130,8 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
           </div>
         </div>
       </div>
+      <!-- [H2HC P2] identity card: the spine surfaces here -->
+      <div class="h2hc-prof" id="h2hc-prof-card" style="margin:12px 16px 0"></div>
       <div class="prof-edit-hd">Edit Profile Below</div>
       <div class="prof-form">
         <div class="pf-photo-hint" style="margin-bottom:6px"><strong>Photos (up to 3, optional)</strong>Tap the &#9733; on any photo to make it your avatar.</div>
@@ -8208,6 +8354,55 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
       </div>
       <div id="tm-claim-code" class="tm-claim-code-display">— — — — — —</div>
       <button class="post-submit" style="margin-top:14px" onclick="closeModal('modal-tm-claim')">Got it</button>
+    </div>
+  </div>
+</div>
+
+<!-- [H2HC P2] HIKER IDENTITY (magic link + 18+ gate) — the shared spine for profile + chat + GPSG consent -->
+<div class="modal-overlay" id="modal-h2hc-auth">
+  <div class="modal-box h2hc-auth-box" style="height:auto;max-height:80vh">
+    <div class="modal-hdr">
+      <span style="font-size:1.1rem">&#x1F392;</span>
+      <h2>Hiker Sign-In</h2>
+      <button class="modal-close" onclick="closeModal('modal-h2hc-auth')">&#x2715;</button>
+    </div>
+    <div class="modal-body" style="padding:16px 18px">
+      <div class="h2hc-step" id="h2hc-step-attest">
+        <p class="h2hc-q">First, an honest question: are you 18 or older?</p>
+        <p class="h2hc-p">Signing in unlocks features built for adults &mdash; a profile that follows you across devices, and (soon) Hiker-to-Hiker Chat. We ask once.</p>
+        <div class="h2hc-row">
+          <button class="h2hc-btn" onclick="h2hcAttestYes()">Yes &mdash; I’m 18 or older</button>
+          <button class="h2hc-btn warn" onclick="h2hcAttestNo()">No &mdash; I’m under 18</button>
+        </div>
+      </div>
+      <div class="h2hc-step" id="h2hc-step-minor">
+        <p class="h2hc-q">Thanks for being honest.</p>
+        <p class="h2hc-p">Sign-in and chat are for hikers 18 and older, so those stay off on this device. <b>Everything else is all yours</b> &mdash; plan treks, use the maps and guides, browse the board. Happy trails. &#x1F97E;</p>
+        <button class="h2hc-btn ghost" onclick="closeModal('modal-h2hc-auth')">Back to the app</button>
+      </div>
+      <div class="h2hc-step" id="h2hc-step-email">
+        <p class="h2hc-q">No password. No account form. Just your email.</p>
+        <p class="h2hc-p">We’ll email you a one-time sign-in link. Your address is used for sign-in only &mdash; it’s never shown to anyone, anywhere in the app, ever.</p>
+        <div class="h2hc-row">
+          <input class="h2hc-in" id="h2hc-email" type="email" autocomplete="email" placeholder="you@example.com">
+          <button class="h2hc-btn" id="h2hc-send-btn" onclick="h2hcSendLink()">Email my link</button>
+        </div>
+        <p class="h2hc-note">Free forever &middot; no spam, no newsletter &middot; the link expires shortly and works once.</p>
+      </div>
+      <div class="h2hc-step" id="h2hc-step-sent">
+        <p class="h2hc-q">Check your email. &#x2709;</p>
+        <p class="h2hc-p">We sent a sign-in link to <b id="h2hc-sent-to">your address</b>. Open it on this device and you’ll land back here, signed in. (Check spam the first time.)</p>
+        <button class="h2hc-btn ghost" onclick="h2hcShowStep('email')">Use a different email</button>
+      </div>
+      <div class="h2hc-step" id="h2hc-step-name">
+        <p class="h2hc-q">Last step: your trail name.</p>
+        <p class="h2hc-p">This is the only name other hikers will ever see &mdash; on your profile and (soon) in the rooms.</p>
+        <div class="h2hc-row">
+          <input class="h2hc-in" id="h2hc-trailname" maxlength="40" placeholder="e.g. Stagger Lee">
+          <button class="h2hc-btn" id="h2hc-name-btn" onclick="h2hcFinishIdentity()">That’s me</button>
+        </div>
+        <p class="h2hc-note">You can change it later. Your email stays private &mdash; only a one-way fingerprint is stored.</p>
+      </div>
     </div>
   </div>
 </div>
@@ -8578,7 +8773,7 @@ function spShowView(id){
     var e=document.getElementById(v); if(e) e.style.display=(v===id)?'block':'none';
   });
 }
-function openProfile(){ spShowView('sp-tab-profile'); renderProfile(); }
+function openProfile(){ spShowView('sp-tab-profile'); renderProfile(); try{h2hcRenderProfileCard();}catch(_){} }
 function openPostForm(){ spShowView('sp-tab-post'); if(typeof prefillPostForm==='function') prefillPostForm(); }
 function backToBoard(){ spShowView('sp-tab-board'); if(typeof fetchPosts==='function') fetchPosts(); syncAvatars(); }
 function hydratePhotosFromProfile(){ var p=loadHikerProfile(); if(p.photos&&p.photos.length&&(!Array.isArray(_pfPhotos)||!_pfPhotos.some(Boolean))){ _pfPhotos=p.photos.filter(Boolean).concat([null,null,null]).slice(0,3); } }

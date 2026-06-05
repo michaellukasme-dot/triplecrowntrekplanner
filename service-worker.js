@@ -14,7 +14,7 @@
  * ----------------------------------------------------------------------------
  */
 
-const CACHE_VERSION = 'v34';                       // ⬅ bump on meaningful asset changes (v34: first-open donation card, 12-month donor suppression)
+const CACHE_VERSION = 'v35';                       // ⬅ bump on meaningful asset changes (v35: H2HC P2 hiker identity spine)
 const SHELL_CACHE  = 'tctp-shell-'  + CACHE_VERSION;
 const ASSET_CACHE  = 'tctp-assets-' + CACHE_VERSION;
 
