@@ -722,7 +722,7 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 @keyframes atcsFade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .atcs-blank b{color:#1e3a1e}.atcs-blank .atcs-recw{color:#d23b2f;font-weight:800}
 /* ── [ALLTREKS-FU F1] On-Trail View card (in-tab, expandable; honest blank tape) ── */
-.atcs-card{border:1.5px solid #3b5c33;border-radius:12px;background:#f7f4ea;overflow:hidden}
+.atcs-card{flex:0 0 auto;border:1.5px solid #3b5c33;border-radius:12px;background:#f7f4ea;overflow:hidden} /* [ALLTREKS-FU v28] flex-shrink:0 — the tab scrolls, the card never crushes */
 .atcs-card-strip{display:flex;align-items:center;gap:9px;width:100%;border:0;background:#1e3a1e;color:#eaf2e6;font:inherit;padding:10px 12px;cursor:pointer;text-align:left}
 .atcs-card-strip:disabled{cursor:default;opacity:.75}
 .atcs-card-strip .atcs-card-ttl{flex:1;font-weight:800;font-size:.82rem;letter-spacing:.03em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

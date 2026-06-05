@@ -14,7 +14,7 @@
  * ----------------------------------------------------------------------------
  */
 
-const CACHE_VERSION = 'v27';                       // ⬅ bump on meaningful asset changes (v27: ALLTREKS-FU On-Trail View card)
+const CACHE_VERSION = 'v28';                       // ⬅ bump on meaningful asset changes (v28: card flex-shrink hotfix)
 const SHELL_CACHE  = 'tctp-shell-'  + CACHE_VERSION;
 const ASSET_CACHE  = 'tctp-assets-' + CACHE_VERSION;
 
