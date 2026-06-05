@@ -721,6 +721,29 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .atcs-blank.atcs-show{display:block;animation:atcsFade .4s ease}
 @keyframes atcsFade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .atcs-blank b{color:#1e3a1e}.atcs-blank .atcs-recw{color:#d23b2f;font-weight:800}
+/* ── [ALLTREKS-FU F1] On-Trail View card (in-tab, expandable; honest blank tape) ── */
+.atcs-card{border:1.5px solid #3b5c33;border-radius:12px;background:#f7f4ea;overflow:hidden}
+.atcs-card-strip{display:flex;align-items:center;gap:9px;width:100%;border:0;background:#1e3a1e;color:#eaf2e6;font:inherit;padding:10px 12px;cursor:pointer;text-align:left}
+.atcs-card-strip:disabled{cursor:default;opacity:.75}
+.atcs-card-strip .atcs-card-ttl{flex:1;font-weight:800;font-size:.82rem;letter-spacing:.03em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.atcs-card-pill{flex:0 0 auto;font-size:.6rem;font-weight:800;letter-spacing:.12em;padding:3px 8px;border-radius:99px;border:1px solid}
+.atcs-card-pill.is-profile{background:#e8f0e8;color:#1e3a1e;border-color:#6ba368}
+.atcs-card-pill.is-blank{background:#2a2417;color:#c8a84b;border-color:#c8a84b}
+.atcs-card-caret{flex:0 0 auto;color:#9fb89a;font-size:.7rem;transition:transform .25s}
+.atcs-card.open .atcs-card-caret{transform:rotate(180deg)}
+.atcs-card-body{display:none;padding:10px 12px 12px;background:#f7f4ea}
+.atcs-card.open .atcs-card-body{display:block;animation:atcsFade .35s ease}
+.atcs-card-src{font-size:.62rem;font-weight:700;letter-spacing:.06em;color:#5b8fa8;margin:0 0 6px}
+.atcs-card-wrap{position:relative;width:100%;height:170px;background:#fdfcf7;border:1px solid #e3ddc8;border-radius:8px;overflow:hidden}
+.atcs-card-wrap canvas{display:block;width:100%;height:100%}
+.atcs-card-tape{padding:6px 2px 0}
+.atcs-card-tape .atcs-tapeline{height:46px;border:1px solid #e3ddc8;border-radius:8px;background:#fdfcf7;position:relative}
+.atcs-card-tape .atcs-tapeline:before{content:'';position:absolute;left:8%;right:8%;top:50%;border-top:2px dashed #b9b29a}
+.atcs-card-tape .atcs-tapeline i{position:absolute;top:50%;width:14px;height:14px;margin-top:-7px;border:2.5px solid #8d866e;border-radius:50%;background:#f7f4ea}
+.atcs-card-tape .atcs-tapeline i.l{left:8%;margin-left:-7px}.atcs-card-tape .atcs-tapeline i.r{right:8%;margin-right:-7px}
+.atcs-card-blanktxt{font-size:.74rem;line-height:1.45;color:#2d5a27;margin:8px 0 0}
+.atcs-card-blanktxt b{color:#1e3a1e}.atcs-card-blanktxt .atcs-recw{color:#d23b2f;font-weight:800}
+.atcs-card-pins{font-size:.64rem;color:#7c8a7c;margin:5px 0 0}
 .atcs-go{width:100%;border:0;border-radius:10px;background:#1e3a1e;color:#fff;font:inherit;font-weight:800;font-size:.98rem;letter-spacing:.05em;padding:13px;cursor:pointer;box-shadow:0 4px 0 #122610;transition:transform .08s,box-shadow .08s}
 .atcs-go:active{transform:translateY(3px);box-shadow:0 1px 0 #122610}
 .atcs-go .atcs-tri{color:#c8a84b}
@@ -1887,7 +1910,7 @@ function allTreksTab(which, btn){
   if (allTab) allTab.style.display = isLog ? 'none' : 'flex';
   if (tLog) tLog.classList.toggle('active', isLog);
   if (tAll) tAll.classList.toggle('active', !isLog);
-  if (isLog) { try { renderTracker(); } catch(_){} }
+  if (isLog) { try { if (window.atcs && atcs.on) atcsStop(true); } catch(_){} try { renderTracker(); } catch(_){} } /* [ALLTREKS-FU F1] eject on tab leave */
 }
 
 function switchTrailData(trail) {
@@ -3278,6 +3301,7 @@ function openModal(id){
   document.body.style.overflow='hidden';
 }
 function closeModal(id){
+  if (id === 'modal-tracker') { try { if (window.atcs && atcs.on) atcsStop(true); } catch(_){} } /* [ALLTREKS-FU F1] restore Big-3 world on close */
   document.getElementById(id).classList.remove('open');
   document.body.style.overflow='';
 }
@@ -7642,6 +7666,15 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
           profile yet &#8212; the elevation view stays empty until it is real. Hike it with GPS on and
           <span class="atcs-recw">your trek writes Side A</span> for every hiker after you.
         </div>
+        <!-- [ALLTREKS-FU F1] On-Trail View card: real profile when data exists, honest blank tape when it doesn't. Never a fake curve. -->
+        <div class="atcs-card" id="atcsCard" style="display:none">
+          <button class="atcs-card-strip" id="atcsCardStrip" type="button" aria-expanded="false">
+            <span class="atcs-card-ttl" id="atcsCardTtl">On-Trail View</span>
+            <span class="atcs-card-pill is-blank" id="atcsCardPill">BLANK TAPE</span>
+            <span class="atcs-card-caret">&#9660;</span>
+          </button>
+          <div class="atcs-card-body" id="atcsCardBody"></div>
+        </div>
         <button class="atcs-go" id="atcsGo"><span class="atcs-tri">&#9654;</span>&nbsp; GO ON THE HIKE</button>
         <button class="atcs-eject" id="atcsEject">&#9632; EJECT &#8212; back to the Big 3</button>
         <div class="atcs-foot">All 50 states on deck &#183; 76 treks named &#183; lengths &amp; pins land as they are verified &#183; No ads &#183; No account &#183; Your data stays on your device</div>
@@ -8985,6 +9018,7 @@ function atcsInit(){
   atcsEl('atcsEject').onclick=function(){atcsStop(false);};
   atcsEl('atcsSideBtn').addEventListener('click',atcsFlip);
   atcsEl('atcsLenBadge').addEventListener('click',function(){showToast('Length fills in once trail research lands');});
+  var cs=atcsEl('atcsCardStrip');if(cs)cs.addEventListener('click',atcsCardToggle); /* [ALLTREKS-FU F1] */
   if(!atcs.recTimer)atcs.recTimer=setInterval(atcsSyncRec,3000);
   atcsSyncRec();
 }
@@ -9008,7 +9042,7 @@ function atcsLoadLabel(i){
   if(isNaN(i)||i<0){atcs.hike=null;atcsSetName('Pick a hike\u2026',false);
     atcsEl('atcsSub').textContent=ATCS_SEED[atcs.state].name+' \u00B7 All Treks';
     atcsEl('atcsLenTxt').textContent='\u2014 mi';atcsEl('atcsChips').innerHTML='';
-    atcsEl('atcsBlank').classList.remove('atcs-show');return;}
+    atcsEl('atcsBlank').classList.remove('atcs-show');atcsCardSetTeaser(null);return;}
   var h=ATCS_SEED[atcs.state].hikes[i];atcs.hike=h;
   atcsSetName(h.name,true); /* the label crawl */
   atcsEl('atcsSub').textContent=ATCS_SEED[atcs.state].name+' \u00B7 '+(atcs.side==='A'?'trailhead \u2192 terminus':'terminus \u2192 trailhead');
@@ -9020,8 +9054,9 @@ function atcsLoadLabel(i){
     '<span class="atcs-chip atcs-blz" style="background:'+flat+'">'+atcsEsc(h.blaze)+' blaze</span>'+
     '<span class="atcs-chip">'+atcsEsc(h.dif)+'</span>'+
     (h.feat?'<span class="atcs-chip">'+atcsEsc(h.feat)+'</span>':'')+
-    '<span class="atcs-chip atcs-warn">profile unrecorded \u00B7 blank tape</span>'+((h.th&&h.th.conf==='approx')?'<span class="atcs-chip">endpoints approx</span>':'');
+    (atcsProfileSource(h)?'<span class="atcs-chip" style="background:#e8f0e8;color:#1e3a1e;border-color:#6ba368">profile on tape</span>':'<span class="atcs-chip atcs-warn">profile unrecorded \u00B7 blank tape</span>')+((h.th&&h.th.conf==='approx')?'<span class="atcs-chip">endpoints approx</span>':'');
   atcsEl('atcsBlank').classList.remove('atcs-show');
+  atcsCardSetTeaser(h); /* [ALLTREKS-FU F1] */
 }
 function atcsFlip(){
   atcs.side=(atcs.side==='A')?'B':'A';
@@ -9031,6 +9066,109 @@ function atcsFlip(){
   showToast('Side '+atcs.side+' \u2014 '+(atcs.side==='A'?'standard direction':'reverse direction'));
 }
 /* ── the adapter (D-AT-1/3/4): real path, self-gated until geometry exists ── */
+/* ── [ALLTREKS-FU F2] Big-3 resolver: hikes that ARE sections of the AT/PCT/CDT play the
+   data we already hold. Data-driven from the trail objects' trek state codes — no hardcoded
+   mile numbers. Returns {trail, lo, hi, tag} or null. ── */
+function atcsBig3Band(h){
+  if(!h||!h.id)return null;
+  var m=null;
+  if(/-appalachian-trail-/.test(h.id))m={obj:(typeof AT!=='undefined'?AT:null),tag:'AT'};
+  else if(/-pacific-crest-trail-/.test(h.id))m={obj:(typeof PCT!=='undefined'?PCT:null),tag:'PCT'};
+  else if(/-continental-divide-trail-/.test(h.id))m={obj:(typeof CDT!=='undefined'?CDT:null),tag:'CDT'};
+  if(!m||!m.obj||!m.obj.treks||!m.obj.treks.nobo)return null;
+  var code=(h.id.split('-')[0]||'').toUpperCase(),lo=null,hi=null;
+  m.obj.treks.nobo.forEach(function(t){
+    var st=String(t.state||'');
+    if(st===code||st.split('/').indexOf(code)>=0){
+      if(lo===null||t.cumMileStart<lo)lo=t.cumMileStart;
+      if(hi===null||t.cumMileEnd>hi)hi=t.cumMileEnd;
+    }
+  });
+  if(lo===null||hi===null||hi<=lo)return null;
+  return {trail:m.obj,lo:lo,hi:hi,tag:m.tag};
+}
+/* ── [ALLTREKS-FU F3] Profile provider seam. THE one place the card asks for data.
+   Returns {pts:[[mile,ft],...], lo, hi, label} or null (null = honest blank tape).
+   Today's only provider is the Big-3 resolver above. A future provider turns a completed
+   Recorded Track (GPS) into the same shape — crowd-sourced "Side A" recordings plug in
+   here without touching the card. Never synthesize: no provider, no curve. ── */
+function atcsProfileSource(h){
+  var b=atcsBig3Band(h);
+  if(b&&b.trail.elevation&&b.trail.elevation.length){
+    var pts=b.trail.elevation.filter(function(e){return e[0]>=Math.floor(b.lo)&&e[0]<=Math.ceil(b.hi);});
+    if(pts.length>=2)return {pts:pts,lo:b.lo,hi:b.hi,label:b.tag+' data \u00B7 mi '+Math.round(b.lo)+'\u2013'+Math.round(b.hi)};
+  }
+  return null;
+}
+/* ── [ALLTREKS-FU F1] the On-Trail View card (in-tab, expandable) ── */
+function atcsCardSetTeaser(h){
+  var card=atcsEl('atcsCard');if(!card)return;
+  if(!h){card.style.display='none';atcsCardCollapse();return;}
+  card.style.display='';
+  atcsEl('atcsCardTtl').textContent=h.name+' \u00B7 On-Trail View';
+  var pill=atcsEl('atcsCardPill'),src=atcsProfileSource(h);
+  pill.textContent=src?'PROFILE':'BLANK TAPE';
+  pill.className='atcs-card-pill '+(src?'is-profile':'is-blank');
+}
+function atcsCardToggle(){
+  var card=atcsEl('atcsCard');if(!card||!atcs.hike)return;
+  if(card.classList.contains('open'))atcsCardCollapse();else atcsCardExpand();
+}
+function atcsCardExpand(){
+  var card=atcsEl('atcsCard');if(!card||!atcs.hike)return;
+  card.classList.add('open');
+  var st=atcsEl('atcsCardStrip');if(st)st.setAttribute('aria-expanded','true');
+  var bl=atcsEl('atcsBlank');if(bl)bl.classList.remove('atcs-show'); /* the card carries the message now */
+  requestAnimationFrame(atcsCardRender);
+}
+function atcsCardCollapse(){
+  var card=atcsEl('atcsCard');if(!card)return;
+  card.classList.remove('open');
+  var st=atcsEl('atcsCardStrip');if(st)st.setAttribute('aria-expanded','false');
+}
+function atcsCardRender(){
+  var body=atcsEl('atcsCardBody'),h=atcs.hike;if(!body||!h)return;
+  var src=atcsProfileSource(h);
+  if(!src){
+    /* honest blank tape — the recruitment state, never a silent canvas */
+    var unmapped=!(h.th&&h.tm&&h.th.lat!=null);
+    var pins=unmapped?'Trailhead and terminus not yet pinned.':('Trailhead pinned \u00B7 Terminus pinned'+((h.th&&h.th.conf==='approx')?' (approx)':'')+(h.len!=null?' \u00B7 '+h.len+' mi':''));
+    body.innerHTML='<div class="atcs-card-tape"><div class="atcs-tapeline"><i class="l"></i><i class="r"></i></div></div>'+
+      '<p class="atcs-card-blanktxt"><b>Blank tape</b> \u2014 no one has recorded this profile yet. Hike it with GPS on and <span class="atcs-recw">your trek writes Side A</span> for every hiker after you.</p>'+
+      '<p class="atcs-card-pins">'+atcsEsc(pins)+'</p>';
+    return;
+  }
+  body.innerHTML='<p class="atcs-card-src">'+atcsEsc(src.label)+'</p><div class="atcs-card-wrap"><canvas id="atcsCardCanvas"></canvas></div>';
+  var wrap=body.querySelector('.atcs-card-wrap'),cv=atcsEl('atcsCardCanvas');
+  var dpr=window.devicePixelRatio||1,W=wrap.clientWidth,H=wrap.clientHeight;
+  if(!W||!H)return;
+  cv.width=W*dpr;cv.height=H*dpr;
+  var ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+  var pts=src.pts,minE=Infinity,maxE=-Infinity,i;
+  for(i=0;i<pts.length;i++){if(pts[i][1]<minE)minE=pts[i][1];if(pts[i][1]>maxE)maxE=pts[i][1];}
+  var range=(maxE-minE)||1,PAD={t:16,r:52,b:20,l:8};
+  var cw=W-PAD.l-PAD.r,ch=H-PAD.t-PAD.b;
+  var X=function(m){return PAD.l+cw*(m-src.lo)/(src.hi-src.lo);};
+  var Y=function(e){return PAD.t+ch*(1-(e-minE)/range);};
+  ctx.beginPath();ctx.moveTo(X(pts[0][0]),Y(pts[0][1]));
+  for(i=1;i<pts.length;i++)ctx.lineTo(X(pts[i][0]),Y(pts[i][1]));
+  ctx.lineTo(X(pts[pts.length-1][0]),H-PAD.b);ctx.lineTo(X(pts[0][0]),H-PAD.b);ctx.closePath();
+  ctx.fillStyle='rgba(45,90,39,.16)';ctx.fill();
+  ctx.beginPath();ctx.moveTo(X(pts[0][0]),Y(pts[0][1]));
+  for(i=1;i<pts.length;i++)ctx.lineTo(X(pts[i][0]),Y(pts[i][1]));
+  ctx.strokeStyle='#2d5a27';ctx.lineWidth=1.6;ctx.stroke();
+  /* mile ticks */
+  ctx.strokeStyle='#b9b29a';ctx.lineWidth=1;ctx.beginPath();
+  var span=src.hi-src.lo,step=span>120?25:(span>40?10:5),m0=Math.ceil(src.lo/step)*step,m;
+  for(m=m0;m<=src.hi;m+=step){ctx.moveTo(X(m),H-PAD.b);ctx.lineTo(X(m),H-PAD.b+4);}
+  ctx.stroke();
+  ctx.fillStyle='#7c8a7c';ctx.font='9px "DM Sans",sans-serif';ctx.textAlign='center';
+  for(m=m0;m<=src.hi;m+=step)ctx.fillText(String(Math.round(m)),X(m),H-6);
+  /* ft rail */
+  ctx.textAlign='left';ctx.fillStyle='#2d5a27';ctx.font='bold 10px "DM Sans",sans-serif';
+  ctx.fillText(Math.round(maxE).toLocaleString()+' ft',W-PAD.r+6,PAD.t+8);
+  ctx.fillText(Math.round(minE).toLocaleString()+' ft',W-PAD.r+6,H-PAD.b);
+}
 function atcsBuildTrail(h){
   if(!h||!h.th||!h.tm||h.th.lat==null)return null; /* unmapped: no synthetic trail, no fake curve */
   var L=h.len||0;
@@ -9047,7 +9185,7 @@ function atcsLoadHike(h){
   if(!built)return false;
   atcs.prevTrail={t:window.ACTIVE_TRAIL,w:window.ACTIVE_WAYPOINTS,id:window.ACTIVE_TRAIL_ID};
   window.ACTIVE_TRAIL=built.trail;window.ACTIVE_WAYPOINTS=built.waypoints;window.ACTIVE_TRAIL_ID='ALLTREKS:'+h.id;
-  try{if(typeof openCardFullscreen==='function')openCardFullscreen();}catch(_){}
+  /* [ALLTREKS-FU F1] no longer opens the main-page fullscreen card mid-tab; the in-tab On-Trail View card is the display */
   return true;
 }
 function atcsRestore(){
@@ -9060,7 +9198,7 @@ function atcsPlay(){
   atcs.on=true;atcsEl('atcsDeck').classList.add('atcs-playing');
   var w=atcsEl('atcsWrap');if(w)w.classList.add('atcs-on');
   atcsSyncRec();
-  atcsEl('atcsBlank').classList.add('atcs-show');
+  atcsCardExpand(); /* [ALLTREKS-FU F1] the card carries the profile-or-blank-tape answer */
   atcsEl('atcsGo').innerHTML='<span class="atcs-tri">&#9654;</span>&nbsp; ON THE HIKE \u2014 '+atcsEsc(atcs.hike.name);
   atcs.counter=0;clearInterval(atcs.timer);
   atcs.timer=setInterval(function(){atcs.counter+=0.1;atcsEl('atcsCounter').textContent=('0000'+atcs.counter.toFixed(1)).slice(-6);},300);
@@ -9072,6 +9210,7 @@ function atcsStop(silent){
   atcs.on=false;atcsEl('atcsDeck').classList.remove('atcs-playing');
   var w=atcsEl('atcsWrap');if(w)w.classList.remove('atcs-on');
   atcsSyncRec();clearInterval(atcs.timer);
+  atcsCardCollapse(); /* [ALLTREKS-FU F1] */
   atcsEl('atcsCounter').textContent='0000.0';
   atcsEl('atcsGo').innerHTML='<span class="atcs-tri">&#9654;</span>&nbsp; GO ON THE HIKE';
   atcsEl('atcsBlank').classList.remove('atcs-show');
