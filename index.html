@@ -5703,7 +5703,7 @@ function renderBoard() {
     const hikedKey = isHikedTogether(p.trail_name);
     const hikedWithMe = getHikedWithMeList(p.trail_name);
     const hikedCount = hikedWithMe.length ? `<span style="font-size:.65rem;color:var(--sage);margin-left:4px">${hikedWithMe.length} hiker${hikedWithMe.length>1?'s':''} hiked this trail together</span>` : '';
-    const hikedBtn = `<button class="pc-hiked-btn${hikedKey?' active':''}" onclick="toggleHikedTogether('${esc(p.trail_name)}',this)">${hikedKey?'✅ Hiked Together':'🤝 Hiked Together'}</button>${hikedCount}`;
+    const hikedBtn = `<button class="pc-hiked-btn${hikedKey?' active':''}" onclick="toggleHikedTogether('${esc(p.trail_name)}',this)">${hikedKey?'✅ Hiker Friends':'🤝 Hiker Friends'}</button>${hikedCount}`;
     const age = timeAgo(p.created_at);
     const dirBadge = p.direction === 'NOBO'
       ? '<span class="pc-badge pc-nobo">↑ NOBO</span>'
@@ -5948,20 +5948,20 @@ async function toggleHikedTogether(trail_name, btn) {
   if (alreadyHiked) {
     localStorage.removeItem(getHikedTogetherKey(trail_name));
     btn.classList.remove('active');
-    btn.innerHTML = '🤝 Hiked Together';
+    btn.innerHTML = '🤝 Hiker Friends';
     const sb = getSupaClient();
     if (sb && myName) {
       await sb.from('slack_pack_hiked_together').delete()
         .eq('hiker_a', myName).eq('hiker_b', trail_name);
     }
-    showToast(`Removed "Hiked Together" with ${trail_name}`);
+    showToast(`Removed "Hiker Friends" with ${trail_name}`);
     return;
   }
   if (!myName) { showToast('Post yourself to the board first!'); return; }
   if (myName.toLowerCase() === trail_name.toLowerCase()) { showToast("You can't hike with yourself 😄"); return; }
   localStorage.setItem(getHikedTogetherKey(trail_name), Date.now());
   btn.classList.add('active');
-  btn.innerHTML = '✅ Hiked Together';
+  btn.innerHTML = '✅ Hiker Friends';
   showToast(`🤝 You and ${trail_name} walked some miles together.`);
   const sb = getSupaClient();
   if (sb) {
@@ -9076,7 +9076,7 @@ function renderProfile(){
   var bio=document.getElementById('profTopBio'); if(bio) bio.textContent=p.about||'Add a short bio below.';
   var loc=document.getElementById('profTopLoc'); if(loc) loc.textContent=p.location?('📍 '+p.location):'';
   var cnt=document.getElementById('profTopCount');
-  if(cnt){ var n=hikerDisplayName(); cnt.textContent = (window._hikedTogetherCache && n && window._hikedTogetherCache[n]) ? (window._hikedTogetherCache[n].length+' Hiking Partners') : ''; }
+  if(cnt){ var n=hikerDisplayName(); cnt.textContent = (window._hikedTogetherCache && n && window._hikedTogetherCache[n]) ? (window._hikedTogetherCache[n].length+' Hiker Friends') : ''; }
   renderProfilePhotos(); syncAvatars();
 }
 function renderProfilePhotos(){

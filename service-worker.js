@@ -14,7 +14,7 @@
  * ----------------------------------------------------------------------------
  */
 
-const CACHE_VERSION = 'v37';                       // ⬅ bump on meaningful asset changes (v37: H2HC P4 realtime + unread)
+const CACHE_VERSION = 'v38';                       // ⬅ bump on meaningful asset changes (v38: Hiked Together → Hiker Friends)
 const SHELL_CACHE  = 'tctp-shell-'  + CACHE_VERSION;
 const ASSET_CACHE  = 'tctp-assets-' + CACHE_VERSION;
 
