@@ -763,6 +763,37 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .h2hc-prof .h2hc-prof-tx{font-size:.74rem;color:#555;line-height:1.45}
 .h2hc-prof .h2hc-prof-tx b{color:#1e3a1e}
 .h2hc-prof button{margin-top:8px}
+/* ── [H2HC P3] the H2H toast (drop-down rooms panel, Messenger-style, anchored top-right) ── */
+.h2hc-toast{position:absolute;top:84px;right:10px;width:min(380px,calc(100% - 20px));max-height:min(560px,calc(100% - 100px));background:#fff;border:1px solid #d7ddd4;border-radius:14px;box-shadow:0 14px 44px rgba(20,40,16,.28);display:none;flex-direction:column;overflow:hidden;z-index:60}
+.h2hc-toast.open{display:flex;animation:atcsFade .22s ease}
+.h2hc-t-hd{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#1e3a1e;color:#fff}
+.h2hc-t-hd b{font-size:.92rem;font-weight:800}
+.h2hc-t-hd .h2hc-t-x{margin-left:auto;background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:7px;width:26px;height:26px;cursor:pointer;font-size:.8rem}
+.h2hc-t-back{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:7px;padding:3px 9px;cursor:pointer;font-size:.74rem;font-weight:700}
+.h2hc-notice{font-size:.64rem;line-height:1.45;color:#7a5b14;background:#fdf6e4;border-bottom:1px solid #f0e2b8;padding:7px 12px}
+.h2hc-notice b{color:#5d4408}
+.h2hc-t-list{overflow-y:auto;flex:1}
+.h2hc-room-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid #eef1ec;padding:11px 13px;cursor:pointer;font:inherit}
+.h2hc-room-row:hover{background:#f4f7f3}
+.h2hc-room-ic{flex:0 0 34px;width:34px;height:34px;border-radius:50%;background:#e8f0e8;display:flex;align-items:center;justify-content:center;font-size:1rem}
+.h2hc-room-nm{font-weight:700;font-size:.85rem;color:#1e3a1e}
+.h2hc-room-sub{font-size:.68rem;color:#8a948a}
+.h2hc-msgs{overflow-y:auto;flex:1;padding:10px 12px;display:flex;flex-direction:column;gap:9px;background:#f7f9f6}
+.h2hc-msg{background:#fff;border:1px solid #e4e9e2;border-radius:11px;padding:8px 10px}
+.h2hc-msg.mine{background:#eaf3e8;border-color:#cfe0c9}
+.h2hc-m-top{display:flex;align-items:baseline;gap:7px}
+.h2hc-m-nm{font-weight:800;font-size:.76rem;color:#1e3a1e}
+.h2hc-m-tm{font-size:.62rem;color:#9aa49a}
+.h2hc-m-acts{margin-left:auto;display:flex;gap:6px}
+.h2hc-m-acts button{border:0;background:none;color:#9aa49a;font-size:.62rem;cursor:pointer;padding:0 2px;font-weight:700}
+.h2hc-m-acts button:hover{color:#a33}
+.h2hc-m-body{font-size:.82rem;line-height:1.45;color:#333;margin-top:3px;word-wrap:break-word;white-space:pre-wrap}
+.h2hc-comp{display:flex;gap:7px;padding:9px 10px;border-top:1px solid #e4e9e2;background:#fff}
+.h2hc-comp input{flex:1;font:inherit;font-size:.84rem;padding:9px 11px;border:1.5px solid #c9d2c9;border-radius:9px}
+.h2hc-comp button{border:0;border-radius:9px;background:#1e3a1e;color:#fff;font:inherit;font-weight:800;font-size:.8rem;padding:9px 14px;cursor:pointer}
+.h2hc-gate{padding:11px 12px;border-top:1px solid #e4e9e2;background:#fff;text-align:center}
+.h2hc-gate .h2hc-btn{width:100%}
+.h2hc-empty{padding:26px 14px;text-align:center;color:#8a948a;font-size:.78rem;line-height:1.5}
 .atcs-go{width:100%;border:0;border-radius:10px;background:#1e3a1e;color:#fff;font:inherit;font-weight:800;font-size:.98rem;letter-spacing:.05em;padding:13px;cursor:pointer;box-shadow:0 4px 0 #122610;transition:transform .08s,box-shadow .08s}
 .atcs-go:active{transform:translateY(3px);box-shadow:0 1px 0 #122610}
 .atcs-go .atcs-tri{color:#c8a84b}
@@ -5216,6 +5247,170 @@ function h2hcInit(){
 }
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(h2hcInit, 400); });
 
+/* ══════ [H2HC P3] ROOMS UI — the Hiker-to-Hiker toast ══════
+   Public trail-bubble rooms (D16) · no DMs (D17) · text-only (D27) · no presence (D28) ·
+   reading is anonymous, POSTING requires the P2 identity (D24) · Report + Mute are one tap
+   from every message (D22/D25) · server enforces bans/rate limits via trg_sp_room_msg_guard ·
+   30-day purge runs nightly server-side (D20). Realtime + unread = P4 (interim: fetch on
+   open/room/send + gentle 25s poll while a room is visible).
+   COLUMN MAP — single source of truth for table/column names; finalized against
+   information_schema 2026-06-05: */
+var H2HC_COLS = { /* finalized against information_schema 2026-06-05 */
+  room: { table:'sp_chat_rooms',    id:'id', trail:'trail', label:'label', active:'is_active', sort:'sort_order' },
+  msg:  { table:'sp_room_messages', id:'id', room:'room_id', sender:'sender_id', body:'body', kind:'kind', created:'created_at' },
+  rep:  { table:'sp_chat_reports',  msg:'message_id', room:'room_id', reporter:'reporter_id', reported:'reported_id', reason:'reason', snap:'message_snapshot' },
+  mute: { table:'sp_chat_mutes',    muter:'muter_id', muted:'muted_id' },
+  names:{ view:'sp_chat_display_names', id:'id', name:'trail_name' } /* additive view — trail names are public by design; emails/hashes never (D26) */
+};
+var _h2hcRoom=null,_h2hcRooms=[],_h2hcMuted={},_h2hcNames={},_h2hcPoll=null;
+
+function h2hcEsc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function h2hcTrail(){return window.ACTIVE_TRAIL_ID||'AT';}
+
+function h2hcToggleToast(ev){
+  if(ev&&ev.stopPropagation)ev.stopPropagation();
+  var p=document.getElementById('h2hcToast');if(!p)return;
+  if(p.classList.contains('open')){p.classList.remove('open');h2hcStopPoll();return;}
+  p.classList.add('open');
+  h2hcBackToRooms();
+  h2hcLoadRooms();
+}
+function h2hcBackToRooms(){
+  _h2hcRoom=null;h2hcStopPoll();
+  document.getElementById('h2hcRooms').style.display='';
+  document.getElementById('h2hcMsgs').style.display='none';
+  document.getElementById('h2hcComp').style.display='none';
+  document.getElementById('h2hcGate').style.display='none';
+  document.getElementById('h2hcBack').style.display='none';
+  document.getElementById('h2hcTitle').textContent='Hiker-to-Hiker \u00B7 '+h2hcTrail();
+}
+function h2hcLoadRooms(){
+  var sb=getSupaClient(),L=document.getElementById('h2hcRooms'),C=H2HC_COLS.room;
+  if(!sb){L.innerHTML='<div class="h2hc-empty">Chat needs a connection \u2014 you\u2019re offline. The trail will wait.</div>';return;}
+  L.innerHTML='<div class="h2hc-empty">Finding the rooms\u2026</div>';
+  sb.from(C.table).select('*').eq(C.trail,h2hcTrail()).eq(C.active,true).order(C.sort)
+    .then(function(r){
+      if(r.error){L.innerHTML='<div class="h2hc-empty">Couldn\u2019t load rooms \u2014 '+h2hcEsc(r.error.message)+'</div>';return;}
+      _h2hcRooms=r.data||[];
+      if(!_h2hcRooms.length){L.innerHTML='<div class="h2hc-empty">No rooms on this trail yet.</div>';return;}
+      L.innerHTML=_h2hcRooms.map(function(rm){
+        return '<button class="h2hc-room-row" onclick="h2hcOpenRoom(\''+h2hcEsc(rm[C.id])+'\')">'+
+          '<span class="h2hc-room-ic">\u26FA</span><span><div class="h2hc-room-nm">'+h2hcEsc(rm[C.label])+'</div>'+
+          '<div class="h2hc-room-sub">public room \u00B7 '+h2hcEsc(rm[C.trail])+'</div></span></button>';
+      }).join('');
+    });
+}
+function h2hcOpenRoom(id){
+  var C=H2HC_COLS.room;
+  _h2hcRoom=null;
+  for(var i=0;i<_h2hcRooms.length;i++)if(String(_h2hcRooms[i][C.id])===String(id))_h2hcRoom=_h2hcRooms[i];
+  if(!_h2hcRoom)return;
+  document.getElementById('h2hcRooms').style.display='none';
+  document.getElementById('h2hcMsgs').style.display='';
+  document.getElementById('h2hcBack').style.display='';
+  document.getElementById('h2hcTitle').textContent=_h2hcRoom[C.label]||'Room';
+  h2hcRenderGate();
+  h2hcLoadMutes(function(){h2hcLoadMsgs();});
+  h2hcStartPoll();
+}
+function h2hcRenderGate(){
+  var comp=document.getElementById('h2hcComp'),gate=document.getElementById('h2hcGate');
+  if(h2hcMinorLocked()){comp.style.display='none';gate.style.display='';
+    gate.className='h2hc-gate';gate.innerHTML='<div class="h2hc-prof-tx">Chat is for hikers 18+, so posting is off on this device. Reading is open to all.</div>';return;}
+  if(h2hcIdentity()){gate.style.display='none';comp.style.display='';return;}
+  comp.style.display='none';gate.style.display='';gate.className='h2hc-gate';
+  gate.innerHTML='<button class="h2hc-btn" onclick="h2hcOpenAuth()">\u2709 Sign in to post (free, 18+)</button>'+
+    '<div class="h2hc-prof-tx" style="margin-top:6px">Reading is open \u2014 posting takes the 30-second magic-link sign-in.</div>';
+}
+function h2hcLoadMutes(cb){
+  _h2hcMuted={};var sb=getSupaClient(),id=h2hcIdentity(),C=H2HC_COLS.mute;
+  if(!sb||!id){cb&&cb();return;}
+  sb.from(C.table).select(C.muted).eq(C.muter,id.id).then(function(r){
+    (r.data||[]).forEach(function(row){_h2hcMuted[row[C.muted]]=1;});cb&&cb();
+  });
+}
+function h2hcResolveNames(ids,cb){
+  var sb=getSupaClient(),N=H2HC_COLS.names,need=[];
+  ids.forEach(function(i){if(i&&!_h2hcNames[i]&&need.indexOf(i)<0)need.push(i);});
+  if(!sb||!need.length){cb&&cb();return;}
+  sb.from(N.view).select(N.id+','+N.name).in(N.id,need).then(function(r){
+    (r.data||[]).forEach(function(row){_h2hcNames[row[N.id]]=row[N.name];});cb&&cb();
+  });
+}
+function h2hcLoadMsgs(){
+  var sb=getSupaClient(),M=document.getElementById('h2hcMsgs'),C=H2HC_COLS.msg,R=H2HC_COLS.room;
+  if(!sb||!_h2hcRoom)return;
+  sb.from(C.table).select('*').eq(C.room,_h2hcRoom[R.id]).order(C.created,{ascending:false}).limit(60)
+    .then(function(r){
+      if(r.error){M.innerHTML='<div class="h2hc-empty">Couldn\u2019t load messages \u2014 '+h2hcEsc(r.error.message)+'</div>';return;}
+      var rows=(r.data||[]).reverse();
+      rows=rows.filter(function(m){return !_h2hcMuted[m[C.sender]];});
+      h2hcResolveNames(rows.map(function(m){return m[C.sender];}),function(){
+        var me=h2hcIdentity(),html='';
+        if(!rows.length){html='<div class="h2hc-empty">Quiet out here. Say hello \u2014 every thru-hike starts with one word.</div>';}
+        rows.forEach(function(m){
+          var mine=me&&String(m[C.sender])===String(me.id);
+          var when=new Date(m[C.created]);
+          var tm=when.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' '+when.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+          var nm=mine?(me.trail_name||'you'):(_h2hcNames[m[C.sender]]||'hiker');
+          html+='<div class="h2hc-msg'+(mine?' mine':'')+'"><div class="h2hc-m-top">'+
+            '<span class="h2hc-m-nm">'+h2hcEsc(nm)+'</span><span class="h2hc-m-tm">'+tm+'</span>'+
+            (mine?'':'<span class="h2hc-m-acts">'+
+              '<button onclick="h2hcReport(\''+h2hcEsc(m[C.id])+'\')" title="Report to the operator">\u2691 Report</button>'+
+              '<button onclick="h2hcMute(\''+h2hcEsc(m[C.sender])+'\')" title="Hide this hiker on this device">\u20E0 Mute</button></span>')+
+            '</div><div class="h2hc-m-body">'+h2hcEsc(m[C.body])+'</div></div>';
+        });
+        M.innerHTML=html;M.scrollTop=M.scrollHeight;
+      });
+    });
+}
+function h2hcSend(){
+  var inp=document.getElementById('h2hcInput'),txt=(inp.value||'').trim();
+  if(!txt)return;
+  var id=h2hcIdentity();if(!id){h2hcOpenAuth();return;}
+  if(h2hcMinorLocked())return;
+  var sb=getSupaClient(),C=H2HC_COLS.msg,R=H2HC_COLS.room,row={};
+  row[C.room]=_h2hcRoom[R.id];row[C.sender]=id.id;row[C.body]=txt;row[C.kind]='text';
+  inp.disabled=true;
+  sb.from(C.table).insert([row]).then(function(r){
+    inp.disabled=false;
+    if(r.error){showToast('Didn\u2019t send \u2014 '+(r.error.message||'try again'));return;}
+    inp.value='';h2hcLoadMsgs();
+  });
+}
+function h2hcReport(msgId){
+  var id=h2hcIdentity();
+  if(!id){showToast('Sign in to report \u2014 it keeps reports accountable');h2hcOpenAuth();return;}
+  var sb=getSupaClient(),C=H2HC_COLS.msg,P=H2HC_COLS.rep,R=H2HC_COLS.room;
+  sb.from(C.table).select('*').eq(C.id,msgId).limit(1).then(function(q){
+    var m=(q.data||[])[0];if(!m){showToast('Couldn\u2019t find that message');return;}
+    var row={};
+    row[P.msg]=m[C.id];row[P.room]=m[C.room];row[P.reporter]=id.id;row[P.reported]=m[C.sender];
+    row[P.reason]='reported_in_app';
+    row[P.snap]={body:m[C.body],kind:m[C.kind],created_at:m[C.created]}; /* survives the 30-day purge (D20) */
+    sb.from(P.table).insert([row]).then(function(r){
+      if(r.error){showToast('Report didn\u2019t go through \u2014 '+(r.error.message||'try again'));return;}
+      showToast('Reported \u00B7 the operator will review. Thank you for watching the trail. \u2691');
+    });
+  });
+}
+function h2hcMute(identId){
+  var id=h2hcIdentity();
+  if(!id){showToast('Sign in to mute \u2014 mutes follow your identity');h2hcOpenAuth();return;}
+  if(String(identId)===String(id.id))return;
+  var sb=getSupaClient(),C=H2HC_COLS.mute,row={};
+  row[C.muter]=id.id;row[C.muted]=identId;
+  sb.from(C.table).insert([row]).then(function(r){
+    if(r.error&&!/duplicate/i.test(r.error.message||'')){showToast('Mute didn\u2019t stick \u2014 '+(r.error.message||'try again'));return;}
+    _h2hcMuted[identId]=1;h2hcLoadMsgs();
+    showToast('Muted \u00B7 you won\u2019t see them again. They\u2019re not told.');
+  });
+}
+function h2hcStartPoll(){h2hcStopPoll();_h2hcPoll=setInterval(function(){
+  var p=document.getElementById('h2hcToast');
+  if(p&&p.classList.contains('open')&&_h2hcRoom)h2hcLoadMsgs();else h2hcStopPoll();},25000);}
+function h2hcStopPoll(){if(_h2hcPoll){clearInterval(_h2hcPoll);_h2hcPoll=null;}}
+
 function initSocialModal() {
   initSlackPack(); // keep existing planner working
   prefillPostForm();
@@ -7903,7 +8098,23 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
     <div class="sp-modal-tabs">
       <button class="sp-modal-tab active" onclick="spTab('board',this)">🥾 Hiker Board</button>
       <button class="sp-modal-tab" onclick="spTab('magic',this)">✨ Magic</button>
-      <button class="sp-modal-tab" onclick="spTab('h2h',this)">💬 H2H Chat</button>
+      <button class="sp-modal-tab" id="h2hcTabBtn" onclick="h2hcToggleToast(event)">💬 H2H Chat</button> <!-- [H2HC P3] toast toggle, not a tab (D29 as amended) -->
+    </div>
+    <!-- [H2HC P3] Hiker-to-Hiker toast: public trail rooms · no DMs · text only · 30-day purge -->
+    <div class="h2hc-toast" id="h2hcToast" role="dialog" aria-label="Hiker-to-Hiker Chat">
+      <div class="h2hc-t-hd">
+        <button class="h2hc-t-back" id="h2hcBack" onclick="h2hcBackToRooms()" style="display:none">&#8249; Rooms</button>
+        <b id="h2hcTitle">Hiker-to-Hiker</b>
+        <button class="h2hc-t-x" onclick="h2hcToggleToast()" aria-label="Close">&#x2715;</button>
+      </div>
+      <div class="h2hc-notice"><b>Rooms are public</b> &mdash; every hiker can read them. Not for emergencies: <b>call 911</b>. Messages auto-delete after 30 days. Be good to each other out there.</div>
+      <div class="h2hc-t-list" id="h2hcRooms"></div>
+      <div class="h2hc-msgs" id="h2hcMsgs" style="display:none"></div>
+      <div id="h2hcGate" style="display:none"></div>
+      <div class="h2hc-comp" id="h2hcComp" style="display:none">
+        <input id="h2hcInput" maxlength="280" placeholder="Say something to the trail&hellip;" onkeydown="if(event.key==='Enter')h2hcSend()">
+        <button onclick="h2hcSend()">Send</button>
+      </div>
     </div>
     <div class="modal-body">
 
@@ -8769,7 +8980,7 @@ function syncAvatars(){
   if(prompt){ var n=hikerDisplayName(); prompt.textContent = n ? ("What's on your mind, "+n+'?') : "What's on your mind?"; }
 }
 function spShowView(id){
-  ['sp-tab-board','sp-tab-post','sp-tab-magic','sp-tab-h2h','sp-tab-profile','sp-tab-planner'].forEach(function(v){
+  ['sp-tab-board','sp-tab-post','sp-tab-magic','sp-tab-profile','sp-tab-planner'] /* [H2HC P3] sp-tab-h2h retired — the toast replaced it */.forEach(function(v){
     var e=document.getElementById(v); if(e) e.style.display=(v===id)?'block':'none';
   });
 }
