@@ -4177,7 +4177,7 @@ function donCanShowAT() {
   if (parseInt(localStorage.getItem(DON_KEY_NEVER)||'0') >= 2) return false;
   if (localStorage.getItem(DON_KEY_DONATED)) return false;
   const last = parseInt(localStorage.getItem(DON_KEY_AT_LAST)||'0');
-  if (last && (Date.now() - last) < 24*60*60*1000) return false;
+  if (last && (Date.now() - last) < 7*24*60*60*1000) return false; /* [v33] once per 7 days on GO */
   const lastFired = parseInt(localStorage.getItem(DON_KEY_LAST_FIRED)||'0');
   if (lastFired && (Date.now() - lastFired) < DON_COOLDOWN_MS) return false;
   return true;
@@ -4232,8 +4232,8 @@ function showDonationMoment(trigger) {
       body:"This screen was built for exactly this moment — when you need information and can\'t afford clicks.<br><br>The trail is free because people fund it. So is this app." },
     return:       { icon:'🌲', title:"You came back.",
       body:"This is the last time we\'ll ask this year. If the app has earned a contribution, here\'s how to send it directly to the trail." },
-    alltreks_go:  { icon:'\ud83d\udcfc', title:'All Treks runs on the honor system.',
-      body:'The Big 3 stay free forever \u2014 this tape deck is the <b>supporter tier</b>. Your first 50 miles a year are on the house; past that it\u2019s <b>$15/year</b>, scout\u2019s honor.<br><br>No paywall, no lockout \u2014 just the hostel donation box, and you\u2019re standing in front of it. $15 is less than one town burger. If All Treks is earning its keep, today\u2019s the day. \ud83c\udf54' },
+    alltreks_go:  { icon:'\ud83d\udcfc', title:'The Big 3 stay free. Forever.',
+      body:'All Treks runs on supporters \u2014 your first <b>50 miles a year</b> are on us, and <b>$15/year</b> after that keeps the lights on.<br><br>Honor system, like the donation box at the hostel. If the tape\u2019s been good to you, drop in the $15 \u2014 then go on that hike. \ud83e\udd7e' },
   };
   const msg = msgs[trigger]||msgs.welcome;
 
@@ -4247,6 +4247,11 @@ function showDonationMoment(trigger) {
   donTipAmt = 5;
   document.querySelectorAll('.don-tip').forEach(b =>
     b.classList.toggle('selected', b.dataset.amt === '5'));
+  if (trigger === 'alltreks_go') { /* [ALLTREKS-FU v33] the ask is the $15/yr honor tier */
+    donTipAmt = 15;
+    document.querySelectorAll('.don-tip').forEach(b => b.classList.remove('selected'));
+    document.getElementById('don-coffee-btn').textContent = '\ud83d\udcfc Keep All Treks rolling \u2014 $15/year';
+  }
   document.getElementById('donation-overlay').dataset.trigger = trigger;
   document.getElementById('donation-overlay').classList.add('open');
 }

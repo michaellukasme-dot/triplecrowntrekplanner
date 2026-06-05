@@ -14,7 +14,7 @@
  * ----------------------------------------------------------------------------
  */
 
-const CACHE_VERSION = 'v32';                       // ⬅ bump on meaningful asset changes (v32: card auto-opens on selection)
+const CACHE_VERSION = 'v33';                       // ⬅ bump on meaningful asset changes (v33: All Treks donor card - banner language, 7-day cadence, $15 ask)
 const SHELL_CACHE  = 'tctp-shell-'  + CACHE_VERSION;
 const ASSET_CACHE  = 'tctp-assets-' + CACHE_VERSION;
 
