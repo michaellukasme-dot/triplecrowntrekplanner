@@ -14,7 +14,7 @@
  * ----------------------------------------------------------------------------
  */
 
-const CACHE_VERSION = 'v33';                       // ⬅ bump on meaningful asset changes (v33: All Treks donor card - banner language, 7-day cadence, $15 ask)
+const CACHE_VERSION = 'v34';                       // ⬅ bump on meaningful asset changes (v34: first-open donation card, 12-month donor suppression)
 const SHELL_CACHE  = 'tctp-shell-'  + CACHE_VERSION;
 const ASSET_CACHE  = 'tctp-assets-' + CACHE_VERSION;
 

@@ -1914,8 +1914,8 @@ function allTreksTab(which, btn){
   if (tLog) tLog.classList.toggle('active', isLog);
   if (tAll) tAll.classList.toggle('active', !isLog);
   if (isLog) { try { if (window.atcs && atcs.on) atcsStop(true); } catch(_){} try { renderTracker(); } catch(_){} } /* [ALLTREKS-FU F1] eject on tab leave */
-  if (!isLog && !window._atcsSupToast) { window._atcsSupToast = 1;
-    try { showToast('The Big 3 stay free \u2014 forever. All Treks runs on supporters: first 50 miles a year on us, $15/yr after. Honor system \u00B7 like the hostel donation box \u26FA'); } catch(_){} } /* [ALLTREKS-FU v29] */
+  if (!isLog) { /* [ALLTREKS-FU v34] first open = the donation CARD (click-away), then the 7-day recurrence; no toast */
+    try { if (typeof showDonationMoment==='function') setTimeout(function(){showDonationMoment('alltreks_go');}, 600); } catch(_){} }
 }
 
 function switchTrailData(trail) {
@@ -4173,9 +4173,16 @@ function donMarkShown(trigger) {
    at most once per 24h, only on GO, still respects donated / "never again" / the 6h global
    cooldown so it can't stack on a main-app moment. */
 const DON_KEY_AT_LAST = 'tctp_don_at_last';
+const DON_KEY_DONATED_AT = 'tctp_donated_at'; /* [v34] timestamp; All Treks suppression = 12 months */
 function donCanShowAT() {
   if (parseInt(localStorage.getItem(DON_KEY_NEVER)||'0') >= 2) return false;
-  if (localStorage.getItem(DON_KEY_DONATED)) return false;
+  /* [v34] donation suppresses the All Treks ask for 12 months (legacy donors without a
+     timestamp get one now, so their clock starts today rather than asking immediately) */
+  var donAt = parseInt(localStorage.getItem(DON_KEY_DONATED_AT)||'0');
+  if (!donAt && localStorage.getItem(DON_KEY_DONATED)) {
+    donAt = Date.now(); localStorage.setItem(DON_KEY_DONATED_AT, String(donAt));
+  }
+  if (donAt && (Date.now() - donAt) < 365*24*60*60*1000) return false;
   const last = parseInt(localStorage.getItem(DON_KEY_AT_LAST)||'0');
   if (last && (Date.now() - last) < 7*24*60*60*1000) return false; /* [v33] once per 7 days on GO */
   const lastFired = parseInt(localStorage.getItem(DON_KEY_LAST_FIRED)||'0');
@@ -4280,6 +4287,7 @@ async function logDonationIntent(source) {
 async function donGo() {
   await logDonationIntent('prompt');
   localStorage.setItem(DON_KEY_DONATED,'1');
+  localStorage.setItem(DON_KEY_DONATED_AT, String(Date.now())); /* [v34] */
   document.getElementById('donation-overlay').classList.remove('open');
   const note = 'Supporting '+((_donActiveConsChoice)||getDonCons().short)+' via Triple Crown Trek Planner';
   window.open('https://buymeacoffee.com/staggerlee?message='+encodeURIComponent(note)+'&amount='+((donTipAmt||5)*100),'_blank');
