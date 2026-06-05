@@ -14,7 +14,7 @@
  * ----------------------------------------------------------------------------
  */
 
-const CACHE_VERSION = 'v36';                       // ⬅ bump on meaningful asset changes (v36: H2HC P3 rooms toast)
+const CACHE_VERSION = 'v37';                       // ⬅ bump on meaningful asset changes (v37: H2HC P4 realtime + unread)
 const SHELL_CACHE  = 'tctp-shell-'  + CACHE_VERSION;
 const ASSET_CACHE  = 'tctp-assets-' + CACHE_VERSION;
 

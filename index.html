@@ -794,6 +794,10 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .h2hc-gate{padding:11px 12px;border-top:1px solid #e4e9e2;background:#fff;text-align:center}
 .h2hc-gate .h2hc-btn{width:100%}
 .h2hc-empty{padding:26px 14px;text-align:center;color:#8a948a;font-size:.78rem;line-height:1.5}
+/* ── [H2HC P4] unread indicators ── */
+.h2hc-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#3f8f3f;margin-left:auto;flex:0 0 9px}
+#h2hcTabBtn{position:relative}
+#h2hcTabBtn .h2hc-dot{position:absolute;top:7px;right:7px;margin:0}
 .atcs-go{width:100%;border:0;border-radius:10px;background:#1e3a1e;color:#fff;font:inherit;font-weight:800;font-size:.98rem;letter-spacing:.05em;padding:13px;cursor:pointer;box-shadow:0 4px 0 #122610;transition:transform .08s,box-shadow .08s}
 .atcs-go:active{transform:translateY(3px);box-shadow:0 1px 0 #122610}
 .atcs-go .atcs-tri{color:#c8a84b}
@@ -3354,6 +3358,7 @@ function openModal(id){
 }
 function closeModal(id){
   if (id === 'modal-tracker') { try { if (window.atcs && atcs.on) atcsStop(true); } catch(_){} } /* [ALLTREKS-FU F1] restore Big-3 world on close */
+  if (id === 'modal-sp') { try { if (typeof h2hcTeardown==='function') h2hcTeardown(); } catch(_){} } /* [H2HC P4] drop the realtime channel with the modal */
   document.getElementById(id).classList.remove('open');
   document.body.style.overflow='';
 }
@@ -5270,13 +5275,13 @@ function h2hcTrail(){return window.ACTIVE_TRAIL_ID||'AT';}
 function h2hcToggleToast(ev){
   if(ev&&ev.stopPropagation)ev.stopPropagation();
   var p=document.getElementById('h2hcToast');if(!p)return;
-  if(p.classList.contains('open')){p.classList.remove('open');h2hcStopPoll();return;}
+  if(p.classList.contains('open')){h2hcTeardown();return;} /* [H2HC P4] */
   p.classList.add('open');
   h2hcBackToRooms();
   h2hcLoadRooms();
 }
 function h2hcBackToRooms(){
-  _h2hcRoom=null;h2hcStopPoll();
+  _h2hcRoom=null;h2hcStopPoll();h2hcUnsub(); /* [H2HC P4] */
   document.getElementById('h2hcRooms').style.display='';
   document.getElementById('h2hcMsgs').style.display='none';
   document.getElementById('h2hcComp').style.display='none';
@@ -5298,6 +5303,7 @@ function h2hcLoadRooms(){
           '<span class="h2hc-room-ic">\u26FA</span><span><div class="h2hc-room-nm">'+h2hcEsc(rm[C.label])+'</div>'+
           '<div class="h2hc-room-sub">public room \u00B7 '+h2hcEsc(rm[C.trail])+'</div></span></button>';
       }).join('');
+      h2hcUnreadScan(function(u){h2hcPaintUnread(u);}); /* [H2HC P4] */
     });
 }
 function h2hcOpenRoom(id){
@@ -5311,7 +5317,8 @@ function h2hcOpenRoom(id){
   document.getElementById('h2hcTitle').textContent=_h2hcRoom[C.label]||'Room';
   h2hcRenderGate();
   h2hcLoadMutes(function(){h2hcLoadMsgs();});
-  h2hcStartPoll();
+  h2hcStartPoll();   /* stands down once Realtime reports SUBSCRIBED */
+  h2hcSub(_h2hcRoom[C.id]); /* [H2HC P4] */
 }
 function h2hcRenderGate(){
   var comp=document.getElementById('h2hcComp'),gate=document.getElementById('h2hcGate');
@@ -5361,6 +5368,7 @@ function h2hcLoadMsgs(){
             '</div><div class="h2hc-m-body">'+h2hcEsc(m[C.body])+'</div></div>';
         });
         M.innerHTML=html;M.scrollTop=M.scrollHeight;
+        if(rows.length)h2hcMarkRead(_h2hcRoom[R.id],rows[rows.length-1][C.created]); /* [H2HC P4] */
       });
     });
 }
@@ -5411,7 +5419,73 @@ function h2hcStartPoll(){h2hcStopPoll();_h2hcPoll=setInterval(function(){
   if(p&&p.classList.contains('open')&&_h2hcRoom)h2hcLoadMsgs();else h2hcStopPoll();},25000);}
 function h2hcStopPoll(){if(_h2hcPoll){clearInterval(_h2hcPoll);_h2hcPoll=null;}}
 
+/* ══════ [H2HC P4] REALTIME + UNREAD ══════
+   Live messages via Supabase Realtime (postgres_changes INSERT, filtered to the open room;
+   RLS applies to the subscriber, public read policy covers anon). The 25s poll survives only
+   as a fallback when the channel fails to subscribe. Unread = localStorage last-seen
+   timestamp per room (`tctp_room_read_<id>`) vs the room's newest message. */
+var _h2hcChan=null;
+function h2hcReadKey(roomId){return 'tctp_room_read_'+roomId;}
+function h2hcMarkRead(roomId,ts){try{var k=h2hcReadKey(roomId),old=localStorage.getItem(k);if(!old||ts>old)localStorage.setItem(k,ts);}catch(_){}}
+function h2hcSub(roomId){
+  h2hcUnsub();
+  var sb=getSupaClient();if(!sb||!sb.channel)return;
+  try{
+    _h2hcChan=sb.channel('h2hc-room-'+roomId)
+      .on('postgres_changes',
+          {event:'INSERT',schema:'public',table:H2HC_COLS.msg.table,filter:H2HC_COLS.msg.room+'=eq.'+roomId},
+          function(){h2hcLoadMsgs();})
+      .subscribe(function(status){
+        if(status==='SUBSCRIBED'){h2hcStopPoll();}          /* live — the poll stands down */
+        else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){h2hcStartPoll();} /* fallback */
+      });
+  }catch(_){h2hcStartPoll();}
+}
+function h2hcUnsub(){
+  if(_h2hcChan){try{var sb=getSupaClient();if(sb&&sb.removeChannel)sb.removeChannel(_h2hcChan);}catch(_){}_h2hcChan=null;}
+}
+function h2hcTeardown(){h2hcUnsub();h2hcStopPoll();var p=document.getElementById('h2hcToast');if(p)p.classList.remove('open');}
+/* unread for the rooms list + the tab button: one query for the trail's rooms' newest messages */
+function h2hcUnreadScan(cb){
+  var sb=getSupaClient(),R=H2HC_COLS.room,C=H2HC_COLS.msg;
+  if(!sb||!_h2hcRooms.length){cb&&cb({});return;}
+  var ids=_h2hcRooms.map(function(r){return r[R.id];});
+  sb.from(C.table).select(C.room+','+C.created).in(C.room,ids).order(C.created,{ascending:false}).limit(120)
+    .then(function(r){
+      var latest={};(r.data||[]).forEach(function(m){if(!latest[m[C.room]])latest[m[C.room]]=m[C.created];});
+      var unread={};
+      ids.forEach(function(id){
+        var l=latest[id];if(!l)return;
+        var seen=null;try{seen=localStorage.getItem(h2hcReadKey(id));}catch(_){}
+        if(!seen||l>seen)unread[id]=1;
+      });
+      cb&&cb(unread);
+    });
+}
+function h2hcPaintUnread(unread){
+  var R=H2HC_COLS.room,any=false;
+  _h2hcRooms.forEach(function(rm){if(unread[rm[R.id]])any=true;});
+  document.querySelectorAll('#h2hcRooms .h2hc-room-row').forEach(function(btn,i){
+    var rm=_h2hcRooms[i];if(!rm)return;
+    var dot=btn.querySelector('.h2hc-dot');
+    if(unread[rm[R.id]]){if(!dot){var d=document.createElement('span');d.className='h2hc-dot';btn.appendChild(d);}}
+    else if(dot){dot.remove();}
+  });
+  var tb=document.getElementById('h2hcTabBtn');
+  if(tb){var td=tb.querySelector('.h2hc-dot');
+    if(any){if(!td){var d2=document.createElement('span');d2.className='h2hc-dot';tb.appendChild(d2);}}
+    else if(td){td.remove();}}
+}
+function h2hcUnreadBadge(){ /* called on SP modal open — light, async, fails silent */
+  var sb=getSupaClient(),R=H2HC_COLS.room;if(!sb)return;
+  var go=function(){h2hcUnreadScan(function(u){h2hcPaintUnread(u);});};
+  if(_h2hcRooms.length)go();
+  else sb.from(R.table).select('*').eq(R.trail,h2hcTrail()).eq(R.active,true).order(R.sort)
+    .then(function(r){if(!r.error){_h2hcRooms=r.data||[];go();}});
+}
+
 function initSocialModal() {
+  try { if (typeof h2hcUnreadBadge==='function') setTimeout(h2hcUnreadBadge, 600); } catch(_){} /* [H2HC P4] */
   initSlackPack(); // keep existing planner working
   prefillPostForm();
   spTab('board', document.querySelector('#modal-sp .sp-modal-tab'));
