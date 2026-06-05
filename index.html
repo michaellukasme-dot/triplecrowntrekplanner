@@ -7693,10 +7693,8 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
         </div>
         <!-- [ALLTREKS-FU F1] On-Trail View card: real profile when data exists, honest blank tape when it doesn't. Never a fake curve. -->
         <div class="atcs-card" id="atcsCard" style="display:none">
-          <button class="atcs-card-strip" id="atcsCardStrip" type="button" aria-expanded="false">
+          <button class="atcs-card-strip" id="atcsCardStrip" type="button" aria-expanded="true">
             <span class="atcs-card-ttl" id="atcsCardTtl">On-Trail View</span>
-            <span class="atcs-card-pill is-blank" id="atcsCardPill">BLANK TAPE</span>
-            <span class="atcs-card-caret">&#9660;</span>
           </button>
           <div class="atcs-card-body" id="atcsCardBody"></div>
         </div>
@@ -9131,9 +9129,7 @@ function atcsCardSetTeaser(h){
   if(!h){card.style.display='none';atcsCardCollapse();return;}
   card.style.display='';
   atcsEl('atcsCardTtl').textContent=h.name+' \u00B7 On-Trail View';
-  var pill=atcsEl('atcsCardPill'),src=atcsProfileSource(h);
-  pill.textContent=src?'PROFILE':'BLANK TAPE';
-  pill.className='atcs-card-pill '+(src?'is-profile':'is-blank');
+  atcsCardExpand(); /* [ALLTREKS-FU v32] selection shows the view immediately \u2014 no tap, no pill, no caret */
 }
 function atcsCardToggle(){
   var card=atcsEl('atcsCard');if(!card||!atcs.hike)return;

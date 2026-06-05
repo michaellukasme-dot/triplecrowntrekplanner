@@ -14,7 +14,7 @@
  * ----------------------------------------------------------------------------
  */
 
-const CACHE_VERSION = 'v31';                       // ⬅ bump on meaningful asset changes (v31: selectors+chips above the deck)
+const CACHE_VERSION = 'v32';                       // ⬅ bump on meaningful asset changes (v32: card auto-opens on selection)
 const SHELL_CACHE  = 'tctp-shell-'  + CACHE_VERSION;
 const ASSET_CACHE  = 'tctp-assets-' + CACHE_VERSION;
 
