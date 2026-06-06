@@ -1114,7 +1114,22 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.45), 0 1px 2px rgba(138,67,16,.18);
   letter-spacing:.05em}
 
-.tm-svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;margin-top:4px}
+.tm-svc-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.tm-svc-chip.svc-ico{width:46px;height:46px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;padding:0;border-radius:12px;text-align:center}
+#tm-view-angel .post-field{margin-bottom:8px}
+#tm-dir-list .board-empty{min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.sp-comp-counters{display:flex;gap:10px;align-items:center;margin-left:auto;flex-shrink:0}
+.sp-comp-counters button{background:none;border:none;cursor:pointer;font-family:inherit;font-size:.82rem;color:var(--text);display:flex;align-items:center;gap:3px;padding:0}
+.sp-comp-counters b{font-weight:700;font-size:.74rem;color:var(--pine)}
+.sp-comp-counters b.zero{color:var(--subtle)}
+@media (max-width:520px){.sp-comp-counters{display:none}}
+.sp-stories{display:flex;gap:8px;overflow-x:auto;padding:4px 14px 8px;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.sp-story{flex:0 0 96px;height:128px;border-radius:12px;border:1px solid var(--border);background:var(--white);cursor:pointer;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:8px;font-family:inherit;text-align:left}
+.sp-story-create{align-items:center;justify-content:center;gap:6px;background:var(--mist);font-weight:700;font-size:.7rem;color:var(--pine);text-align:center}
+.sp-story-plus{width:30px;height:30px;border-radius:50%;background:var(--pine);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.sp-story-ava{position:absolute;top:8px;left:8px;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.65rem;font-weight:800;border:2px solid #fff}
+.sp-story-nm{font-size:.66rem;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6);line-height:1.2;word-break:break-word}
+.sp-story-dir{position:absolute;top:8px;right:8px;font-size:.6rem;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6)}
 .tm-svc-chip{padding:7px 10px;border-radius:14px;border:1.5px solid var(--border);background:var(--white);
   color:var(--text);font-size:.74rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .12s;text-align:left}
 .tm-svc-chip:hover{border-color:var(--leaf)}
@@ -5643,7 +5658,89 @@ function getPostMile(trekName) {
   return match ? match.cumMileStart : null;
 }
 
-function renderBoard() {
+// ── [SP-SOCIAL sp-redesign-1] Stories rail + composer counters ─────────
+  function spRenderStories(){
+    const el = document.getElementById('spStories');
+    if (!el) return;
+    const posts = (typeof allPosts !== 'undefined' && Array.isArray(allPosts)) ? allPosts : [];
+    if (!posts.length){ el.style.display='none'; el.innerHTML=''; return; }
+    const colors = ['#1e3a1e','#2d5a27','#4a7c59','#1e4d72','#6b3c1a','#3b6d11','#5b3a29','#854f0b','#1a2e42'];
+    const esc = (typeof tmEsc==='function') ? tmEsc : function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+    let h = '<button type="button" class="sp-story sp-story-create" onclick="openPostForm()">' +
+            '<span class="sp-story-plus">+</span>Create story</button>';
+    posts.slice(0, 12).forEach(function(p, idx){
+      const nm = p.trail_name || 'Hiker';
+      const initials = nm.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
+      let hash = 0; for (let c = 0; c < nm.length; c++) hash = (hash*31 + nm.charCodeAt(c)) >>> 0;
+      const col = colors[hash % colors.length];
+      const dir = p.direction === 'NOBO' ? '\u2191 NOBO' : (p.direction === 'SOBO' ? '\u2193 SOBO' : '');
+      h += '<button type="button" class="sp-story" style="background:linear-gradient(160deg,'+col+' 0%, #11221a 100%)" ' +
+           'onclick="spStoryGlance('+idx+')">' +
+           '<span class="sp-story-ava" style="background:'+col+'">'+esc(initials)+'</span>' +
+           (dir ? '<span class="sp-story-dir">'+dir+'</span>' : '') +
+           '<span class="sp-story-nm">'+esc(nm)+'</span></button>';
+    });
+    el.innerHTML = h; el.style.display='flex';
+  }
+  function spStoryGlance(idx){
+    // UX canon: glance = toast in place
+    const posts = (typeof allPosts !== 'undefined' && Array.isArray(allPosts)) ? allPosts : [];
+    const p = posts[idx]; if (!p) return;
+    showToast('\u{1F97E} ' + (p.trail_name||'Hiker') + (p.note ? ' \u2014 "' + p.note + '"' : ' is on the board \u2014 card below.'));
+  }
+  let _spBearCount = null, _spBearCountAt = 0;
+  function spUpdateComposerCounters(){
+    const el = document.getElementById('spCompCounters');
+    if (!el) return;
+    const now = Date.now();
+    let water = 0, warn = 0;
+    try {
+      Object.keys(_waterCondCache || {}).forEach(function(k){
+        const r = _waterCondCache[k];
+        if (!r || (now - new Date(r.reported_at)) > 7*24*60*60*1000) return;
+        water++;
+        if (r.condition === 'dry' || r.condition === 'stagnant') warn++;
+      });
+    } catch(e) {}
+    const hikers = (typeof allPosts !== 'undefined' && Array.isArray(allPosts)) ? allPosts.length : 0;
+    const bear = (_spBearCount == null) ? '\u2013' : _spBearCount;
+    function chip(emoji, val, tip, fn){
+      const zero = (val === 0 || val === '\u2013') ? ' class="zero"' : '';
+      return '<button type="button" title="'+tip+'" aria-label="'+tip+'" onclick="'+fn+'">'+emoji+' <b'+zero+'>'+val+'</b></button>';
+    }
+    el.innerHTML =
+      chip('\u{1F43B}', bear,  'Bear sightings on this trail, last 24h', "spCounterGlance('bear')") +
+      chip('\u{1F4A7}', water, 'Water reports, last 7 days',             "spCounterGlance('water')") +
+      chip('\u26A0\uFE0F', warn, 'Sources reported dry or stagnant',     "spCounterGlance('warn')") +
+      chip('\u{1F3D5}', hikers,'Hikers on the board',                    "spCounterGlance('hikers')");
+    if (now - _spBearCountAt > 5*60*1000) {
+      _spBearCountAt = now;
+      try {
+        const sb = getSupaClient();
+        if (sb) {
+          const since = new Date(now - 24*60*60*1000).toISOString();
+          sb.from('bear_sightings')
+            .select('id', { count: 'exact', head: true })
+            .eq('trail', window.ACTIVE_TRAIL_ID || 'AT').gte('reported_at', since)
+            .then(function(res){
+              if (res && typeof res.count === 'number') { _spBearCount = res.count; spUpdateComposerCounters(); }
+            });
+        }
+      } catch(e) {}
+    }
+  }
+  function spCounterGlance(kind){
+    // UX canon: glance = toast in place; never a new screen
+    const n = _spBearCount;
+    const msgs = {
+      bear:  '\u{1F43B} ' + (n==null ? 'No fresh bear count yet \u2014 try again in a moment.' : (n + ' bear sighting' + (n===1?'':'s') + ' reported on this trail in the last 24h.')),
+      water: '\u{1F4A7} Water reports from the last 7 days \u2014 source colors on the elevation map show conditions.',
+      warn:  '\u26A0\uFE0F Sources reported dry or stagnant in the last 7 days. Carry extra where it matters.',
+      hikers:'\u{1F3D5} Hikers currently posted on the partner board, all sections.'
+    };
+    showToast(msgs[kind] || '');
+  }
+  function renderBoard() { try { spRenderStories(); spUpdateComposerCounters(); } catch(e) {}
   const list = document.getElementById('sp-board-list');
   let posts = allPosts;
 
@@ -6908,9 +7005,10 @@ function tmRenderDirectory(){
   if (_angelActiveFilter === 'legacy') rows = rows.filter(r => (r.confirmation_count||0) >= ANGEL_LEGEND_MIN);
   else if (_angelActiveFilter !== 'all') rows = rows.filter(r => (r.services||[]).includes(_angelActiveFilter));
 
-  // Near Me filter (requires GPS)
-  if (_angelNearMe && typeof lastGpsPos !== 'undefined' && lastGpsPos) {
-    rows = rows.filter(r => tmHaversineMi(lastGpsPos.coords.latitude, lastGpsPos.coords.longitude, r.lat, r.lon) <= 50);
+  // Nearest first — always (sp-redesign-1): GPS available → sort by distance; else server order
+  if (typeof lastGpsPos !== 'undefined' && lastGpsPos && lastGpsPos.coords && rows.length) {
+    rows.sort((a,b) => tmHaversineMi(lastGpsPos.coords.latitude, lastGpsPos.coords.longitude, a.lat, a.lon)
+                     - tmHaversineMi(lastGpsPos.coords.latitude, lastGpsPos.coords.longitude, b.lat, b.lon));
   }
 
   // Empty state
@@ -8200,9 +8298,12 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
       <div class="sp-composer" onclick="openPostForm()">
         <button class="sp-composer-ava" id="spComposerAva" onclick="event.stopPropagation();openProfile()" title="Your profile"><span class="prof-cam">📷</span></button>
         <div class="sp-composer-text" id="spComposerPrompt">What's on your mind?</div>
+        <div class="sp-comp-counters" id="spCompCounters" onclick="event.stopPropagation()"></div>
         <button class="sp-composer-post">POST</button>
       </div>
       <div class="sp-slackpack-launch" onclick="openSlackPackSheet()"><span class="lf-ico"></span>Leapfrog a partner — 2 hikers, 2 cars &rarr;</div>
+      <!-- [SP-SOCIAL sp-redesign-1] Stories rail: trail-wide board posts as cards -->
+      <div class="sp-stories" id="spStories" style="display:none"></div>
       <div class="board-filters">
         <button class="board-filter active" onclick="spFilter('all',this)">All</button>
         <button class="board-filter" onclick="spFilter('NOBO',this)">↑ NOBO</button>
@@ -8471,15 +8572,14 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
         <!-- Service filter chips -->
         <div class="board-filters" id="tm-service-filters">
           <button class="board-filter active" data-svc="all"            onclick="tmFilter(this)">All</button>
-          <button class="board-filter"        data-svc="rides"          onclick="tmFilter(this)">🚗 Rides</button>
-          <button class="board-filter"        data-svc="feed"           onclick="tmFilter(this)">🍔 Feed</button>
-          <button class="board-filter"        data-svc="bunk"           onclick="tmFilter(this)">🛏 Bunk</button>
-          <button class="board-filter"        data-svc="shower_laundry" onclick="tmFilter(this)">🚿 Shower</button>
-          <button class="board-filter"        data-svc="water_cache"    onclick="tmFilter(this)">💧 Water</button>
-          <button class="board-filter"        data-svc="resupply_hold"  onclick="tmFilter(this)">📦 Resupply</button>
-          <button class="board-filter"        data-svc="gear_fix"       onclick="tmFilter(this)">🔧 Gear</button>
-          <button class="board-filter"        data-svc="legacy"         onclick="tmFilter(this)">✨ Legend</button>
-          <button class="board-filter" id="tm-near-me-btn" onclick="tmToggleNearMe(this)" title="Angels within 50 trail miles of you">📍 Near Me</button>
+          <button class="board-filter" data-svc="rides" onclick="tmFilter(this)" title="Rides" aria-label="Rides">🚗</button>
+          <button class="board-filter" data-svc="feed" onclick="tmFilter(this)" title="Feed" aria-label="Feed">🍔</button>
+          <button class="board-filter" data-svc="bunk" onclick="tmFilter(this)" title="Bunk / Hostel" aria-label="Bunk or hostel">🛏</button>
+          <button class="board-filter" data-svc="shower_laundry" onclick="tmFilter(this)" title="Shower / Laundry" aria-label="Shower or laundry">🚿</button>
+          <button class="board-filter" data-svc="water_cache" onclick="tmFilter(this)" title="Water" aria-label="Water">💧</button>
+          <button class="board-filter" data-svc="resupply_hold" onclick="tmFilter(this)" title="Resupply Hold" aria-label="Resupply hold">📦</button>
+          <button class="board-filter" data-svc="gear_fix" onclick="tmFilter(this)" title="Gear Fix" aria-label="Gear fix">🔧</button>
+          <button class="board-filter" data-svc="legacy" onclick="tmFilter(this)" title="Trail Legends" aria-label="Trail Legends">✨</button>
         </div>
 
         <!-- Directory list -->
@@ -8537,13 +8637,13 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
           <div class="post-field">
             <label>What you offer  <span style="color:var(--subtle);font-weight:400">(pick 1–4)</span></label>
             <div class="tm-svc-grid" id="tm-svc-grid">
-              <button type="button" class="tm-svc-chip" data-svc="rides"          onclick="tmToggleSvc(this)" aria-pressed="false">🚗 Rides</button>
-              <button type="button" class="tm-svc-chip" data-svc="feed"           onclick="tmToggleSvc(this)" aria-pressed="false">🍔 Feed</button>
-              <button type="button" class="tm-svc-chip" data-svc="bunk"           onclick="tmToggleSvc(this)" aria-pressed="false">🛏 Bunk / Hostel</button>
-              <button type="button" class="tm-svc-chip" data-svc="shower_laundry" onclick="tmToggleSvc(this)" aria-pressed="false">🚿 Shower / Laundry</button>
-              <button type="button" class="tm-svc-chip" data-svc="resupply_hold"  onclick="tmToggleSvc(this)" aria-pressed="false">📦 Resupply Hold</button>
-              <button type="button" class="tm-svc-chip" data-svc="gear_fix"       onclick="tmToggleSvc(this)" aria-pressed="false">🔧 Gear Fix</button>
-              <button type="button" class="tm-svc-chip" data-svc="water_cache"    onclick="tmToggleSvc(this)" aria-pressed="false">💧 Water Cache *</button>
+              <button type="button" class="tm-svc-chip svc-ico" data-svc="rides" onclick="tmToggleSvc(this)" aria-pressed="false" title="Rides" aria-label="Rides">🚗</button>
+              <button type="button" class="tm-svc-chip svc-ico" data-svc="feed" onclick="tmToggleSvc(this)" aria-pressed="false" title="Feed" aria-label="Feed">🍔</button>
+              <button type="button" class="tm-svc-chip svc-ico" data-svc="bunk" onclick="tmToggleSvc(this)" aria-pressed="false" title="Bunk / Hostel" aria-label="Bunk / Hostel">🛏</button>
+              <button type="button" class="tm-svc-chip svc-ico" data-svc="shower_laundry" onclick="tmToggleSvc(this)" aria-pressed="false" title="Shower / Laundry" aria-label="Shower / Laundry">🚿</button>
+              <button type="button" class="tm-svc-chip svc-ico" data-svc="resupply_hold" onclick="tmToggleSvc(this)" aria-pressed="false" title="Resupply Hold" aria-label="Resupply Hold">📦</button>
+              <button type="button" class="tm-svc-chip svc-ico" data-svc="gear_fix" onclick="tmToggleSvc(this)" aria-pressed="false" title="Gear Fix" aria-label="Gear Fix">🔧</button>
+              <button type="button" class="tm-svc-chip svc-ico" data-svc="water_cache" onclick="tmToggleSvc(this)" aria-pressed="false" title="Water Cache — hand-deliver when possible" aria-label="Water Cache — hand-deliver when possible">💧</button>
             </div>
             <div id="tm-water-note" class="tm-water-note" style="display:none"></div>
           </div>
