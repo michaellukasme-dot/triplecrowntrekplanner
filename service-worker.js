@@ -14,7 +14,7 @@
  * ----------------------------------------------------------------------------
  */
 
-const CACHE_VERSION = 'v41';                       // ⬅ bump on meaningful asset changes (v41: v40 + Add New trek — hiker-named, device-local, charter-gated sharing)
+const CACHE_VERSION = 'v39';                       // ⬅ bump on meaningful asset changes (v39: SP modal redesign — stories rail, composer counters, emoji pills)
 const SHELL_CACHE  = 'tctp-shell-'  + CACHE_VERSION;
 const ASSET_CACHE  = 'tctp-assets-' + CACHE_VERSION;
 

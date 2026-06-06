@@ -747,12 +747,6 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .atcs-card-blanktxt{font-size:.74rem;line-height:1.45;color:#2d5a27;margin:8px 0 0}
 .atcs-card-blanktxt b{color:#1e3a1e}.atcs-card-blanktxt .atcs-recw{color:#d23b2f;font-weight:800}
 .atcs-card-pins{font-size:.64rem;color:#7c8a7c;margin:5px 0 0}
-.atcs-card-src{display:flex;align-items:center;gap:8px}
-.atcs-card-fsbtn{margin-left:auto;border:1px solid #6ba368;background:#e8f0e8;color:#1e3a1e;border-radius:8px;font-size:.85rem;line-height:1;padding:3px 9px;cursor:pointer}
-.atcs-card-fsbtn:hover{background:#d8e8d4}
-.atcs-scrub-line{display:none;position:absolute;top:0;bottom:0;width:0;border-left:1.5px dashed #4a7c59;pointer-events:none;z-index:4}
-.atcs-scrub-label{display:none;position:absolute;top:6px;max-width:150px;background:#1e3a1e;color:#eaf2e6;font-size:.62rem;line-height:1.4;padding:5px 7px;border-radius:7px;pointer-events:none;z-index:5}
-.atcs-share-btn{margin-left:6px;border:1px solid #6ba368;background:#e8f0e8;color:#1e3a1e;border-radius:7px;font-size:.62rem;font-weight:700;padding:2px 7px;cursor:pointer;font-family:inherit}
 /* ── [H2HC P2] hiker identity spine: sign-in UI ── */
 .h2hc-auth-box{max-width:420px}
 .h2hc-step{display:none}.h2hc-step.on{display:block;animation:atcsFade .3s ease}
@@ -2640,7 +2634,6 @@ function openCardFullscreen() {
 function closeCardFullscreen() {
   const overlay = document.getElementById('cardFsOverlay');
   overlay.classList.remove('open');
-  if (_fsCtx) { _fsCtx = null; var _t9 = document.getElementById('cardFsTitle'); if (_t9) _t9.textContent = '\uD83D\uDCC8 Trail \u00B7 On-Trail View'; } /* [ALLTREKS-FU F4] */
   document.body.style.overflow = '';
   if (fsLeafletMap) fsLeafletMap.invalidateSize();
 }
@@ -2723,16 +2716,15 @@ function drawFsElevation() {
   // comes from the state/segment the planner card is showing, so expanding a state shows
   // THAT state. Full Route zooms out to the whole trail. (v15 windowed only around GPS,
   // which made every state expand to the same ±10mi view regardless of what was tapped.)
-  const _fsTrail = (_fsCtx && _fsCtx.trail) ? _fsCtx.trail /* [ALLTREKS-FU F4] */
-    : (typeof tdGetTrail === 'function')
+  const _fsTrail = (typeof tdGetTrail === 'function')
     ? (tdGetTrail(window.ACTIVE_TRAIL_ID || 'AT') || window.ACTIVE_TRAIL || AT)
     : (window.ACTIVE_TRAIL || AT);
   const allPts = (_fsTrail && _fsTrail.elevation && _fsTrail.elevation.length) ? _fsTrail.elevation : null;
   if (!allPts) return;
   const fullStart = allPts[0][0], fullEnd = allPts[allPts.length - 1][0];
   const _im = (document.getElementById('elevCanvas') || {})._elevMeta;
-  const segStart = _fsCtx ? Math.max(fullStart, _fsCtx.lo) : ((_im && _im.startMile != null) ? _im.startMile : fullStart); /* [ALLTREKS-FU F4] */
-  const segEnd   = _fsCtx ? Math.min(fullEnd, _fsCtx.hi)   : ((_im && _im.endMile   != null) ? _im.endMile   : fullEnd);
+  const segStart = (_im && _im.startMile != null) ? _im.startMile : fullStart;
+  const segEnd   = (_im && _im.endMile   != null) ? _im.endMile   : fullEnd;
   const rows = (typeof currentItinerary !== 'undefined') ? currentItinerary : [];
 
   const dpr = window.devicePixelRatio || 1;
@@ -3263,33 +3255,29 @@ async function checkBearSightings() {
 function initFsMap() {
   const mapEl = document.getElementById('fs-leaflet-map');
   if (!mapEl) return;
-  var _off9 = document.getElementById('fsMapOffline');                 /* [MAPS M-9] honest offline state */
-  if (_off9) _off9.style.display = (typeof navigator !== 'undefined' && navigator.onLine === false) ? 'block' : 'none';
 
   if (!fsLeafletMap) {
     fsLeafletMap = L.map(mapEl, {zoomControl:true});
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
       attribution:'© OpenStreetMap', maxZoom:19
     }).addTo(fsLeafletMap);
-    L.control.scale({imperial:true, metric:false}).addTo(fsLeafletMap); /* [MAPS M-7] */
   } else {
     fsLeafletMap.eachLayer(l=>{ if(!l._url) fsLeafletMap.removeLayer(l); });
   }
 
-  const mainMeta = document.getElementById('elevCanvas')._elevMeta; /* [ALLTREKS-FU F4] ctx wins */
-  if (!mainMeta && !_fsCtx) { fsLeafletMap.setView([39.5,-76.5],7); return; }
-  const startMile = _fsCtx ? _fsCtx.lo : mainMeta.startMile;
-  const endMile   = _fsCtx ? _fsCtx.hi : mainMeta.endMile;
+  const mainMeta = document.getElementById('elevCanvas')._elevMeta;
+  if (!mainMeta) { fsLeafletMap.setView([39.5,-76.5],7); return; }
+  const {startMile, endMile} = mainMeta;
 
   // ── If GPS active: show ±3mi window at zoom 15 (Far Out-killer view) ──
   const WINDOW_MI = 3;
   let localStart = startMile, localEnd = endMile;
-  if (lastGpsPos && lastGpsPos.mile !== undefined && !fsShowFullRoute && (!_fsCtx || _fsCtx.tag === (window.ACTIVE_TRAIL_ID||'AT'))) {
+  if (lastGpsPos && lastGpsPos.mile !== undefined && !fsShowFullRoute) {
     localStart = Math.max(startMile, lastGpsPos.mile - WINDOW_MI);
     localEnd   = Math.min(endMile,   lastGpsPos.mile + WINDOW_MI);
   }
 
-  const coords = _fsCtx ? _fsGeoPick('c') : (window.ACTIVE_COORDS || AT_TRAIL_COORDS); /* [ALLTREKS-FU F4] */
+  const coords = (window.ACTIVE_COORDS || AT_TRAIL_COORDS);
   const wpSeg  = (window.ACTIVE_WAYPOINTS||AT_WAYPOINTS).filter(w =>
     w[0]>=localStart && w[0]<=localEnd && w[3] && w[4]);
 
@@ -3322,27 +3310,25 @@ function initFsMap() {
     if (hasWater && !fsFilters.water) return;
     if (hasShelter && !fsFilters.shelter) return;
     const icon = (hasWater?'💧':'') + (hasShelter?'🏕':'') + (w[7]?'🚽':'');
-    const condC = hasWater ? getWaterCondColor(w[0]) : null;   /* [MAPS M-2] live condition color */
-    const condL = hasWater ? getWaterCondLabel(w[0]) : null;
-    const col  = condC || (hasWater ? '#5b8fa8' : '#4a7c59');
+    const col  = hasWater ? '#5b8fa8' : '#4a7c59';
     const r    = hasWater ? 7 : 5;
     L.circleMarker([w[3],w[4]], {radius:r, color:col, fillColor:col, fillOpacity:.85, weight:1.5})
-      .bindPopup(`${icon} <b>${w[1]}</b><br>Mile ${w[0]}` + (condL ? `<br>${condL}` : ''))  /* [MAPS M-6] tap popups */
+      .bindTooltip(`${icon} ${w[1]}<br><small>Mile ${w[0]}</small>`, {direction:'top'})
       .addTo(fsLeafletMap);
   });
 
   // ── Resupply markers ──
   if (fsFilters.resupply) {
-    (_fsCtx ? _fsGeoPick('r') : (window.ACTIVE_RESUPPLY||AT_RESUPPLY)).filter(r=>
+    (window.ACTIVE_RESUPPLY||AT_RESUPPLY).filter(r=>
       r[0]>=localStart&&r[0]<=localEnd&&r[2]&&r[3]
     ).forEach(r=>{
       L.circleMarker([r[2],r[3]], {radius:6,color:'#c8a84b',fillColor:'#ffe9a0',fillOpacity:.9,weight:2})
-        .bindPopup('🍎 <b>'+r[1]+'</b>').addTo(fsLeafletMap); /* [MAPS M-6] */
+        .bindTooltip('🍎 '+r[1], {direction:'top'}).addTo(fsLeafletMap);
     });
   }
 
   // ── Fit to local or full view ──
-  if (lastGpsPos && !fsShowFullRoute && (!_fsCtx || _fsCtx.tag === (window.ACTIVE_TRAIL_ID||'AT'))) {
+  if (lastGpsPos && !fsShowFullRoute) {
     fsLeafletMap.setView([lastGpsPos.lat, lastGpsPos.lon], 15);
   } else {
     fsLeafletMap.fitBounds(latlngs, {padding:[24,24]});
@@ -3889,7 +3875,7 @@ function mapFitTrail() {
   if (!leafletMapObj) return;
   const from = getFromTrekObj(), to = getToTrekObj();
   if (!from || !to) return;
-  const wpSeg = (_fsCtx ? _fsGeoPick('w') : (window.ACTIVE_WAYPOINTS||AT_WAYPOINTS)).filter(w => w[0] >= from.cumMileStart && w[0] <= to.cumMileEnd);
+  const wpSeg = (window.ACTIVE_WAYPOINTS||AT_WAYPOINTS).filter(w => w[0] >= from.cumMileStart && w[0] <= to.cumMileEnd);
   if (wpSeg.length) leafletMapObj.fitBounds(wpSeg.map(w=>[w[3],w[4]]), {padding:[16,16]});
 }
 
@@ -8698,19 +8684,6 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
 </div>
 
 <!-- ── Trail Magic: Confirm action sheet ──────────────────────────── -->
-<!-- ── [ALLTREKS-AN] Add New trek sheet ── -->
-<div class="modal-overlay" id="modal-atcs-new">
-  <div class="modal-box" style="width:min(95vw,420px)">
-    <div class="modal-hdr"><span style="font-size:1.2rem">★</span><h2>Add a New Trek</h2><button class="modal-close" onclick="closeModal('modal-atcs-new')">✕</button></div>
-    <div class="modal-body" style="padding:16px 18px">
-      <p style="font-size:.78rem;line-height:1.5;color:#444;margin:0 0 10px">Name a hike TCTP doesn’t know yet — in <b id="atcsNewState">your state</b>. It lives on this device, under ★ in your trek list. Hike it with GPS tracking on and your recording becomes its first profile.</p>
-      <div class="post-field"><label for="atcsNewName">Trek name</label><input id="atcsNewName" maxlength="60" placeholder="e.g. Sawmill Ridge Loop" style="width:100%;font:inherit;font-size:.9rem;padding:9px 11px;border:1.5px solid #c9d2c9;border-radius:9px"></div>
-      <div class="post-field"><label for="atcsNewLen">Length, miles (optional)</label><input id="atcsNewLen" inputmode="decimal" maxlength="7" placeholder="e.g. 12.5" style="width:140px;font:inherit;font-size:.9rem;padding:9px 11px;border:1.5px solid #c9d2c9;border-radius:9px"></div>
-      <p style="font-size:.64rem;color:#7c8a7c;line-height:1.5;margin:8px 0 12px">Honest-data note: your trek shows a blank tape until a real GPS recording exists — TCTP never draws a curve it doesn’t have.</p>
-      <button class="post-submit" onclick="atcsSaveNewTrek()" style="width:100%">★ Add my trek</button>
-    </div>
-  </div>
-</div>
 <div class="modal-overlay" id="modal-tm-confirm">
   <div class="modal-box" style="width:min(95vw,420px)">
     <div class="modal-hdr">
@@ -8989,7 +8962,6 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
 
     <!-- ── MAP PANEL ── -->
     <div id="fs-tab-map" class="card-fs-map-wrap" style="display:none">
-      <div id="fsMapOffline" style="display:none;background:#2a2417;color:#e8d9a0;font-size:.68rem;line-height:1.45;padding:6px 12px;flex-shrink:0">No signal — map tiles stream when you’re connected. Your trail line, waypoints, and the elevation profile work offline, always.</div>
       <div class="card-fs-map-controls">
         <div id="fs-map-gps-status" style="font-size:.63rem;color:rgba(174,198,174,.75);flex:1"></div>
         <button onclick="fsFindTrailOnMap()" style="padding:4px 10px;border-radius:10px;border:1.5px solid rgba(107,163,104,.4);background:rgba(107,163,104,.15);font-size:.68rem;font-weight:700;cursor:pointer;color:#aec6ae">🧭 Find Trail</button>
@@ -9646,46 +9618,18 @@ var ATCS_BLAZE={"White":{c:"#f4f1ea"},"Orange":{c:"#e8761e"},"Yellow":{c:"#f2c20
 var atcs={hike:null,side:"A",on:false,counter:0,timer:null,recTimer:null,prevTrail:null};
 function atcsEl(id){return document.getElementById(id);}
 function atcsEsc(s){return String(s).replace(/[&<>"']/g,function(m){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m];});}
-/* ── [ALLTREKS-AN A-NEW] Add New trek: hiker-named, device-local until the GPSG privacy
-     charter clears community submissions. Honest labels everywhere; no fake pins. ── */
-  var ATCS_MYTREKS_KEY='tctp_my_treks';
-  function atcsMyTreks(){ try{ return JSON.parse(localStorage.getItem(ATCS_MYTREKS_KEY)||'{}'); }catch(e){ return {}; } }
-  function atcsSaveMyTreks(o){ try{ localStorage.setItem(ATCS_MYTREKS_KEY, JSON.stringify(o)); }catch(e){} }
-  function atcsHikesFor(state){ var seed=(ATCS_SEED[state]&&ATCS_SEED[state].hikes)||[]; var mine=(atcsMyTreks()[state]||[]); return seed.concat(mine); }
-  function atcsHikeAt(state,i){ var all=atcsHikesFor(state); return all[i]||null; }
-  function atcsOpenNewTrek(){ var nm=atcsEl('atcsNewName'); if(nm)nm.value=''; var ln=atcsEl('atcsNewLen'); if(ln)ln.value=''; var stl=atcsEl('atcsNewState'); if(stl)stl.textContent=(ATCS_SEED[atcs.state]&&ATCS_SEED[atcs.state].name)||atcs.state; openModal('modal-atcs-new'); if(nm)setTimeout(function(){nm.focus();},50); }
-  function atcsSaveNewTrek(){
-    var nm=(atcsEl('atcsNewName').value||'').trim();
-    if(nm.length<3){ showToast('Give your trek a name (3+ characters).'); return; }
-    var lnRaw=(atcsEl('atcsNewLen').value||'').trim(); var ln=lnRaw?parseFloat(lnRaw):null;
-    if(ln!==null&&(!isFinite(ln)||ln<=0||ln>5000)){ showToast('Length looks off \u2014 leave it blank if unsure.'); return; }
-    var slug=nm.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'trek';
-    var h={ id:atcs.state+'-custom-'+slug+'-'+Date.now().toString(36), name:nm, len:ln,
-            blaze:'None', dif:'Unrated', feat:'Hiker-added', th:null, tm:null, custom:true };
-    var mine=atcsMyTreks(); (mine[atcs.state]=mine[atcs.state]||[]).push(h); atcsSaveMyTreks(mine);
-    closeModal('modal-atcs-new');
-    if(typeof atcsFillHikes==='function')atcsFillHikes();
-    var hk=atcsEl('atcsSelHike'); var idx=atcsHikesFor(atcs.state).length-1;
-    if(hk){ hk.value=String(idx); } atcsLoadLabel(idx);
-    showToast('\u2605 '+nm+' added \u2014 yours, on this device. Hike it with GPS on to record Side A.');
-  }
-  function atcsShareNewTrek(){
-    showToast('Community trek submissions open once the privacy charter clears \u2014 your trek and any recording stay on this device until then, by design.');
-  }
-  function atcsInit(){
+function atcsInit(){
   var st=atcsEl('atcsSelState'),hk=atcsEl('atcsSelHike');
   if(!st||st.options.length)return;
   atcs.state=atcs.state||'PA';
   st.innerHTML=Object.keys(ATCS_SEED).map(function(c){var s=ATCS_SEED[c];
     return '<option value="'+c+'"'+(c===atcs.state?' selected':'')+'>'+atcsEsc(s.name)+' \u00B7 '+s.hikes.length+(s.hikes.length===1?' trek':' treks')+'</option>';}).join('')+
     ATCS_COMING.map(function(n){return '<option disabled>'+atcsEsc(n)+' \u00B7 coming soon</option>';}).join('');
-  function fillHikes(){var all=atcsHikesFor(atcs.state);hk.innerHTML='<option value="">\u2014 pick your trek \u2014</option>'+
-    all.map(function(h,i){return '<option value="'+i+'">'+(h.custom?'\u2605 ':'')+atcsEsc(h.name)+'</option>';}).join('')+
-    '<option value="__new">\u2795 Add a new trek\u2026</option>';}
-  window.atcsFillHikes=fillHikes; /* [ALLTREKS-AN] */
+  function fillHikes(){hk.innerHTML='<option value="">\u2014 pick your trek \u2014</option>'+
+    ATCS_SEED[atcs.state].hikes.map(function(h,i){return '<option value="'+i+'">'+atcsEsc(h.name)+'</option>';}).join('');}
   fillHikes();
   st.onchange=function(){atcs.state=st.value;fillHikes();atcsLoadLabel(NaN);};
-  hk.onchange=function(){ if(hk.value==='__new'){ hk.value=''; atcsOpenNewTrek(); return; } atcsLoadLabel(parseInt(hk.value,10)); };
+  hk.onchange=function(){atcsLoadLabel(parseInt(hk.value,10));};
   atcsEl('atcsGo').onclick=atcsPlay;
   atcsEl('atcsEject').onclick=function(){atcsStop(false);};
   atcsEl('atcsSideBtn').addEventListener('click',atcsFlip);
@@ -9715,7 +9659,7 @@ function atcsLoadLabel(i){
     atcsEl('atcsSub').textContent=ATCS_SEED[atcs.state].name+' \u00B7 All Treks';
     atcsEl('atcsLenTxt').textContent='\u2014 mi';atcsEl('atcsChips').innerHTML='';
     atcsEl('atcsBlank').classList.remove('atcs-show');atcsCardSetTeaser(null);return;}
-  var h=atcsHikeAt(atcs.state,i);if(!h){atcs.hike=null;return;}atcs.hike=h; /* [ALLTREKS-AN] */
+  var h=ATCS_SEED[atcs.state].hikes[i];atcs.hike=h;
   atcsSetName(h.name,true); /* the label crawl */
   atcsEl('atcsSub').textContent=ATCS_SEED[atcs.state].name+' \u00B7 '+(atcs.side==='A'?'trailhead \u2192 terminus':'terminus \u2192 trailhead');
   atcsEl('atcsLenTxt').textContent=(h.len!=null?h.len+' mi':'\u2014 mi');
@@ -9773,56 +9717,7 @@ function atcsProfileSource(h){
   return null;
 }
 /* ── [ALLTREKS-FU F1] the On-Trail View card (in-tab, expandable) ── */
-/* ── [ALLTREKS-FU F4] Big-3 parity seam: _fsCtx lets the REAL fullscreen On-Trail View
-     (elevation + map tabs) serve an All Treks hike riding Big-3 geometry. Null = Big-3
-     behavior, untouched. No band, no data → no fullscreen (honest blank tape stands). ── */
-  var _fsCtx = null;
-  function _fsGeoPickFor(tag, kind){
-    var M={AT:{c:'AT_TRAIL_COORDS',w:'AT_WAYPOINTS',r:'AT_RESUPPLY'},
-           PCT:{c:'PCT_TRAIL_COORDS',w:'PCT_WAYPOINTS',r:'PCT_RESUPPLY'},
-           CDT:{c:'CDT_TRAIL_COORDS',w:'CDT_WAYPOINTS',r:'CDT_RESUPPLY'}};
-    var n=M[tag]&&M[tag][kind]; var v=n?window[n]:null; return v||[];
-  }
-  function _fsGeoPick(kind){ return _fsGeoPickFor(_fsCtx&&_fsCtx.tag, kind); }
-  function atcsOpenFullscreen(){
-    var h=atcs.hike; if(!h) return;
-    var b=atcsBig3Band(h), s=atcsProfileSource(h);
-    if(!b||!s){ showToast('Full On-Trail View needs recorded profile data \u2014 this trek is still blank tape.'); return; }
-    _fsCtx={tag:b.tag, trail:b.trail, lo:s.lo, hi:s.hi, name:h.name};
-    var t=document.getElementById('cardFsTitle'); if(t) t.textContent='\uD83D\uDCC8 '+h.name+' \u00B7 On-Trail View';
-    fsShowFullRoute=false;
-    openCardFullscreen();
-  }
-  function atcsAttachScrub(wrap, cv, src, PAD, W, H){
-    if(!wrap||!cv||!src||!src.pts||src.pts.length<2) return;
-    var line=document.createElement('div'); line.className='atcs-scrub-line';
-    var lab=document.createElement('div'); lab.className='atcs-scrub-label';
-    wrap.appendChild(line); wrap.appendChild(lab);
-    var b=atcsBig3Band(atcs.hike)||{};
-    var wps=_fsGeoPickFor(b.tag,'w').filter(function(w){return w[0]>=src.lo&&w[0]<=src.hi;});
-    function show(clientX){
-      var rect=cv.getBoundingClientRect(); var x=clientX-rect.left;
-      var inner=W-PAD.l-PAD.r; var fx=(x-PAD.l)/inner;
-      if(fx<0||fx>1){hide();return;}
-      var mile=src.lo+fx*(src.hi-src.lo);
-      var pt=src.pts.reduce(function(a,q){return Math.abs(q[0]-mile)<Math.abs(a[0]-mile)?q:a;});
-      var near=null; wps.forEach(function(w){ if(!near||Math.abs(w[0]-mile)<Math.abs(near[0]-mile)) near=w; });
-      var nextW=null,nextS=null;
-      wps.forEach(function(w){ if(w[0]>=mile){ if(w[5]===1&&(!nextW||w[0]<nextW[0]))nextW=w; if(w[6]===1&&(!nextS||w[0]<nextS[0]))nextS=w; } });
-      line.style.left=x+'px'; line.style.display='block';
-      var hh='<b>Mile '+(Math.round(mile*10)/10)+'</b> \u00B7 '+Math.round(pt[1]).toLocaleString()+' ft';
-      if(near&&Math.abs(near[0]-mile)<=5){ var ic=(near[5]===1?'\uD83D\uDCA7':'')+(near[6]===1?'\u26FA':''); hh+='<br>'+ic+' '+atcsEsc(String(near[1]))+' \u00B7 mi '+near[0]; }
-      if(nextW) hh+='<br>\uD83D\uDCA7 next water: '+(Math.round((nextW[0]-mile)*10)/10)+' mi';
-      if(nextS) hh+='<br>\u26FA next shelter: '+(Math.round((nextS[0]-mile)*10)/10)+' mi';
-      lab.innerHTML=hh; lab.style.display='block';
-      lab.style.left=Math.min(Math.max(0,x+8), W-155)+'px';
-    }
-    function hide(){ line.style.display='none'; lab.style.display='none'; }
-    cv.addEventListener('pointermove', function(e){ show(e.clientX); });
-    cv.addEventListener('pointerdown', function(e){ show(e.clientX); });
-    cv.addEventListener('pointerleave', hide);
-  }
-  function atcsCardSetTeaser(h){
+function atcsCardSetTeaser(h){
   var card=atcsEl('atcsCard');if(!card)return;
   if(!h){card.style.display='none';atcsCardCollapse();return;}
   card.style.display='';
@@ -9854,13 +9749,12 @@ function atcsCardRender(){
     /* honest blank tape — the recruitment state, never a silent canvas */
     var unmapped=!(h.th&&h.tm&&h.th.lat!=null);
     var pins=unmapped?'Trailhead and terminus not yet pinned.':('Trailhead pinned \u00B7 Terminus pinned'+((h.th&&h.th.conf==='approx')?' (approx)':'')+(h.len!=null?' \u00B7 '+h.len+' mi':''));
-    if(h.custom){ pins='\u2605 Hiker-named trek \u2014 local to this device. '+pins+' <button type="button" class="atcs-share-btn" onclick="atcsShareNewTrek()">Share with TCTP\u2026</button>'; } /* [ALLTREKS-AN] */
     body.innerHTML='<div class="atcs-card-tape"><div class="atcs-tapeline"><i class="l"></i><i class="r"></i></div></div>'+
       '<p class="atcs-card-blanktxt"><b>Blank tape</b> \u2014 no one has recorded this profile yet. Hike it with GPS on and <span class="atcs-recw">your trek writes Side A</span> for every hiker after you.</p>'+
-      '<p class="atcs-card-pins">'+(h.custom?pins:atcsEsc(pins))+'</p>';
+      '<p class="atcs-card-pins">'+atcsEsc(pins)+'</p>';
     return;
   }
-  body.innerHTML='<p class="atcs-card-src">'+atcsEsc(src.label)+'<button type="button" class="atcs-card-fsbtn" onclick="atcsOpenFullscreen()" title="Expand \u2014 full On-Trail View" aria-label="Expand to full screen">\u2922</button></p><div class="atcs-card-wrap"><canvas id="atcsCardCanvas"></canvas></div>';
+  body.innerHTML='<p class="atcs-card-src">'+atcsEsc(src.label)+'</p><div class="atcs-card-wrap"><canvas id="atcsCardCanvas"></canvas></div>';
   var wrap=body.querySelector('.atcs-card-wrap'),cv=atcsEl('atcsCardCanvas');
   var dpr=window.devicePixelRatio||1,W=wrap.clientWidth,H=wrap.clientHeight;
   if(!W||!H)return;
@@ -9890,7 +9784,6 @@ function atcsCardRender(){
   ctx.textAlign='left';ctx.fillStyle='#2d5a27';ctx.font='bold 10px "DM Sans",sans-serif';
   ctx.fillText(Math.round(maxE).toLocaleString()+' ft',W-PAD.r+6,PAD.t+8);
   ctx.fillText(Math.round(minE).toLocaleString()+' ft',W-PAD.r+6,H-PAD.b);
-  atcsAttachScrub(wrap, cv, src, PAD, W, H);
 }
 function atcsBuildTrail(h){
   if(!h||!h.th||!h.tm||h.th.lat==null)return null; /* unmapped: no synthetic trail, no fake curve */
