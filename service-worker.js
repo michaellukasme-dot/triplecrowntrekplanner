@@ -14,7 +14,7 @@
  * ----------------------------------------------------------------------------
  */
 
-const CACHE_VERSION = 'v39';                       // ⬅ bump on meaningful asset changes (v39: SP modal redesign — stories rail, composer counters, emoji pills)
+const CACHE_VERSION = 'v40';                       // ⬅ bump on meaningful asset changes (v40: All Treks Farrah full-function — scrub + fullscreen parity; map polish M-2/6/7/9)
 const SHELL_CACHE  = 'tctp-shell-'  + CACHE_VERSION;
 const ASSET_CACHE  = 'tctp-assets-' + CACHE_VERSION;
 
