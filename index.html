@@ -752,6 +752,7 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .atcs-card-fsbtn:hover{background:#d8e8d4}
 .atcs-scrub-line{display:none;position:absolute;top:0;bottom:0;width:0;border-left:1.5px dashed #4a7c59;pointer-events:none;z-index:4}
 .atcs-scrub-label{display:none;position:absolute;top:6px;max-width:150px;background:#1e3a1e;color:#eaf2e6;font-size:.62rem;line-height:1.4;padding:5px 7px;border-radius:7px;pointer-events:none;z-index:5}
+.atcs-share-btn{margin-left:6px;border:1px solid #6ba368;background:#e8f0e8;color:#1e3a1e;border-radius:7px;font-size:.62rem;font-weight:700;padding:2px 7px;cursor:pointer;font-family:inherit}
 /* ── [H2HC P2] hiker identity spine: sign-in UI ── */
 .h2hc-auth-box{max-width:420px}
 .h2hc-step{display:none}.h2hc-step.on{display:block;animation:atcsFade .3s ease}
@@ -8697,6 +8698,19 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
 </div>
 
 <!-- ── Trail Magic: Confirm action sheet ──────────────────────────── -->
+<!-- ── [ALLTREKS-AN] Add New trek sheet ── -->
+<div class="modal-overlay" id="modal-atcs-new">
+  <div class="modal-box" style="width:min(95vw,420px)">
+    <div class="modal-hdr"><span style="font-size:1.2rem">★</span><h2>Add a New Trek</h2><button class="modal-close" onclick="closeModal('modal-atcs-new')">✕</button></div>
+    <div class="modal-body" style="padding:16px 18px">
+      <p style="font-size:.78rem;line-height:1.5;color:#444;margin:0 0 10px">Name a hike TCTP doesn’t know yet — in <b id="atcsNewState">your state</b>. It lives on this device, under ★ in your trek list. Hike it with GPS tracking on and your recording becomes its first profile.</p>
+      <div class="post-field"><label for="atcsNewName">Trek name</label><input id="atcsNewName" maxlength="60" placeholder="e.g. Sawmill Ridge Loop" style="width:100%;font:inherit;font-size:.9rem;padding:9px 11px;border:1.5px solid #c9d2c9;border-radius:9px"></div>
+      <div class="post-field"><label for="atcsNewLen">Length, miles (optional)</label><input id="atcsNewLen" inputmode="decimal" maxlength="7" placeholder="e.g. 12.5" style="width:140px;font:inherit;font-size:.9rem;padding:9px 11px;border:1.5px solid #c9d2c9;border-radius:9px"></div>
+      <p style="font-size:.64rem;color:#7c8a7c;line-height:1.5;margin:8px 0 12px">Honest-data note: your trek shows a blank tape until a real GPS recording exists — TCTP never draws a curve it doesn’t have.</p>
+      <button class="post-submit" onclick="atcsSaveNewTrek()" style="width:100%">★ Add my trek</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="modal-tm-confirm">
   <div class="modal-box" style="width:min(95vw,420px)">
     <div class="modal-hdr">
@@ -9632,18 +9646,46 @@ var ATCS_BLAZE={"White":{c:"#f4f1ea"},"Orange":{c:"#e8761e"},"Yellow":{c:"#f2c20
 var atcs={hike:null,side:"A",on:false,counter:0,timer:null,recTimer:null,prevTrail:null};
 function atcsEl(id){return document.getElementById(id);}
 function atcsEsc(s){return String(s).replace(/[&<>"']/g,function(m){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m];});}
-function atcsInit(){
+/* ── [ALLTREKS-AN A-NEW] Add New trek: hiker-named, device-local until the GPSG privacy
+     charter clears community submissions. Honest labels everywhere; no fake pins. ── */
+  var ATCS_MYTREKS_KEY='tctp_my_treks';
+  function atcsMyTreks(){ try{ return JSON.parse(localStorage.getItem(ATCS_MYTREKS_KEY)||'{}'); }catch(e){ return {}; } }
+  function atcsSaveMyTreks(o){ try{ localStorage.setItem(ATCS_MYTREKS_KEY, JSON.stringify(o)); }catch(e){} }
+  function atcsHikesFor(state){ var seed=(ATCS_SEED[state]&&ATCS_SEED[state].hikes)||[]; var mine=(atcsMyTreks()[state]||[]); return seed.concat(mine); }
+  function atcsHikeAt(state,i){ var all=atcsHikesFor(state); return all[i]||null; }
+  function atcsOpenNewTrek(){ var nm=atcsEl('atcsNewName'); if(nm)nm.value=''; var ln=atcsEl('atcsNewLen'); if(ln)ln.value=''; var stl=atcsEl('atcsNewState'); if(stl)stl.textContent=(ATCS_SEED[atcs.state]&&ATCS_SEED[atcs.state].name)||atcs.state; openModal('modal-atcs-new'); if(nm)setTimeout(function(){nm.focus();},50); }
+  function atcsSaveNewTrek(){
+    var nm=(atcsEl('atcsNewName').value||'').trim();
+    if(nm.length<3){ showToast('Give your trek a name (3+ characters).'); return; }
+    var lnRaw=(atcsEl('atcsNewLen').value||'').trim(); var ln=lnRaw?parseFloat(lnRaw):null;
+    if(ln!==null&&(!isFinite(ln)||ln<=0||ln>5000)){ showToast('Length looks off \u2014 leave it blank if unsure.'); return; }
+    var slug=nm.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'trek';
+    var h={ id:atcs.state+'-custom-'+slug+'-'+Date.now().toString(36), name:nm, len:ln,
+            blaze:'None', dif:'Unrated', feat:'Hiker-added', th:null, tm:null, custom:true };
+    var mine=atcsMyTreks(); (mine[atcs.state]=mine[atcs.state]||[]).push(h); atcsSaveMyTreks(mine);
+    closeModal('modal-atcs-new');
+    if(typeof atcsFillHikes==='function')atcsFillHikes();
+    var hk=atcsEl('atcsSelHike'); var idx=atcsHikesFor(atcs.state).length-1;
+    if(hk){ hk.value=String(idx); } atcsLoadLabel(idx);
+    showToast('\u2605 '+nm+' added \u2014 yours, on this device. Hike it with GPS on to record Side A.');
+  }
+  function atcsShareNewTrek(){
+    showToast('Community trek submissions open once the privacy charter clears \u2014 your trek and any recording stay on this device until then, by design.');
+  }
+  function atcsInit(){
   var st=atcsEl('atcsSelState'),hk=atcsEl('atcsSelHike');
   if(!st||st.options.length)return;
   atcs.state=atcs.state||'PA';
   st.innerHTML=Object.keys(ATCS_SEED).map(function(c){var s=ATCS_SEED[c];
     return '<option value="'+c+'"'+(c===atcs.state?' selected':'')+'>'+atcsEsc(s.name)+' \u00B7 '+s.hikes.length+(s.hikes.length===1?' trek':' treks')+'</option>';}).join('')+
     ATCS_COMING.map(function(n){return '<option disabled>'+atcsEsc(n)+' \u00B7 coming soon</option>';}).join('');
-  function fillHikes(){hk.innerHTML='<option value="">\u2014 pick your trek \u2014</option>'+
-    ATCS_SEED[atcs.state].hikes.map(function(h,i){return '<option value="'+i+'">'+atcsEsc(h.name)+'</option>';}).join('');}
+  function fillHikes(){var all=atcsHikesFor(atcs.state);hk.innerHTML='<option value="">\u2014 pick your trek \u2014</option>'+
+    all.map(function(h,i){return '<option value="'+i+'">'+(h.custom?'\u2605 ':'')+atcsEsc(h.name)+'</option>';}).join('')+
+    '<option value="__new">\u2795 Add a new trek\u2026</option>';}
+  window.atcsFillHikes=fillHikes; /* [ALLTREKS-AN] */
   fillHikes();
   st.onchange=function(){atcs.state=st.value;fillHikes();atcsLoadLabel(NaN);};
-  hk.onchange=function(){atcsLoadLabel(parseInt(hk.value,10));};
+  hk.onchange=function(){ if(hk.value==='__new'){ hk.value=''; atcsOpenNewTrek(); return; } atcsLoadLabel(parseInt(hk.value,10)); };
   atcsEl('atcsGo').onclick=atcsPlay;
   atcsEl('atcsEject').onclick=function(){atcsStop(false);};
   atcsEl('atcsSideBtn').addEventListener('click',atcsFlip);
@@ -9673,7 +9715,7 @@ function atcsLoadLabel(i){
     atcsEl('atcsSub').textContent=ATCS_SEED[atcs.state].name+' \u00B7 All Treks';
     atcsEl('atcsLenTxt').textContent='\u2014 mi';atcsEl('atcsChips').innerHTML='';
     atcsEl('atcsBlank').classList.remove('atcs-show');atcsCardSetTeaser(null);return;}
-  var h=ATCS_SEED[atcs.state].hikes[i];atcs.hike=h;
+  var h=atcsHikeAt(atcs.state,i);if(!h){atcs.hike=null;return;}atcs.hike=h; /* [ALLTREKS-AN] */
   atcsSetName(h.name,true); /* the label crawl */
   atcsEl('atcsSub').textContent=ATCS_SEED[atcs.state].name+' \u00B7 '+(atcs.side==='A'?'trailhead \u2192 terminus':'terminus \u2192 trailhead');
   atcsEl('atcsLenTxt').textContent=(h.len!=null?h.len+' mi':'\u2014 mi');
@@ -9812,9 +9854,10 @@ function atcsCardRender(){
     /* honest blank tape — the recruitment state, never a silent canvas */
     var unmapped=!(h.th&&h.tm&&h.th.lat!=null);
     var pins=unmapped?'Trailhead and terminus not yet pinned.':('Trailhead pinned \u00B7 Terminus pinned'+((h.th&&h.th.conf==='approx')?' (approx)':'')+(h.len!=null?' \u00B7 '+h.len+' mi':''));
+    if(h.custom){ pins='\u2605 Hiker-named trek \u2014 local to this device. '+pins+' <button type="button" class="atcs-share-btn" onclick="atcsShareNewTrek()">Share with TCTP\u2026</button>'; } /* [ALLTREKS-AN] */
     body.innerHTML='<div class="atcs-card-tape"><div class="atcs-tapeline"><i class="l"></i><i class="r"></i></div></div>'+
       '<p class="atcs-card-blanktxt"><b>Blank tape</b> \u2014 no one has recorded this profile yet. Hike it with GPS on and <span class="atcs-recw">your trek writes Side A</span> for every hiker after you.</p>'+
-      '<p class="atcs-card-pins">'+atcsEsc(pins)+'</p>';
+      '<p class="atcs-card-pins">'+(h.custom?pins:atcsEsc(pins))+'</p>';
     return;
   }
   body.innerHTML='<p class="atcs-card-src">'+atcsEsc(src.label)+'<button type="button" class="atcs-card-fsbtn" onclick="atcsOpenFullscreen()" title="Expand \u2014 full On-Trail View" aria-label="Expand to full screen">\u2922</button></p><div class="atcs-card-wrap"><canvas id="atcsCardCanvas"></canvas></div>';

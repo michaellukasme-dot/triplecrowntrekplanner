@@ -14,7 +14,7 @@
  * ----------------------------------------------------------------------------
  */
 
-const CACHE_VERSION = 'v40';                       // ⬅ bump on meaningful asset changes (v40: All Treks Farrah full-function — scrub + fullscreen parity; map polish M-2/6/7/9)
+const CACHE_VERSION = 'v41';                       // ⬅ bump on meaningful asset changes (v41: v40 + Add New trek — hiker-named, device-local, charter-gated sharing)
 const SHELL_CACHE  = 'tctp-shell-'  + CACHE_VERSION;
 const ASSET_CACHE  = 'tctp-assets-' + CACHE_VERSION;
 
