@@ -14,7 +14,7 @@
  * ----------------------------------------------------------------------------
  */
 
-const CACHE_VERSION = 'v39';                       // ⬅ bump on meaningful asset changes (v39: SP modal redesign — stories rail, composer counters, emoji pills)
+const CACHE_VERSION = 'v43';                       // v43: map-of-dots share tab (PostMind primitive) added
 const SHELL_CACHE  = 'tctp-shell-'  + CACHE_VERSION;
 const ASSET_CACHE  = 'tctp-assets-' + CACHE_VERSION;
 
