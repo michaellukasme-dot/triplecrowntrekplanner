@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<!-- TCTP landing v2 2026-06-18 :: + interactive map-of-dots showcase (trail switch + mile slider, light trail palette); compare table verified 18 Jun 2026 (sizes corrected, trackers grounded in disclosures, size-% row added). -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Triple Crown Trek Planner — Everything a thru-hiker needs. Nothing you have to pay for.</title>
+<meta name="description" content="The free, offline-first planner for the Appalachian Trail, Pacific Crest Trail, and Continental Divide Trail. No account. No install. No ads. No tracking. Ever.">
+<link rel="canonical" href="https://triplecrowntrekplanner.com/website/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1e3a1e; --pine:#2d5a27; --leaf:#6ba368; --moss:#4a7c59;
+  --paper:#f7f4ea; --cream:#fdfcf7; --tan:#e3ddc8; --subtle:#7c8a7c;
+  --blaze:#e8761e; --gold:#c8a84b; --night:#0d1f0d;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);line-height:1.6;
+  background-image:radial-gradient(rgba(45,90,39,.045) 1px, transparent 1.4px);background-size:26px 26px}
+.wrap{max-width:1060px;margin:0 auto;padding:0 22px}
+.serif{font-family:'Playfair Display',serif}
+.mono{font-family:'DM Mono',monospace}
+
+/* ── Masthead ── */
+header{border-bottom:3px double var(--ink);background:var(--cream)}
+.mast{display:flex;align-items:baseline;justify-content:space-between;padding:18px 0;gap:14px;flex-wrap:wrap}
+.mast .brand{font-family:'Playfair Display',serif;font-weight:800;font-size:1.25rem;letter-spacing:.01em}
+.mast .brand .blz{display:inline-block;width:11px;height:18px;background:var(--blaze);border-radius:2px;margin-right:9px;transform:translateY(2px)}
+.mast nav{display:flex;gap:18px;font-size:.8rem;font-weight:700;letter-spacing:.05em}
+.mast nav a{color:var(--pine);text-decoration:none;border-bottom:2px solid transparent}
+.mast nav a:hover{border-color:var(--blaze)}
+.mast .cta{background:var(--ink);color:#fff;padding:8px 16px;border-radius:99px;text-decoration:none;font-weight:700;font-size:.8rem}
+.mast .cta:hover{background:var(--pine)}
+
+/* ── Hero ── */
+.hero{padding:74px 0 30px;position:relative;overflow:hidden}
+.hero h1{font-family:'Playfair Display',serif;font-weight:800;font-size:clamp(2.3rem,6vw,4.3rem);line-height:1.04;max-width:14ch}
+.hero h1 em{font-style:italic;color:var(--pine)}
+.hero .deck{margin:22px 0 0;font-size:clamp(1rem,2vw,1.2rem);max-width:52ch;color:#3a4a3a}
+.hero .deck b{color:var(--ink)}
+.hero .actions{display:flex;gap:14px;margin:30px 0 0;flex-wrap:wrap;align-items:center}
+.btn-go{background:var(--blaze);color:#fff;font-weight:800;font-size:1rem;padding:15px 30px;border-radius:14px;text-decoration:none;box-shadow:0 6px 0 #b85a12;transition:transform .08s,box-shadow .08s}
+.btn-go:hover{transform:translateY(2px);box-shadow:0 4px 0 #b85a12}
+.btn-ghost{color:var(--pine);font-weight:700;text-decoration:none;border-bottom:2px solid var(--leaf);padding-bottom:2px}
+.hero .nopixel{margin-top:26px;font-size:.74rem;color:var(--subtle)}
+.hero-ridge{position:absolute;right:-40px;bottom:-12px;width:min(46vw,460px);opacity:.9;pointer-events:none}
+@media(max-width:760px){.hero-ridge{display:none}}
+
+/* ── Receipt strip (the unforgettable bit) ── */
+.receipt{background:var(--night);color:#eaf2e6;padding:46px 0 50px;margin-top:60px;
+  border-top:4px solid var(--blaze);border-bottom:4px solid var(--blaze)}
+.receipt h2{font-family:'Playfair Display',serif;font-size:clamp(1.4rem,3vw,2rem);margin-bottom:8px}
+.receipt .sub{color:#9fb89a;font-size:.85rem;margin-bottom:28px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.stat{border:1px dashed rgba(159,184,154,.5);border-radius:14px;padding:20px 18px;background:rgba(255,255,255,.03)}
+.stat .big{font-family:'DM Mono',monospace;font-size:clamp(1.7rem,3.6vw,2.5rem);font-weight:500;color:#fff;line-height:1.1}
+.stat .big .hl{color:var(--gold)}
+.stat .lbl{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:#9fb89a;margin-top:8px}
+.stat .ftn{font-size:.68rem;color:#7e9479;margin-top:6px;line-height:1.45}
+
+/* ── Features ── */
+.features{padding:70px 0 24px}
+.kick{font-size:.72rem;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--blaze);margin-bottom:10px}
+.features h2{font-family:'Playfair Display',serif;font-size:clamp(1.6rem,3.4vw,2.4rem);max-width:24ch;line-height:1.15}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:36px}
+.fcard{background:var(--cream);border:1.5px solid var(--tan);border-radius:16px;padding:22px 20px;position:relative}
+.fcard:nth-child(odd){transform:rotate(-.35deg)}
+.fcard:nth-child(even){transform:rotate(.3deg)}
+.fcard h3{font-family:'Playfair Display',serif;font-size:1.08rem;margin-bottom:8px}
+.fcard p{font-size:.84rem;color:#3a4a3a}
+.fcard .emo{font-size:1.4rem;display:block;margin-bottom:10px}
+
+/* ── Comparison table ── */
+.compare{padding:60px 0 30px}
+.compare .tablewrap{overflow-x:auto;margin-top:30px;border:2px solid var(--ink);border-radius:14px;background:var(--cream)}
+table{width:100%;border-collapse:collapse;font-size:.84rem;min-width:640px}
+th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--tan)}
+thead th{background:var(--ink);color:#fff;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase}
+thead th:first-child{width:34%}
+tbody tr:nth-child(even){background:rgba(45,90,39,.045)}
+td.us{font-weight:700;color:var(--pine)}
+td .y{color:var(--pine);font-weight:800}
+td .n{color:#b5451b;font-weight:800}
+td .p{color:var(--gold);font-weight:800}
+.compare .src{font-size:.66rem;color:var(--subtle);margin-top:10px}
+
+/* ── Honesty band ── */
+.honesty{background:var(--cream);border-top:3px double var(--ink);border-bottom:3px double var(--ink);padding:54px 0;margin-top:50px}
+.honesty blockquote{font-family:'Playfair Display',serif;font-style:italic;font-size:clamp(1.2rem,2.8vw,1.8rem);max-width:34ch;line-height:1.35}
+.honesty cite{display:block;margin-top:16px;font-style:normal;font-family:'DM Sans',sans-serif;font-size:.78rem;color:var(--subtle)}
+
+/* ── Footer ── */
+footer{padding:46px 0 60px}
+.foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:flex-start}
+.foot .col{font-size:.8rem;color:#3a4a3a;max-width:40ch}
+.foot a{color:var(--pine)}
+.foot .fin{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--subtle);margin-top:8px}
+
+/* ── Reveal animation ── */
+@media (prefers-reduced-motion: no-preference){
+  .reveal{opacity:0;transform:translateY(14px);animation:rise .7s ease forwards}
+  .reveal.d1{animation-delay:.08s}.reveal.d2{animation-delay:.18s}.reveal.d3{animation-delay:.3s}
+  @keyframes rise{to{opacity:1;transform:none}}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap mast">
+    <span class="brand"><span class="blz"></span>Triple Crown Trek Planner</span>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#compare">vs. the paid apps</a>
+      <a href="#trailmap">Trail map</a>
+      <a href="#honesty">Our deal</a>
+    </nav>
+    <a class="cta" href="/">Open the planner →</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <h1 class="reveal serif">Plan the <em>whole trail.</em><br>Pay for none of it.</h1>
+    <p class="deck reveal d1">The offline-first planner for the <b>Appalachian Trail</b>, <b>Pacific Crest Trail</b>, and <b>Continental Divide Trail</b> — itineraries, elevation, maps, water, shelters, resupply, trail magic, and hiking partners. <b>No account. No install. No ads. No subscription. Ever.</b></p>
+    <div class="actions reveal d2">
+      <a class="btn-go" href="/">Start planning — it's a URL</a>
+      <a class="btn-ghost" href="#compare">See the receipts ↓</a>
+    </div>
+    <p class="nopixel reveal d3">No pixels. No retargeting. If you've seen our ad, somebody's lying.</p>
+    <svg class="hero-ridge" viewBox="0 0 460 220" aria-hidden="true">
+      <polyline points="0,200 40,150 75,170 120,95 160,130 205,60 250,110 290,75 340,140 380,100 460,180"
+        fill="none" stroke="#2d5a27" stroke-width="3" stroke-linejoin="round"/>
+      <polyline points="0,210 60,180 110,195 170,150 230,175 300,135 360,170 460,200"
+        fill="none" stroke="#6ba368" stroke-width="2" opacity=".6"/>
+      <circle cx="205" cy="60" r="5" fill="#e8761e"/>
+    </svg>
+  </section>
+
+  <section class="receipt">
+    <div class="wrap">
+      <h2 class="serif">The receipts.</h2>
+      <p class="sub">What it costs to be trail-ready, offline, for one AT thru-hike.</p>
+      <div class="stats">
+        <div class="stat"><div class="big"><span class="hl">$0</span></div>
+          <div class="lbl">TCTP — forever</div>
+          <div class="ftn">Donation buttons go straight to the trail conservancies, not to us.</div></div>
+        <div class="stat"><div class="big">$36<span class="hl">/yr</span></div>
+          <div class="lbl">AllTrails Plus, minimum</div>
+          <div class="ftn">Offline maps are a paid tier. Free tier carries ads.</div></div>
+        <div class="stat"><div class="big">$74.99</div>
+          <div class="lbl">FarOut AT guide</div>
+          <div class="ftn">Per trail — or a subscription for the catalog.</div></div>
+        <div class="stat"><div class="big"><span class="hl">0 bytes</span></div>
+          <div class="lbl">Our install size</div>
+          <div class="ftn">It's a URL. The whole app is smaller than one of their screenshots — and it's already offline-ready.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features wrap" id="features">
+    <p class="kick">Built for the thru-hike, not the day hike</p>
+    <h2 class="serif">Three trails. One file. Everything that matters at mile 1,276.</h2>
+    <div class="fgrid">
+      <div class="fcard"><span class="emo">📅</span><h3>A real itinerary engine</h3>
+        <p>Pace, zero days, town breaks, end-date math — plan Springer to Katahdin or any segment between any two waypoints, then download the PDF. Free.</p></div>
+      <div class="fcard"><span class="emo">📈</span><h3>On-Trail View</h3>
+        <p>Full elevation profiles with every water source, shelter, and resupply pinned to its mile — plus a live GPS dot that knows your trail mile. Expand to full screen: profile and map, side by side.</p></div>
+      <div class="fcard"><span class="emo">🗺</span><h3>Honest maps</h3>
+        <p>Your segment on a real map with a real trail line. Lost the blaze? One tap opens maximum-zoom satellite on your exact position. And when you have zero bars, the data that matters never needed the internet anyway.</p></div>
+      <div class="fcard"><span class="emo">💧</span><h3>Water intel from hikers ahead</h3>
+        <p>Condition reports color the sources — flowing, fair, dry — on the profile and the map. Know before you carry.</p></div>
+      <div class="fcard"><span class="emo">🥾</span><h3>The Hiker Board</h3>
+        <p>The only real partner-finder in thru-hiking: direction, pace, dates, gear style. Find your trail family before the approach trail.</p></div>
+      <div class="fcard"><span class="emo">✨</span><h3>Trail Magic</h3>
+        <p>Trail Angels list what they offer at which road crossing; hikers find magic nearest-first. Nobody else has this. We checked.</p></div>
+      <div class="fcard"><span class="emo">⭐</span><h3>All Treks — every state</h3>
+        <p>76 named treks across all 50 states, honestly tiered: real geometry where we have it, a blank tape where we don't — and your GPS recording can write a trek's first profile. Don't see your trail? Add it.</p></div>
+      <div class="fcard"><span class="emo">🤫</span><h3>Privacy as architecture</h3>
+        <p>Plans live on your device. Your GPS position never leaves your phone. No analytics, no ad pixels, no data sales. We couldn't track you if we wanted to — so we built it so we can't want to.</p></div>
+    </div>
+  </section>
+
+  
+  <section class="trailmap wrap" id="trailmap">
+    <p class="kick">Your trail, in your pocket — and shareable</p>
+    <h2 class="serif">The map that traces itself.</h2>
+    <p style="max-width:56ch;color:#3a4a3a;margin-top:10px">Every shelter, resupply, and landmark on real coordinates, connected in trail order — so the line <em>is</em> the trail. Drag your mile and the path fills in behind you. This is the live component, built right into the planner's share card.</p>
+    <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin:20px 0 4px">
+      <label style="font-size:.75rem;font-weight:700;color:var(--pine)">Trail
+        <select id="lp-trail" style="margin-left:6px;font-family:inherit;font-size:.82rem;padding:5px 9px;border:1.5px solid var(--tan);border-radius:9px;background:var(--cream);color:var(--ink);font-weight:700"><option>AT</option><option>PCT</option><option>CDT</option></select></label>
+      <label style="flex:1;min-width:180px;font-size:.75rem;font-weight:700;color:var(--pine);display:flex;align-items:center;gap:10px">Your mile
+        <input type="range" id="lp-mile" min="0" max="2192" value="1024" step="1" style="flex:1;accent-color:var(--blaze);height:4px">
+        <span id="lp-mileout" class="mono" style="color:var(--ink);min-width:70px;text-align:right">1024 mi</span></label>
+    </div>
+    <div style="display:flex;gap:30px;flex-wrap:wrap;align-items:flex-start;margin-top:14px">
+      <div id="lp-map" style="width:min(360px,92vw)"></div>
+      <div style="max-width:32ch">
+        <p style="font-size:.95rem;color:#3a4a3a">277 real AT waypoints, the 14 state crossings called out, your progress in pine and the miles ahead dashed. One tap saves it as an image to share.</p>
+        <p style="margin-top:16px"><a class="btn-ghost" href="/#guides">Free trail guides &amp; user manuals (PDF) →</a></p>
+      </div>
+    </div>
+    <p class="src" style="margin-top:16px">Live demo on real trail geometry. Slide to any mile. Your real position never leaves your phone — this is just the picture you choose to share.</p>
+  </section>
+
+  <section class="compare wrap" id="compare">
+    <p class="kick">Side by side, checked feature by feature</p>
+    <h2 class="serif">We made the comparison table they won't.</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>For a Triple Crown hiker</th><th>TCTP</th><th>AllTrails</th><th>FarOut</th></tr></thead>
+        <tbody>
+          <tr><td>Price for an offline AT thru-hike</td><td class="us">$0</td><td>$36/yr+</td><td>$74.99</td></tr>
+          <tr><td>Thru-hike itinerary engine (pace, zeros, end date)</td><td class="us"><span class="y">✓</span></td><td><span class="n">✗</span></td><td><span class="p">partial</span></td></tr>
+          <tr><td>Works fully offline, free</td><td class="us"><span class="y">✓ by architecture</span></td><td><span class="n">paid tier</span></td><td><span class="p">after purchase</span></td></tr>
+          <tr><td>Account required to plan</td><td class="us"><span class="y">none</span></td><td><span class="n">yes (free)</span></td><td><span class="p">for purchases</span></td></tr>
+          <tr><td>App-store install required</td><td class="us"><span class="y">none — it's a URL</span></td><td><span class="n">yes</span></td><td><span class="n">yes</span></td></tr>
+          <tr><td>App size on your device</td><td class="us"><span class="y">~730 KB · one file</span></td><td><span class="n">~291 MB</span></td><td><span class="n">~186 MB + guides</span></td></tr>
+          <tr><td>How much smaller TCTP is</td><td class="us"><span class="y">—</span></td><td><span class="y">99.8% smaller</span></td><td><span class="y">99.6% smaller</span></td></tr>
+          <tr><td>Printable trek plan (PDF)</td><td class="us"><span class="y">✓ free</span></td><td><span class="p">paid</span></td><td><span class="n">✗</span></td></tr>
+          <tr><td>Hiking-partner matching</td><td class="us"><span class="y">✓ unique</span></td><td><span class="n">✗</span></td><td><span class="n">✗</span></td></tr>
+          <tr><td>Trail Magic marketplace</td><td class="us"><span class="y">✓ unique</span></td><td><span class="n">✗</span></td><td><span class="n">✗</span></td></tr>
+          <tr><td>Ads on the free experience</td><td class="us"><span class="y">never</span></td><td><span class="n">yes</span></td><td><span class="y">no</span></td></tr>
+          <tr><td>Third-party ad / analytics trackers</td><td class="us"><span class="y">none</span></td><td><span class="n">Facebook + Google ad SDKs</span></td><td><span class="n">tracks across apps</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src">Pricing and platform facts verified 18 June 2026 from each company's App Store listing, support pages, and published privacy disclosures; both are excellent products for what they're built for — they're just not built for this. Corrections welcome.</p>
+  </section>
+
+  <section class="honesty" id="honesty">
+    <div class="wrap">
+      <blockquote class="serif">"Sample data is labeled sample. Blank tapes stay blank until a real hiker records them. We never draw a curve we don't have — and we never will."
+        <cite>— The honest-data rules this planner is built on. They're not marketing; they're the build gates.</cite>
+      </blockquote>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div class="col">
+      <b>Triple Crown Trek Planner</b><br>
+      Free forever. Built by one hiker and kept free by the honor system — optional donations go directly to the ATC, PCTA, and CDTC.
+      <div class="fin">~730 KB of app · 7,000+ miles of trail · 0 trackers</div>
+    </div>
+    <div class="col">
+      <a href="/">Open the planner →</a><br>
+      <a href="/#guides">Free trail guides &amp; user manuals (PDF)</a><br>
+      <a href="#trailmap">See a live trail map ↓</a><br>
+      <span style="font-size:.7rem;color:var(--subtle)">© 2026 Triple Crown Trek Planner</span>
+    </div>
+  </div>
+</footer>
+
+
+<!-- map-of-dots interactive showcase (PostMind primitive v0.2 + TCTP adapter) — 2026-06-18 -->
+<script>/*PMMD comp sha:28866eba4aaf47e96e83ce5191e5bb2e48cad3c8b4eda1ec0e73e39aa9c84dda*/
+/* ============================================================================
+ * PostMind — MAP-OF-DOTS  ·  shared primitive  ·  v0.2  ·  2026-06-18
+ * v0.2 adds: progressIndex -> two-tone connecting path (completed vs ahead),
+ * for "my progress" share maps. Back-compatible with v0.1 (progressIndex
+ * optional; omit it and behaviour is identical to v0.1).
+ * Frameworkless, offline, zero-dependency. No tiles, no external libs.
+ *
+ * API
+ *   PostMindMapDots.buildSVG(config) -> svgString            (pure; headless-safe)
+ *   PostMindMapDots.render(el, config) -> { svg, exportPNG }  (browser; DOM + PNG)
+ * config = {
+ *   title, subtitle, brand='PostMind',
+ *   points: [{ lat, lon, label?, kind? }]   kind: 'dot'|'milestone'|'here'
+ *   connect=false,            // path through points in order
+ *   progressIndex=-1,         // NEW: index of current position; path[0..i]=done, [i..]=ahead
+ *   width=1080, height=1350, theme={}
+ * }
+ * Honest-state: points plotted by TRUE lat/lon. No invented landmass outline;
+ * reference frame = faint graticule + the path. Basemap outline is a future,
+ * SOURCED enhancement.
+ * ========================================================================== */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.PostMindMapDots = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var THEME = {
+    bg:'#0f1115', panel:'#161922', grid:'#262b38',
+    line:'#7aa2ff',      // trail ahead / default route
+    done:'#4ade80',      // completed portion
+    dot:'#8b93a7', milestone:'#ffd166', here:'#4ade80',
+    text:'#e8ebf2', sub:'#9aa3b5', accent:'#7aa2ff'
+  };
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function num(n){ return Math.round(n*100)/100; }
+
+  function makeProjector(points, w, h, pad){
+    var lats=points.map(function(p){return p.lat;}), lons=points.map(function(p){return p.lon;});
+    var minLat=Math.min.apply(null,lats), maxLat=Math.max.apply(null,lats);
+    var minLon=Math.min.apply(null,lons), maxLon=Math.max.apply(null,lons);
+    var kx=Math.cos(((minLat+maxLat)/2)*Math.PI/180)||1;
+    var x0=minLon*kx, y1=maxLat;
+    var dx=((maxLon-minLon)*kx)||1, dy=(maxLat-minLat)||1;
+    var availW=w-2*pad, availH=h-2*pad;
+    var s=Math.min(availW/dx, availH/dy);
+    var offX=pad+(availW-dx*s)/2, offY=pad+(availH-dy*s)/2;
+    return function(lat,lon){ return [num(offX+(lon*kx-x0)*s), num(offY+(y1-lat)*s)]; };
+  }
+
+  function buildSVG(cfg){
+    cfg = cfg||{};
+    var t = Object.assign({}, THEME, cfg.theme||{});
+    var W=cfg.width||1080, H=cfg.height||1350;
+    var pts=(cfg.points||[]).filter(function(p){return isFinite(p.lat)&&isFinite(p.lon);});
+    var pad=Math.round(W*0.11);
+    var headerH=Math.round(H*0.13), footerH=Math.round(H*0.07);
+    var mapTop=headerH, mapBottom=H-footerH;
+    var proj=pts.length?makeProjector(pts,W,(mapBottom-mapTop),pad):function(){return [W/2,H/2];};
+    function P(p){ var xy=proj(p.lat,p.lon); return [xy[0], xy[1]+mapTop]; }
+    var pi = (typeof cfg.progressIndex==='number') ? cfg.progressIndex : -1;
+
+    var o=[];
+    o.push('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" style="max-width:100%;height:auto;display:block" role="img" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">');
+    o.push('<title>'+esc(cfg.title||'Map of dots')+'</title><desc>'+pts.length+' points plotted by latitude and longitude'+(cfg.connect?', connected in order':'')+'.</desc>');
+    o.push('<rect width="'+W+'" height="'+H+'" fill="'+t.bg+'"/>');
+    o.push('<rect x="'+(pad*0.4)+'" y="'+mapTop+'" width="'+(W-pad*0.8)+'" height="'+(mapBottom-mapTop)+'" rx="18" fill="'+t.panel+'"/>');
+    if(pts.length){
+      var lats=pts.map(function(p){return p.lat;}), lons=pts.map(function(p){return p.lon;});
+      var loLat=Math.floor(Math.min.apply(null,lats)), hiLat=Math.ceil(Math.max.apply(null,lats));
+      var loLon=Math.floor(Math.min.apply(null,lons)), hiLon=Math.ceil(Math.max.apply(null,lons));
+      var sLat=Math.max(1,Math.round((hiLat-loLat)/6)), sLon=Math.max(1,Math.round((hiLon-loLon)/6));
+      for(var la=loLat; la<=hiLat; la+=sLat){ var a=P({lat:la,lon:loLon}),b=P({lat:la,lon:hiLon});
+        o.push('<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="'+t.grid+'" stroke-width="1"/>'); }
+      for(var lo=loLon; lo<=hiLon; lo+=sLon){ var c=P({lat:loLat,lon:lo}),d=P({lat:hiLat,lon:lo});
+        o.push('<line x1="'+c[0]+'" y1="'+c[1]+'" x2="'+d[0]+'" y2="'+d[1]+'" stroke="'+t.grid+'" stroke-width="1"/>'); }
+    }
+    if(cfg.connect && pts.length>1){
+      function seg(a,b){ return pts.slice(a,b).map(function(p,i){ var xy=P(p); return (i?'L':'M')+xy[0]+' '+xy[1]; }).join(' '); }
+      if(pi>0 && pi<pts.length){
+        o.push('<path d="'+seg(0,pi+1)+'" fill="none" stroke="'+t.done+'" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>');
+        o.push('<path d="'+seg(pi,pts.length)+'" fill="none" stroke="'+t.line+'" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round" opacity="0.7"/>');
+      } else {
+        o.push('<path d="'+seg(0,pts.length)+'" fill="none" stroke="'+t.line+'" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/>');
+      }
+    }
+    pts.forEach(function(p){
+      var xy=P(p), kind=p.kind||'dot';
+      var r=kind==='here'?13:kind==='milestone'?8:5;
+      var fill=kind==='here'?t.here:kind==='milestone'?t.milestone:t.dot;
+      if(kind==='here') o.push('<circle cx="'+xy[0]+'" cy="'+xy[1]+'" r="'+(r+9)+'" fill="'+fill+'" opacity="0.18"/>');
+      o.push('<circle cx="'+xy[0]+'" cy="'+xy[1]+'" r="'+r+'" fill="'+fill+'" stroke="'+t.bg+'" stroke-width="2"/>');
+      if(p.label && (kind==='milestone'||kind==='here'))
+        o.push('<text x="'+(xy[0]+r+6)+'" y="'+(xy[1]+5)+'" fill="'+t.text+'" font-size="'+(kind==='here'?22:18)+'" font-weight="'+(kind==='here'?700:600)+'">'+esc(p.label)+'</text>');
+    });
+    o.push('<text x="'+(pad*0.6)+'" y="'+(headerH*0.46)+'" fill="'+t.text+'" font-size="46" font-weight="800">'+esc(cfg.title||'')+'</text>');
+    if(cfg.subtitle) o.push('<text x="'+(pad*0.6)+'" y="'+(headerH*0.78)+'" fill="'+t.sub+'" font-size="25" font-weight="500">'+esc(cfg.subtitle)+'</text>');
+    o.push('<text x="'+(pad*0.6)+'" y="'+(H-footerH*0.35)+'" fill="'+t.sub+'" font-size="22" font-weight="600">'+esc(cfg.brand||'PostMind')+'</text>');
+    o.push('<text x="'+(W-pad*0.6)+'" y="'+(H-footerH*0.35)+'" fill="'+t.sub+'" font-size="22" text-anchor="end">'+pts.length+' points</text>');
+    o.push('</svg>');
+    return o.join('');
+  }
+
+  function render(el, cfg){
+    var svg=buildSVG(cfg);
+    if(el && el.innerHTML!==undefined) el.innerHTML=svg;
+    function exportPNG(filename, scale){
+      scale=scale||2; var W=(cfg.width||1080), H=(cfg.height||1350);
+      var img=new Image(), blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'}), url=URL.createObjectURL(blob);
+      img.onload=function(){ var c=document.createElement('canvas'); c.width=W*scale; c.height=H*scale;
+        var x=c.getContext('2d'); x.scale(scale,scale); x.drawImage(img,0,0); URL.revokeObjectURL(url);
+        var a=document.createElement('a'); a.download=filename||'map-of-dots.png'; a.href=c.toDataURL('image/png'); a.click(); };
+      img.src=url;
+    }
+    return { svg:svg, exportPNG:exportPNG };
+  }
+
+  return { VERSION:'v0.2', THEME:THEME, buildSVG:buildSVG, render:render };
+});
+
+</script>
+<script>/*PMMD adapter sha:ae3aa85268141338a7102c2e6f143270f5aff06c9c321c365bb64dbb36ed50ea*/
+/* ============================================================================
+ * TCTP -> Map-of-Dots ADAPTER  ·  v0.1  ·  2026-06-18
+ * Turns TCTP's real waypoint rows [mile, name, state, lat, lon] into a config
+ * for PostMindMapDots. Honest milestones only: the two termini + the FIRST
+ * appearance of each state (state-boundary crossings) get labels — derived from
+ * mile + state, NOT from the seed's ambiguous flag columns (those are left for a
+ * future pass once their semantics are confirmed). The waypoint nearest the
+ * hiker's currentMile becomes the 'here' marker + progressIndex (two-tone path).
+ *
+ * tctpDotSet(rows, opts) -> config for PostMindMapDots.buildSVG/render
+ *   rows : [[mile,name,state,lat,lon], ...]   (any order; sorted by mile here)
+ *   opts : { trail:'AT'|'PCT'|'CDT', currentMile?:Number, title?, brand? }
+ * ========================================================================== */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.tctpDotSet = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  var TRAIL_NAME = { AT:'Appalachian Trail', PCT:'Pacific Crest Trail', CDT:'Continental Divide Trail' };
+
+  return function tctpDotSet(rows, opts){
+    opts = opts || {};
+    rows = (rows||[]).filter(function(r){ return isFinite(r[3]) && isFinite(r[4]); })
+                     .slice().sort(function(a,b){ return a[0]-b[0]; });
+    if(!rows.length) return { title: opts.title||'TCTP', points: [], connect:true };
+
+    var seen = {}, pts = [], hereIdx = -1, bestD = Infinity;
+    rows.forEach(function(r,i){
+      var mile=r[0], name=r[1], st=r[2], lat=r[3], lon=r[4];
+      var terminus = (i===0 || i===rows.length-1);
+      var firstInState = !seen[st]; seen[st]=1;
+      var kind='dot', label;
+      if(terminus){ kind='milestone'; label=name; }
+      else if(firstInState){ kind='milestone'; label=st; }   // state code at first crossing
+      pts.push({ lat:lat, lon:lon, kind:kind, label:label, mile:mile, name:name, state:st });
+      if(opts.currentMile!=null){ var dd=Math.abs(mile-opts.currentMile); if(dd<bestD){ bestD=dd; hereIdx=i; } }
+    });
+
+    var progressIndex=-1, subtitle;
+    if(hereIdx>=0){
+      pts[hereIdx].kind='here'; pts[hereIdx].label=pts[hereIdx].name; progressIndex=hereIdx;
+      var total=rows[rows.length-1][0], pct=Math.round((pts[hereIdx].mile/total)*100);
+      subtitle='Mile '+Math.round(pts[hereIdx].mile)+' of '+Math.round(total)+' · '+pct+'% · at '+pts[hereIdx].name;
+    } else {
+      subtitle=rows.length+' waypoints · '+rows[0][2]+' to '+rows[rows.length-1][2];
+    }
+    var trail = opts.trail || '';
+    return {
+      title: opts.title || ((TRAIL_NAME[trail]||trail||'Trek') + (opts.currentMile!=null?' — my progress':'')),
+      subtitle: subtitle,
+      brand: opts.brand || ('PostMind · TCTP'+(trail?(' · '+trail):'')),
+      points: pts, connect: true, progressIndex: progressIndex
+    };
+  };
+});
+
+</script>
+<script>
+var TCTP_LP={"AT":[[8.1,"Hawk Mountain Shelter","GA",34.666,-84.1363],[15.8,"Gooch Mountain Shelter","GA",34.6557,-84.0499],[27.7,"Woods Hole Shelter","GA",34.7372,-83.9549],[28.9,"Blood Mountain Shelter","GA",34.74,-83.9374],[38,"Whitley Gap Shelter","GA",34.7125,-83.8343],[43,"Low Gap Shelter","GA",34.7763,-83.8246],[50.3,"Blue Mountain Shelter","GA",34.8172,-83.7667],[58.4,"Tray Mountain Shelter","GA",34.8041,-83.6768],[65.8,"Deep Gap Shelter","GA",34.8825,-83.6461],[73.9,"Plumorchard Gap Shelter","GA",34.9462,-83.5882],[81.2,"Muskrat Creek Shelter","NC",35.0207,-83.5815],[86.1,"Standing Indian Shelter","NC",35.0355,-83.5481],[93.7,"Carter Gap Shelter (new)","NC",35,-83.4948],[93.7,"Carter Gap Shelter (old)","NC",34.999,-83.4942],[102.4,"Long Branch Shelter","NC",35.0704,-83.501],[105.9,"Rock Gap Shelter","NC",35.0915,-83.523],[113.2,"Siler Bald Shelter","NC",35.1442,-83.5725],[120.6,"Wayah Shelter","NC",35.1358,-83.5581],[125.4,"Cold Spring Shelter","NC",35.231,-83.5597],[131.2,"Wesser Bald Shelter","NC",35.2825,-83.5821],[136.1,"A. Rufus Morgan Shelter","NC",35.3243,-83.5901],[144,"Sassafras Gap Shelter","NC",35.3308,-83.6669],[153.1,"Brown Fork Gap Shelter","NC",35.3743,-83.7338],[159.4,"Cable Gap Shelter","NC",35.4153,-83.7735],[166.2,"Fontana Dam Shelter","NC",35.4484,-83.794],[178,"Mollies Ridge Shelter","TN",35.5459,-83.7935],[181.1,"Russell Field Shelter","TN",35.5618,-83.7665],[184,"Spence Field Shelter","NC",35.5619,-83.7326],[190.1,"Derrick Knob Shelter","TN",35.5663,-83.6418],[195.8,"Silers Bald Shelter","NC",35.5643,-83.5682],[197.5,"Double Spring Gap Shelter","NC",35.5653,-83.5427],[203.1,"Mt. Collins Shelter","TN",35.5939,-83.4713],[211.1,"Icewater Spring Shelter","NC",35.6298,-83.3863],[218.5,"Pecks Corner Shelter","NC",35.6508,-83.3085],[223.7,"Tricorner Knob Shelter","NC",35.6938,-83.2565],[231.4,"Cosby Knob Shelter","NC",35.7272,-83.1821],[238.3,"Davenport Gap Shelter","TN",35.7693,-83.1235],[249,"Groundhog Creek Shelter","NC",35.7818,-83.0262],[257.3,"Roaring Fork Shelter","NC",35.8224,-82.9385],[262.1,"Walnut Mountain Shelter See Note","TN",35.8366,-82.9365],[272.1,"Deer Park Mountain Shelter","NC",35.8759,-82.8612],[286.2,"Spring Mountain Shelter","TN",35.9516,-82.7901],[294.8,"Little Laurel Shelter","NC",36.0151,-82.7358],[302.1,"Jerry's Cabin Shelter","NC",36.0566,-82.6572],[308.8,"Flint Mountain Shelter","NC",36.0349,-82.5967],[317.6,"Hogback Ridge Shelter","NC",35.9641,-82.587],[327.7,"Bald Mountain Shelter","TN",36.0001,-82.4782],[338.3,"No Business Knob Shelter","TN",36.0669,-82.4334],[348.8,"Curley Maple Gap Shelter","TN",36.1043,-82.3968],[361.7,"Cherry Gap Shelter","TN",36.1293,-82.264],[370.8,"Clyde Smith Shelter","TN",36.1485,-82.1612],[379.3,"Roan High Knob Shelter","TN",36.105,-82.1225],[384.5,"Stan Murray Shelter","NC",36.1124,-82.0657],[386.4,"Overmountain Shelter *** CLOSED / DEMOLISHED *** camping still allowed","NC",36.1236,-82.0543],[404.4,"Mountaineer Falls Shelter","TN",36.2202,-81.9857],[414,"Moreland Gap Shelter","TN",36.2202,-82.0884],[422.2,"Laurel Fork Shelter (see Notes)","TN",36.2786,-82.1362],[438,"Vandeventer Shelter","TN",36.367,-82.0588],[444.8,"Iron Mountain Shelter","TN",36.4356,-81.9909],[452.5,"Double Springs Shelter","TN",36.5091,-81.9861],[460.8,"Abingdon Gap Shelter","TN",36.5811,-81.9021],[480.5,"Saunders Shelter","VA",36.6378,-81.713],[487,"Lost Mountain Shelter","VA",36.6441,-81.6561],[499.4,"Thomas Knob Shelter","VA",36.6566,-81.5352],[504.5,"Wise Shelter","VA",36.654,-81.4984],[510.5,"Old Orchard Shelter","VA",36.6833,-81.5111],[515.4,"Hurricane Mountain Shelter","VA",36.7043,-81.5538],[524.6,"Trimpi Shelter","VA",36.7493,-81.4804],[534.4,"Partnership Shelter","VA",36.8095,-81.4224],[541.4,"Chatfield Shelter","VA",36.85,-81.3631],[548.8,"Davis Path campsite","VA",36.9145,-81.3767],[560.7,"Knot Maul Branch Shelter","VA",37.0007,-81.4044],[570.1,"Chestnut Knob Shelter","VA",37.0578,-81.3993],[580.8,"Jenkins Shelter","VA",37.0935,-81.2476],[594.3,"Helveys Mill Shelter","VA",37.1327,-81.1042],[604,"Jenny Knob Shelter","VA",37.1551,-80.9801],[618.5,"Wapiti Shelter","VA",37.224,-80.8239],[628,"Docs Knob Shelter","VA",37.2703,-80.8362],[644.5,"Rice Field Shelter","VA",37.3749,-80.7583],[657,"Pine Swamp Branch Shelter","VA",37.4221,-80.6114],[660.9,"Bailey Gap Shelter","VA",37.4009,-80.577],[669.7,"War Spur Shelter","VA",37.3976,-80.4738],[675.5,"Laurel Creek Shelter","VA",37.359,-80.421],[682.1,"Sarver Hollow Shelter","VA",37.3554,-80.3352],[688.1,"Niday Shelter","VA",37.3875,-80.2642],[698.2,"Pickle Branch Shelter","VA",37.3881,-80.1911],[711.8,"Johns Spring (Boy Scout) Shelter","VA",37.3854,-80.0739],[712.8,"Catawba Mountain Shelter","VA",37.3883,-80.0572],[715.2,"Campbell Shelter","VA",37.3909,-80.0293],[721.2,"Lamberts Meadow Shelter","VA",37.4346,-79.9876],[735.6,"Fullhardt Knob Shelter","VA",37.3985,-79.8537],[741.8,"Wilson Creek Shelter","VA",37.4193,-79.7855],[749.1,"Bobblets Gap Shelter","VA",37.4673,-79.7012],[755.6,"Cove Mountain Shelter","VA",37.5118,-79.6508],[762.6,"Bryant Ridge Shelter","VA",37.5301,-79.5853],[767.5,"Cornelius Creek Shelter","VA",37.494,-79.547],[772.8,"Thunder Hill Shelter","VA",37.5274,-79.504],[785.4,"Matts Creek Shelter","VA",37.5995,-79.4132],[787.6,"Glasgow Town Shelter 1429-1437 Kanawha St Glasgow, VA 24555","VA",37.6292,-79.7377],[789.3,"Johns Hollow Shelter","VA",37.6131,-79.3918],[798.1,"Punchbowl Shelter","VA",37.6778,-79.3385],[807.6,"Brown Mountain Creek Shelter","VA",37.7103,-79.2679],[813.2,"Cow Camp Shelter","VA",37.7467,-79.2131],[823.4,"Seeley-Woodworth Shelter","VA",37.819,-79.1549],[830,"The Priest Shelter","VA",37.8178,-79.0703],[837.6,"Harpers Creek Shelter","VA",37.8565,-79.001],[843.8,"Maupin Field Shelter","VA",37.8849,-78.9936],[859.8,"Paul C. Wolfe Shelter","VA",37.9857,-78.8837],[872.3,"Calf Mountain Shelter","VA",38.0856,-78.7866],[885.3,"Blackrock Hut","VA",38.2141,-78.7424],[898.5,"Pinefield Hut","VA",38.2906,-78.6457],[906.7,"Hightop Hut","VA",38.3331,-78.5584],[919.1,"Bearfence Mountain Hut","VA",38.4441,-78.4704],[930.6,"Rock Spring Hut","VA",38.5531,-78.4083],[941.5,"Byrds Nest #3 Hut","VA",38.6344,-78.3263],[945.9,"Pass Mountain Hut","VA",38.6766,-78.3189],[959,"Gravel Springs Hut","VA",38.7635,-78.2342],[969.5,"Tom Floyd Wayside Shelter","VA",38.8504,-78.1636],[977.6,"Jim n Molly Denton Shelter","VA",38.89,-78.0831],[983.1,"Manassas Gap Shelter","VA",38.9306,-78.0328],[987.6,"Dick's Dome Shelter (no longer exists - see notes)","VA",38.9699,-77.9967],[987.6,"Whiskey Hollow Shelter","VA",38.9693,-77.9987],[996,"Rod Hollow Shelter","VA",39.0479,-77.9441],[1002.9,"Sam Moore Shelter","VA",39.0907,-77.8863],[1013.9,"Blackburn Trail Center 34899 Appalachian Trail Rd  Round Hill, VA 20141 540-338-9028","VA",39.1879,-77.7974],[1017.1,"David Lesser Shelter","VA",39.2272,-77.7792],[1033,"Ed Garvey Shelter","MD",39.3565,-77.6642],[1037.1,"Crampton Gap Shelter","MD",39.4126,-77.6373],[1042.1,"Rocky Run Shelter","MD",39.4608,-77.6311],[1043.9,"Dahlgren Backpack Campground 6130 Old National Pike Boonsboro, MD 21713 301-791-4767","MD",39.4814,-77.6219],[1045.7,"Washington Mounument State Park 6620 Zittlestown Rd Middletown, MD 21769","MD",39.4993,-77.6266],[1049.6,"Pine Knob Shelter","MD",39.5425,-77.6021],[1057.8,"Ensign Cowall Shelter","MD",39.6277,-77.5576],[1062.7,"Raven Rock Shelter","MD",39.6733,-77.5483],[1072.3,"Deer Lick Shelters","PA",39.7662,-77.4849],[1075.9,"Tumbling Run Shelters","PA",39.805,-77.4779],[1082.5,"Rocky Mountain Shelters","PA",39.8686,-77.5006],[1085.9,"Caledonia State Park","PA",39.9114,-77.4826],[1088.1,"Quarry Gap Shelters","PA",39.932,-77.4864],[1095.5,"Birch Run Shelters","PA",39.9846,-77.4204],[1101.7,"Toms Run Shelters","PA",40.0343,-77.357],[1112.6,"James Fry Shelter | Tagg Run","PA",40.063,-77.2061],[1120.7,"Alec Kennedy Shelter","PA",40.1119,-77.1039],[1138.9,"Darlington Shelter","PA",40.302,-77.087],[1146.2,"Cove Mountain Shelter","PA",40.3636,-77.0673],[1154.5,"Clarks Ferry Shelter","PA",40.3922,-76.9937],[1161.2,"Peters Mountain Shelter","PA",40.4258,-76.8794],[1179.2,"Rausch Gap Shelter","PA",40.4985,-76.6002],[1192.6,"William Penn Shelter","PA",40.4956,-76.414],[1196.7,"501 Shelter NOTE: slated to close by the end of 2026; there are groups trying to save it so check ahead of making any plans [REF]","PA",40.5125,-76.3465],[1211.6,"Eagles Nest Shelter","PA",40.5493,-76.1523],[1226.3,"Windsor Furnace Shelter","PA",40.5903,-75.9419],[1235.4,"Eckville Shelter NOTE: slated to close by the end of 2026; there are groups trying to save it so check ahead of making any plans [REF]","PA",40.6328,-75.9584],[1242.8,"Allentown Hiking Club Shelter","PA",40.6831,-75.874],[1252.8,"Bake Oven Knob Shelter","PA",40.7541,-75.727],[1260.3,"George W. Outerbridge Shelter","PA",40.7825,-75.6179],[1277.3,"Leroy A. Smith Shelter","PA",40.8394,-75.3594],[1291,"Kirkridge Shelter","PA",40.9367,-75.1865],[1322.3,"Brink Road Shelter","NJ",41.1532,-74.8378],[1329,"Gren Anderson Shelter","NJ",41.1994,-74.7527],[1334.8,"Mashipacong Shelter","NJ",41.2521,-74.6864],[1337.4,"Rutherford Shelter","NJ",41.2775,-74.678],[1342,"High Point Shelter","NJ",41.3278,-74.6433],[1347.4,"Jim Murray Shelter (\"Secret Shelter\")","NJ",41.2522,-74.6889],[1354.4,"Pochuck Mountain Shelter","NJ",41.2717,-74.5159],[1365.8,"Wawayanda Shelter","NJ",41.2022,-74.3981],[1378.1,"Wildcat Shelter","NY",41.2683,-74.2678],[1392.6,"Fingerboard Shelter","NY",41.2633,-74.104],[1397.9,"William Brien Memorial Shelter","NY",41.2797,-74.0594],[1401.9,"West Mountain Shelter","NY",41.2841,-74.0107],[1434.5,"RPH Shelter","NY",41.5144,-73.7925],[1439.6,"Corrado Pizzeria Gelateria  (Market, Deli, Bages, Pizza) 368 New Hempstead Rd #1 New City, NY 10956","NY",41.5399,-73.7419],[1443.5,"Morgan Stewart Memorial Shelter","NY",41.5645,-73.6917],[1451.3,"Telephone Pioneers Shelter","NY",41.6043,-73.6189],[1460.1,"Wiley Shelter","NY",41.6377,-73.5323],[1464.1,"Ten Mile River Lean-to","CT",41.6651,-73.5095],[1472.9,"Mt. Algo Lean-to","CT",41.7316,-73.4962],[1480.4,"Stewart Hollow Brook Lean-to","CT",41.7786,-73.4193],[1490.4,"Pine Swamp Brook Lean-to","CT",41.8817,-73.3916],[1503.1,"Limestone Spring Lean-to","CT",41.9751,-73.3918],[1510.5,"Riga Lean-to","CT",42.0146,-73.4477],[1511.7,"Brassie Brook Lean-to","CT",42.0283,-73.4531],[1520,"The Hemlocks Shelter (Lean-to)","MA",42.1099,-73.429],[1520.1,"Glen Brook Shelter (Lean-to)","MA",42.1111,-73.4283],[1534.4,"Tom Leonard Shelter (Lean-to)","MA",42.1648,-73.3058],[1539.8,"Mt. Wilcox South Shelter (Lean-to)","MA",42.2077,-73.2683],[1541.5,"Mt. Wilcox North Shelter (Lean-to)","MA",42.2211,-73.2502],[1555.7,"Upper Goose Pond Cabin","MA",42.2887,-73.1813],[1564.5,"October Mountain Shelter (Lean-to)","MA",42.3548,-73.1541],[1573.3,"Kay Wood Lean-to","MA",42.4525,-73.1614],[1585.1,"Father Tom Campsite","MA",42.5596,-73.1596],[1590,"Mark Noepel Shelter (Lean-to)","MA",42.6085,-73.1841],[1596.6,"Wilbur Clearing Shelter (Lean-to)","MA",42.6685,-73.1698],[1608.9,"Seth Warner Shelter","VT",42.7718,-73.1371],[1613.7,"Congdon Shelter","VT",42.848,-73.1099],[1619.6,"Melville Nauheim Shelter","VT",42.8878,-73.0957],[1628.1,"Goddard Shelter","VT",42.9741,-73.0722],[1631.4,"Caughnawaga Shelter","VT",43.015,-73.0436],[1632.4,"Kid Gore Shelter","VT",43.013,-73.0411],[1637,"Story Spring Shelter","VT",43.0505,-73.0125],[1647.4,"Stratton Pond Shelter","VT",43.1014,-72.9683],[1652.3,"William B. Douglas Shelter","VT",43.1445,-72.9909],[1655.3,"Spruce Peak Shelter","VT",43.1786,-72.9952],[1660.1,"Bromley Shelter","VT",43.2092,-72.9697],[1661.1,"Bromley Mountain","VT",43.2279,-72.9401],[1668.2,"Peru Peak Shelter","VT",43.3013,-72.9524],[1672.9,"Lost Pond Shelter","VT",43.3476,-72.9526],[1674.5,"Old Job Shelter","VT",43.3541,-72.9285],[1674.6,"Big Branch Shelter","VT",43.364,-72.9464],[1677.6,"Lula Tye Shelter","VT",43.3954,-72.9548],[1677.9,"Little Rock Pond Shelter","VT",43.4042,-72.9531],[1682.7,"Greenwall Shelter","VT",43.4404,-72.9287],[1687.8,"Minerva Hinchey Shelter","VT",43.4878,-72.9245],[1691.5,"Clarendon Shelter","VT",43.5235,-72.9126],[1697.6,"Governor Clement Shelter","VT",43.6059,-72.8225],[1701.9,"Cooper Lodge","VT",43.5645,-72.8483],[1704.4,"Pico Camp Shelter","VT",43.639,-72.8305],[1706.3,"Churchill Scott Shelter","VT",43.6449,-72.8534],[1709.2,"Tucker Johnson Shelter","VT",43.6794,-72.843],[1711.4,"Gifford Woods State Park","VT",43.6761,-72.8112],[1718.2,"Stony Brook Shelter","VT",43.6918,-72.7301],[1728.1,"Wintturi Shelter","VT",43.6621,-72.6221],[1738.7,"Cloudland Shelter","VT",43.6921,-72.4931],[1740.4,"Thistle Hill Shelter","VT",43.6951,-72.4753],[1749.2,"Happy Hill Shelter","VT",43.7238,-72.3652],[1756.5,"Velvet Rocks Shelter","NH",43.7024,-72.2647],[1766,"Moose Mountain Shelter","NH",43.7278,-72.1469],[1771.7,"Trapper John Shelter","NH",43.783,-72.1115],[1778.4,"Smarts Mountain Cabin","NH",43.8253,-72.0373],[1783.7,"Hexacuba Shelter","NH",43.874,-72.029],[1790.8,"Ore Hill Campsite","NH",43.9636,-71.9405],[1799.4,"Jeffers Brook Shelter","NH",43.9965,-71.8889],[1806.3,"Beaver Brook Shelter","NH",44.0329,-71.8113],[1815.3,"Eliza Brook Campsite Shelter","NH",44.1007,-71.7418],[1819.3,"Kinsman Pond Campsite Shelter","NH",44.1368,-71.7323],[1834.4,"Garfield Ridge Campsite Shelter","NH",44.1906,-71.6083],[1839.9,"Guyot Campsite Shelter","NH",44.1609,-71.535],[1848.9,"Ethan Pond Campsite Shelter","NH",44.1772,-71.4266],[1868.5,"The Perch Shelter","NH",44.3245,-71.3105],[1873,"Osgood Tent Site","NH",44.3087,-71.2571],[1890.8,"Imp Campsite Shelter","NH",44.3289,-71.15],[1897,"Rattle River Shelter","NH",44.3799,-71.1074],[1915.9,"Carlo Col Shelter","ME",44.4886,-71.0161],[1920.5,"Full Goose Shelter","ME",44.5251,-70.9808],[1925.4,"Speck Pond Shelter","ME",44.5646,-70.9735],[1932.3,"Baldpate Lean-to","ME",44.5983,-70.9117],[1935.8,"Frye Notch Lean-to","ME",44.6277,-70.9003],[1946.3,"Hall Mountain Lean-to","ME",44.7008,-70.8246],[1959.1,"Bemis Mountain Lean-to","ME",44.8103,-70.7559],[1967.4,"Sabbath Day Pond Lean-to","ME",44.841,-70.6623],[1978.6,"Piazza Rock Lean-to","ME",44.9041,-70.5308],[1987.5,"Poplar Ridge Lean-to","ME",44.97,-70.4458],[1995.5,"Spaulding Mountain Lean-to","ME",44.9957,-70.3412],[2014.1,"Horns Pond Lean-tos","ME",45.1442,-70.33],[2024.3,"Little Bigelow Lean-to","ME",45.1391,-70.1911],[2032,"West Carry Pond Lean-to","ME",45.158,-70.0998],[2042,"Pierce Pond Lean-to","ME",45.2403,-70.0554],[2051.7,"Pleasant Pond Lean-to","ME",45.2706,-69.9162],[2060.7,"Bald Mountain Brook Lean-to","ME",45.2585,-69.7999],[2064.8,"Moxie Bald (Bald Mtn Pond) Lean-to","ME",45.2706,-69.7452],[2073.7,"Horseshoe Canyon Lean-to","ME",45.2827,-69.6275],[2085.7,"Leeman Brook Lean-to","ME",45.3515,-69.4986],[2093.1,"Wilson Valley Lean-to","ME",45.3979,-69.4595],[2097.8,"Long Pond Stream Lean-to","ME",45.4219,-69.4095],[2101.8,"Cloud Pond Lean-to","ME",45.4189,-69.3516],[2108.9,"Chairback Gap Lean-to","ME",45.4529,-69.2621],[2118.8,"Carl A. Newhall Lean-to","ME",45.5305,-69.3149],[2126,"Logan Brook Lean-to","ME",45.5611,-69.2348],[2129.6,"East Branch Lean-to","ME",45.5967,-69.1982],[2137.7,"Cooper Brook Falls Lean-to","ME",45.6405,-69.0873],[2149.1,"Potaywadjo Spring Lean-to","ME",45.7065,-69.0073],[2153.4,"Nahmakanta Stream Lean-to","ME",45.7982,-69.3131],[2159.2,"Wadleigh Stream Lean-to","ME",45.7473,-69.1445],[2167.3,"Rainbow Stream Lean-to","ME",45.799,-69.1704],[2178.8,"Hurd Brook Lean-to","ME",45.8185,-69.0184],[2192.1,"The Birches Shelters","ME",45.8816,-68.9951],[2192.2,"Katahdin Stream Campground","ME",45.8871,-69.0011]],"PCT":[[0,"Southern Terminus Monument","CA",32.5898,-116.4667],[20,"Lake Morena Campground","CA",32.7074,-116.5228],[42,"Rodriguez Spur Water Cache","CA",33.0888,-116.5731],[77,"San Jacinto Peak","CA",33.8147,-116.6789],[96,"Snow Creek","CA",33.9342,-116.5867],[110,"Cajon Pass Rest Stop","CA",34.3147,-117.4681],[138,"Wrightwood","CA",34.3617,-117.6331],[178,"Tehachapi Pass","CA",35.1325,-118.4487],[340,"Kennedy Meadows General Store","CA",35.9511,-118.0678],[396,"Forester Pass","CA",36.7944,-118.4086],[440,"Muir Pass Hut","CA",37.1117,-118.6706],[560,"Tuolumne Meadows Store","CA",37.8758,-119.3553],[653,"Echo Lake Resort","CA",38.8336,-120.0481],[715,"Donner Pass","CA",39.3206,-120.3281],[877,"Burney Falls State Park","CA",41.0147,-121.6531],[1017,"Castella / Dunsmuir","CA",41.1478,-122.3167],[1094,"Seiad Valley","CA",41.8458,-123.1914],[1720,"Ashland OR","OR",42.1945,-122.7094],[1812,"Crater Lake Rim Village","OR",42.9439,-122.1006],[1849,"Diamond Lake Resort","OR",43.1711,-122.1553],[2073,"Timberline Lodge","OR",45.3311,-121.7139],[2148,"Cascade Locks","OR",45.6689,-121.8947],[2230,"White Pass Ski Area","WA",46.6378,-121.3908],[2295,"Snoqualmie Pass","WA",47.4253,-121.4153],[2393,"Stevens Pass","WA",47.7447,-121.0892],[2572,"Stehekin","WA",48.3158,-120.6856],[2653,"Northern Terminus","WA",48.9986,-120.8003]],"CDT":[[17.1,"Thompson Canyon Windmill","NM",31.64746,-108.32604],[22.4,"Windmill - Solar Well .5 mile NE","NM",31.6992,-108.3787],[39.2,"Water tank 500' E","NM",31.89864,-108.41459],[58.3,"Hwy 113 Water Box","NM",32.08053,-108.55637],[71.3,"Water Tank 2014","NM",32.2149,-108.67438],[98.5,"Tank Dry 2014","NM",32.40511,-108.54533],[113,"Goat Camp Windmill Good in 2014","NM",32.53751,-108.46982],[135.5,"creek (intermittent)","NM",32.69378,-108.52413],[168.2,"Windmill 1 mile N on Rd","NM",32.85117,-108.33736],[203.2,"Sapillo Campground","NM",33.00354,-108.11544],[224.6,"Water in stream","NM",33.13332,-107.95166],[240.6,"Diamond Peak Spring","NM",33.23189,-107.84471],[252.9,"Turkey Spring","NM",33.33877,-107.85235],[278.1,"Adobe Spring - OK in 2014","NM",33.55087,-107.82726],[291.1,"Spaniard Tank","NM",33.67644,-107.85012],[305.3,"Boulevard Tank","NM",33.67816,-108.05827],[318,"Pond. Good 2014","NM",33.69355,-108.22393],[344.4,"Davis Spring","NM",33.70019,-108.48275],[357,"Farm Tank 250'","NM",33.79964,-108.46637],[371.3,"GC No 7 Tank (~1.2 miles west of trail n","NM",33.90684,-108.47111],[385.5,"Valle Tio Vinces Tank and Spring","NM",34.03489,-108.34893],[401.5,"Baca Trick Tank - Dry in 2014","NM",34.20438,-108.39787],[420.1,"Store","NM",34.30973,-108.1897],[462.1,"Windmill","NM",34.73321,-108.08337],[482,"Water tank","NM",34.90146,-108.20276],[497.1,"Faucet at Visitor Center","NM",34.99269,-108.03669],[512.5,"Possible Water cache at Hwy 117","NM",34.89879,-107.85879],[548.4,"Big Spring","NM",35.19669,-107.66933],[563.9,"American Tank","NM",35.32203,-107.57374],[576.9,"Ojo del Dado Canyon - OK in 2014","NM",35.4482,-107.4414],[596.3,"Ojo Frio Spring 1000' East - OK in 2014","NM",35.59186,-107.22755],[611.4,"Water Tank - OK in 2014","NM",35.71094,-107.08537],[626,"Jones Canyon Spring 300' E - OK in 2014","NM",35.85429,-107.01604],[640.7,"Water in creek - OK in 2014","NM",36.07148,-106.94187],[668.9,"Spring - OK in 2014","NM",36.17591,-106.79732],[684.6,"Stream - OK in 2014","NM",36.28713,-106.68009],[707,"Intermittent Creek","NM",36.39239,-106.45403],[726.2,"Creek","NM",36.52105,-106.29677],[738.5,"Stream","NM",36.60572,-106.27026],[754,"Faucet in CG","NM",36.70102,-106.23801],[768,"Creek","NM",36.84497,-106.26352],[786.1,"Stream","NM",36.96851,-106.38876],[798.8,"Water Source","CO",37.02915,-106.45965],[811.9,"Water Source","CO",37.12965,-106.53685],[824,"Water Source","CO",37.23275,-106.62595],[838.9,"Water Source","CO",37.32907,-106.68872],[854.2,"Water Source","CO",37.44683,-106.70058],[866.7,"Water Source","CO",37.48342,-106.80118],[887.6,"Water Source","CO",37.56655,-106.9933],[900.9,"Water Source","CO",37.61545,-107.14128],[919.7,"Water Source","CO",37.67932,-107.29322],[932.8,"Water Source","CO",37.64342,-107.45467],[947.4,"Water Source","CO",37.76015,-107.55757],[964.2,"Water Source","CO",37.849,-107.39925],[987.3,"Water Source","CO",37.93852,-107.1005],[999.9,"Water Source","CO",37.96268,-106.9473],[1014.6,"Water Source","CO",38.06807,-106.79793],[1028.8,"Water Source","CO",38.14922,-106.64077],[1047.5,"Water Source","CO",38.30595,-106.51782],[1061.7,"Water Source","CO",38.31361,-106.33315],[1074.8,"Water Source","CO",38.41219,-106.25626],[1092.3,"Water Source","CO",38.5541,-106.34268],[1107.5,"Water Source","CO",38.65042,-106.4127],[1120.9,"Water Source","CO",38.76277,-106.40817],[1136,"Water Source","CO",38.87879,-106.43707],[1147.6,"Water Source","CO",38.97409,-106.45964],[1161,"Water Source","CO",39.07757,-106.34085],[1173.2,"Water Source","CO",39.13682,-106.40167],[1187.1,"Water Source","CO",39.27428,-106.43915],[1204.7,"Water Source","CO",39.38788,-106.31888],[1217,"Water Source","CO",39.45232,-106.22958],[1233.6,"Water Source","CO",39.52686,-106.10963],[1277.8,"Water Source","CO",39.5864,-105.83568],[1294.6,"Water Source","CO",39.69152,-105.81817],[1312.8,"Water Source","CO",39.78202,-105.83555],[1327.5,"Water Source","CO",39.81117,-105.66783],[1342.9,"Water Source","CO",39.97715,-105.69583],[1357.6,"Water Source","CO",40.10368,-105.74452],[1370.4,"Water Source","CO",40.21663,-105.83063],[1385.2,"Water Source","CO",40.28533,-105.69398],[1397.8,"Water Source","CO",40.31057,-105.83108],[1430.1,"Water Source","CO",40.32375,-106.18228],[1475,"Water Source","CO",40.41285,-106.63845],[1490.6,"Water Source","CO",40.56418,-106.6967],[1503,"Water Source","CO",40.71023,-106.6687],[1517.5,"Water Source","CO",40.82598,-106.77512],[1537.1,"Water Source","CO",41.01547,-106.89368],[1547.4,"creek","WY",41.08923,-106.90993],[1567.1,"creek -good 2014","WY",41.23247,-107.11701],[1579.9,"stream - good 07/14","WY",41.31543,-107.25368],[1594.6,"spring","WY",41.418,-107.39644],[1608.9,"creek","WY",41.51335,-107.4722],[1622.7,"farm-tank E of trail","WY",41.62039,-107.28034],[1649.9,"Fish Pond Spring  good - 08/16","WY",41.92463,-107.32077],[1665.9,"Bull Springs","WY",42.07464,-107.52932],[1680.6,"A&amp","WY",42.2332,-107.70602],[1693.6,"Bull Springs good - 08/16","WY",42.34991,-107.86359],[1715.5,"Tank / State Section Reservoir goo","WY",42.4049,-108.179],[1732.4,"Mormon Spring good - 08/16","WY",42.39238,-108.471],[1745.2,"Willow Creek good - 07/14","WY",42.42521,-108.66061],[1761.4,"creek","WY",42.48629,-108.87466],[1777,"creek","WY",42.54958,-109.04419],[1790.4,"stream","WY",42.60844,-109.1786],[1805.1,"stream","WY",42.74224,-109.28429],[1818.4,"stream","WY",42.86308,-109.41093],[1834.3,"creek","WY",43.00041,-109.57228],[1846.3,"stream","WY",43.11588,-109.67405],[1860.5,"stream","WY",43.21039,-109.75658],[1873.1,"creek","WY",43.3403,-109.84678],[1885.8,"stream","WY",43.45717,-109.89993],[1899.3,"creek","WY",43.5529,-110.00375],[1907.5,"creek","WY",43.63844,-109.96373],[1932,"stream","WY",43.75482,-110.01025],[1946,"creek","WY",43.86466,-110.07566],[1959.7,"creek","WY",43.96313,-110.20695],[1973.3,"stream","WY",44.10048,-110.21729],[1986.7,"stream","WY",44.18546,-110.40703],[1998.7,"creek","WY",44.28882,-110.49993],[2011.3,"river&gt","WY",44.35547,-110.66475],[2023.3,"spring","WY",44.37769,-110.82124],[2038.6,"creek","WY",44.44097,-110.91408],[2038.6,"Creek","MT",44.44107,-110.91397],[2053.3,"creek","MT",44.43963,-111.10367],[2079,"creek","MT",44.65033,-111.24784],[2093.6,"TARGHEE CR","MT",44.7415,-111.37398],[2107.4,"creek","MT",44.7061,-111.47534],[2120.4,"hell roaring creek stream","MT",44.58877,-111.55877],[2140,"spring","MT",44.53753,-111.74283],[2154.1,"spring","MT",44.54319,-111.89326],[2194.5,"spring","MT",44.46417,-112.43945],[2207.1,"creek","MT",44.49589,-112.60081],[2227.6,"Deadman Lake","MT",44.4415,-112.85944],[2240.2,"harkness lakes","MT",44.46651,-112.95776],[2252.4,"stream","MT",44.56058,-113.0105],[2266,"spring","MT",44.70542,-113.10023],[2285,"trail to spring .5 mi","MT",44.80168,-113.30153],[2336.4,"small creek","MT",45.18822,-113.58509],[2349.9,"X Hamby Creek","MT",45.27065,-113.5822],[2362.2,"lake","MT",45.33323,-113.71086],[2376.4,"spring","MT",45.42776,-113.76856],[2395.6,"spring","MT",45.60851,-113.83409],[2424.7,"creek","MT",45.78592,-113.77968],[2437.4,"spring","MT",45.8388,-113.64804],[2451.4,"stream","MT",45.9281,-113.49424],[2465.3,"creek","MT",45.97962,-113.40716],[2477.3,"creek","MT",46.04549,-113.30977],[2512.4,"creek","MT",45.95383,-113.06978],[2519.1,"creek","MT",45.93003,-112.93771],[2531.5,"creek","MT",45.92343,-112.78445],[2548.7,"creek","MT",45.82469,-112.58803],[2561.1,"creek","MT",45.82115,-112.49038],[2576.4,"creek","MT",45.91567,-112.41635],[2590,"Creek","MT",46.00594,-112.43051],[2602.3,"Spring","MT",46.08018,-112.36021],[2631.7,"Small Creek","MT",46.23697,-112.59337],[2647.3,"creek","MT",46.33337,-112.47878],[2661.1,"Spring","MT",46.39049,-112.34615],[2670.4,"spring","MT",46.48786,-112.34578],[2681.6,"spring","MT",46.60101,-112.29481],[2701.6,"Dana Spring","MT",46.72162,-112.46926],[2718.1,"Spring 1/2 mile NE","MT",46.86562,-112.47851],[2746.4,"creek","MT",47.07206,-112.36736],[2765,"lake","MT",47.1813,-112.58299],[2777.1,"stream","MT",47.26447,-112.64145],[2792.3,"creek","MT",47.39385,-112.84056],[2805.1,"stream","MT",47.51208,-112.89718],[2819,"stream","MT",47.62058,-113.07311],[2832,"creek","MT",47.7362,-113.14323],[2844.2,"Red Shale Cr","MT",47.7797,-112.95822],[2857.5,"Lake","MT",47.86325,-113.05016],[2869.9,"stream","MT",47.93552,-112.97236],[2882.9,"East Fork Strawberry Cr","MT",48.06453,-113.03026],[2903.9,"Lee Creek","MT",48.23563,-113.21492],[2917.1,"stream","MT",48.29185,-113.26871],[2930.3,"creek","MT",48.37159,-113.31645],[2943.9,"40 Mile Creek","MT",48.4783,-113.29957],[2959.2,"creek","MT",48.52446,-113.45628],[2973.1,"Red Eagle Creek","MT",48.63581,-113.53031],[2985.7,"stream","MT",48.66496,-113.59361],[2998.5,"stream","MT",48.74305,-113.69872],[3003.5,"creek","MT",48.82135,-113.60977],[3013.7,"spring","MT",48.78925,-113.77804],[3019,"Dawn Mist Falls","MT",48.90789,-113.72356],[3027.5,"creek","MT",48.87854,-113.90536]]};
+(function(){
+  if(!window.PostMindMapDots||!window.tctpDotSet) return;
+  var THEME={ bg:'#fdfcf7', panel:'#f7f4ea', grid:'#e3ddc8', line:'#6ba368', done:'#2d5a27',
+              dot:'#a9b5a3', milestone:'#c8a84b', here:'#e8761e', text:'#1e3a1e', sub:'#7c8a7c', accent:'#e8761e' };
+  var NAME={AT:'Appalachian Trail',PCT:'Pacific Crest Trail',CDT:'Continental Divide Trail'};
+  function draw(){
+    var trail=document.getElementById('lp-trail').value, rows=TCTP_LP[trail];
+    var sl=document.getElementById('lp-mile'), max=Math.round(rows[rows.length-1][0]);
+    sl.max=max; if(+sl.value>max) sl.value=max;
+    var cfg=tctpDotSet(rows,{trail:trail,currentMile:+sl.value,title:NAME[trail],brand:'Triple Crown Trek Planner'});
+    cfg.theme=THEME;
+    var hp=(cfg.progressIndex>=0)?cfg.points[cfg.progressIndex]:null;
+    document.getElementById('lp-mileout').textContent=(hp?Math.round(hp.mile):(+sl.value))+' mi';
+    PostMindMapDots.render(document.getElementById('lp-map'),cfg);
+  }
+  document.getElementById('lp-trail').onchange=draw;
+  document.getElementById('lp-mile').oninput=draw;
+  draw();
+})();
+</script>
+
+</body>
+</html>

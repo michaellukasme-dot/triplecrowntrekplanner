@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- TCTP v44 2026-06-18 :: map-of-dots share tab (PostMind primitive v0.2 responsive-fix + TCTP adapter; real <TRAIL>_WAYPOINTS; SW cache v44). Fixes v43 SVG overflow (responsive max-width) + snapped mile readout. New tab/pane + wrapped switchShareTab; no edits to existing render code. -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -747,6 +748,12 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .atcs-card-blanktxt{font-size:.74rem;line-height:1.45;color:#2d5a27;margin:8px 0 0}
 .atcs-card-blanktxt b{color:#1e3a1e}.atcs-card-blanktxt .atcs-recw{color:#d23b2f;font-weight:800}
 .atcs-card-pins{font-size:.64rem;color:#7c8a7c;margin:5px 0 0}
+.atcs-card-src{display:flex;align-items:center;gap:8px}
+.atcs-card-fsbtn{margin-left:auto;border:1px solid #6ba368;background:#e8f0e8;color:#1e3a1e;border-radius:8px;font-size:.85rem;line-height:1;padding:3px 9px;cursor:pointer}
+.atcs-card-fsbtn:hover{background:#d8e8d4}
+.atcs-scrub-line{display:none;position:absolute;top:0;bottom:0;width:0;border-left:1.5px dashed #4a7c59;pointer-events:none;z-index:4}
+.atcs-scrub-label{display:none;position:absolute;top:6px;max-width:150px;background:#1e3a1e;color:#eaf2e6;font-size:.62rem;line-height:1.4;padding:5px 7px;border-radius:7px;pointer-events:none;z-index:5}
+.atcs-share-btn{margin-left:6px;border:1px solid #6ba368;background:#e8f0e8;color:#1e3a1e;border-radius:7px;font-size:.62rem;font-weight:700;padding:2px 7px;cursor:pointer;font-family:inherit}
 /* ── [H2HC P2] hiker identity spine: sign-in UI ── */
 .h2hc-auth-box{max-width:420px}
 .h2hc-step{display:none}.h2hc-step.on{display:block;animation:atcsFade .3s ease}
@@ -764,6 +771,7 @@ canvas#elevCanvas{width:100%;height:100%;cursor:crosshair;display:block}
 .h2hc-prof .h2hc-prof-tx b{color:#1e3a1e}
 .h2hc-prof button{margin-top:8px}
 /* ── [H2HC P3] the H2H toast (drop-down rooms panel, Messenger-style, anchored top-right) ── */
+#modal-sp .modal-box{position:relative} /* [H2HC P3.1] anchor fix: toast positions to the MODAL, not the viewport — Messenger-pattern attachment per owner mockup */
 .h2hc-toast{position:absolute;top:84px;right:10px;width:min(380px,calc(100% - 20px));max-height:min(560px,calc(100% - 100px));background:#fff;border:1px solid #d7ddd4;border-radius:14px;box-shadow:0 14px 44px rgba(20,40,16,.28);display:none;flex-direction:column;overflow:hidden;z-index:60}
 .h2hc-toast.open{display:flex;animation:atcsFade .22s ease}
 .h2hc-t-hd{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#1e3a1e;color:#fff}
@@ -2634,6 +2642,7 @@ function openCardFullscreen() {
 function closeCardFullscreen() {
   const overlay = document.getElementById('cardFsOverlay');
   overlay.classList.remove('open');
+  if (_fsCtx) { _fsCtx = null; var _t9 = document.getElementById('cardFsTitle'); if (_t9) _t9.textContent = '\uD83D\uDCC8 Trail \u00B7 On-Trail View'; } /* [ALLTREKS-FU F4] */
   document.body.style.overflow = '';
   if (fsLeafletMap) fsLeafletMap.invalidateSize();
 }
@@ -2716,15 +2725,16 @@ function drawFsElevation() {
   // comes from the state/segment the planner card is showing, so expanding a state shows
   // THAT state. Full Route zooms out to the whole trail. (v15 windowed only around GPS,
   // which made every state expand to the same ±10mi view regardless of what was tapped.)
-  const _fsTrail = (typeof tdGetTrail === 'function')
+  const _fsTrail = (_fsCtx && _fsCtx.trail) ? _fsCtx.trail /* [ALLTREKS-FU F4] */
+    : (typeof tdGetTrail === 'function')
     ? (tdGetTrail(window.ACTIVE_TRAIL_ID || 'AT') || window.ACTIVE_TRAIL || AT)
     : (window.ACTIVE_TRAIL || AT);
   const allPts = (_fsTrail && _fsTrail.elevation && _fsTrail.elevation.length) ? _fsTrail.elevation : null;
   if (!allPts) return;
   const fullStart = allPts[0][0], fullEnd = allPts[allPts.length - 1][0];
   const _im = (document.getElementById('elevCanvas') || {})._elevMeta;
-  const segStart = (_im && _im.startMile != null) ? _im.startMile : fullStart;
-  const segEnd   = (_im && _im.endMile   != null) ? _im.endMile   : fullEnd;
+  const segStart = _fsCtx ? Math.max(fullStart, _fsCtx.lo) : ((_im && _im.startMile != null) ? _im.startMile : fullStart); /* [ALLTREKS-FU F4] */
+  const segEnd   = _fsCtx ? Math.min(fullEnd, _fsCtx.hi)   : ((_im && _im.endMile   != null) ? _im.endMile   : fullEnd);
   const rows = (typeof currentItinerary !== 'undefined') ? currentItinerary : [];
 
   const dpr = window.devicePixelRatio || 1;
@@ -3255,29 +3265,33 @@ async function checkBearSightings() {
 function initFsMap() {
   const mapEl = document.getElementById('fs-leaflet-map');
   if (!mapEl) return;
+  var _off9 = document.getElementById('fsMapOffline');                 /* [MAPS M-9] honest offline state */
+  if (_off9) _off9.style.display = (typeof navigator !== 'undefined' && navigator.onLine === false) ? 'block' : 'none';
 
   if (!fsLeafletMap) {
     fsLeafletMap = L.map(mapEl, {zoomControl:true});
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
       attribution:'© OpenStreetMap', maxZoom:19
     }).addTo(fsLeafletMap);
+    L.control.scale({imperial:true, metric:false}).addTo(fsLeafletMap); /* [MAPS M-7] */
   } else {
     fsLeafletMap.eachLayer(l=>{ if(!l._url) fsLeafletMap.removeLayer(l); });
   }
 
-  const mainMeta = document.getElementById('elevCanvas')._elevMeta;
-  if (!mainMeta) { fsLeafletMap.setView([39.5,-76.5],7); return; }
-  const {startMile, endMile} = mainMeta;
+  const mainMeta = document.getElementById('elevCanvas')._elevMeta; /* [ALLTREKS-FU F4] ctx wins */
+  if (!mainMeta && !_fsCtx) { fsLeafletMap.setView([39.5,-76.5],7); return; }
+  const startMile = _fsCtx ? _fsCtx.lo : mainMeta.startMile;
+  const endMile   = _fsCtx ? _fsCtx.hi : mainMeta.endMile;
 
   // ── If GPS active: show ±3mi window at zoom 15 (Far Out-killer view) ──
   const WINDOW_MI = 3;
   let localStart = startMile, localEnd = endMile;
-  if (lastGpsPos && lastGpsPos.mile !== undefined && !fsShowFullRoute) {
+  if (lastGpsPos && lastGpsPos.mile !== undefined && !fsShowFullRoute && (!_fsCtx || _fsCtx.tag === (window.ACTIVE_TRAIL_ID||'AT'))) {
     localStart = Math.max(startMile, lastGpsPos.mile - WINDOW_MI);
     localEnd   = Math.min(endMile,   lastGpsPos.mile + WINDOW_MI);
   }
 
-  const coords = (window.ACTIVE_COORDS || AT_TRAIL_COORDS);
+  const coords = _fsCtx ? _fsGeoPick('c') : (window.ACTIVE_COORDS || AT_TRAIL_COORDS); /* [ALLTREKS-FU F4] */
   const wpSeg  = (window.ACTIVE_WAYPOINTS||AT_WAYPOINTS).filter(w =>
     w[0]>=localStart && w[0]<=localEnd && w[3] && w[4]);
 
@@ -3310,25 +3324,27 @@ function initFsMap() {
     if (hasWater && !fsFilters.water) return;
     if (hasShelter && !fsFilters.shelter) return;
     const icon = (hasWater?'💧':'') + (hasShelter?'🏕':'') + (w[7]?'🚽':'');
-    const col  = hasWater ? '#5b8fa8' : '#4a7c59';
+    const condC = hasWater ? getWaterCondColor(w[0]) : null;   /* [MAPS M-2] live condition color */
+    const condL = hasWater ? getWaterCondLabel(w[0]) : null;
+    const col  = condC || (hasWater ? '#5b8fa8' : '#4a7c59');
     const r    = hasWater ? 7 : 5;
     L.circleMarker([w[3],w[4]], {radius:r, color:col, fillColor:col, fillOpacity:.85, weight:1.5})
-      .bindTooltip(`${icon} ${w[1]}<br><small>Mile ${w[0]}</small>`, {direction:'top'})
+      .bindPopup(`${icon} <b>${w[1]}</b><br>Mile ${w[0]}` + (condL ? `<br>${condL}` : ''))  /* [MAPS M-6] tap popups */
       .addTo(fsLeafletMap);
   });
 
   // ── Resupply markers ──
   if (fsFilters.resupply) {
-    (window.ACTIVE_RESUPPLY||AT_RESUPPLY).filter(r=>
+    (_fsCtx ? _fsGeoPick('r') : (window.ACTIVE_RESUPPLY||AT_RESUPPLY)).filter(r=>
       r[0]>=localStart&&r[0]<=localEnd&&r[2]&&r[3]
     ).forEach(r=>{
       L.circleMarker([r[2],r[3]], {radius:6,color:'#c8a84b',fillColor:'#ffe9a0',fillOpacity:.9,weight:2})
-        .bindTooltip('🍎 '+r[1], {direction:'top'}).addTo(fsLeafletMap);
+        .bindPopup('🍎 <b>'+r[1]+'</b>').addTo(fsLeafletMap); /* [MAPS M-6] */
     });
   }
 
   // ── Fit to local or full view ──
-  if (lastGpsPos && !fsShowFullRoute) {
+  if (lastGpsPos && !fsShowFullRoute && (!_fsCtx || _fsCtx.tag === (window.ACTIVE_TRAIL_ID||'AT'))) {
     fsLeafletMap.setView([lastGpsPos.lat, lastGpsPos.lon], 15);
   } else {
     fsLeafletMap.fitBounds(latlngs, {padding:[24,24]});
@@ -3875,7 +3891,7 @@ function mapFitTrail() {
   if (!leafletMapObj) return;
   const from = getFromTrekObj(), to = getToTrekObj();
   if (!from || !to) return;
-  const wpSeg = (window.ACTIVE_WAYPOINTS||AT_WAYPOINTS).filter(w => w[0] >= from.cumMileStart && w[0] <= to.cumMileEnd);
+  const wpSeg = (_fsCtx ? _fsGeoPick('w') : (window.ACTIVE_WAYPOINTS||AT_WAYPOINTS)).filter(w => w[0] >= from.cumMileStart && w[0] <= to.cumMileEnd);
   if (wpSeg.length) leafletMapObj.fitBounds(wpSeg.map(w=>[w[3],w[4]]), {padding:[16,16]});
 }
 
@@ -8684,6 +8700,19 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
 </div>
 
 <!-- ── Trail Magic: Confirm action sheet ──────────────────────────── -->
+<!-- ── [ALLTREKS-AN] Add New trek sheet ── -->
+<div class="modal-overlay" id="modal-atcs-new">
+  <div class="modal-box" style="width:min(95vw,420px)">
+    <div class="modal-hdr"><span style="font-size:1.2rem">★</span><h2>Add a New Trek</h2><button class="modal-close" onclick="closeModal('modal-atcs-new')">✕</button></div>
+    <div class="modal-body" style="padding:16px 18px">
+      <p style="font-size:.78rem;line-height:1.5;color:#444;margin:0 0 10px">Name a hike TCTP doesn’t know yet — in <b id="atcsNewState">your state</b>. It lives on this device, under ★ in your trek list. Hike it with GPS tracking on and your recording becomes its first profile.</p>
+      <div class="post-field"><label for="atcsNewName">Trek name</label><input id="atcsNewName" maxlength="60" placeholder="e.g. Sawmill Ridge Loop" style="width:100%;font:inherit;font-size:.9rem;padding:9px 11px;border:1.5px solid #c9d2c9;border-radius:9px"></div>
+      <div class="post-field"><label for="atcsNewLen">Length, miles (optional)</label><input id="atcsNewLen" inputmode="decimal" maxlength="7" placeholder="e.g. 12.5" style="width:140px;font:inherit;font-size:.9rem;padding:9px 11px;border:1.5px solid #c9d2c9;border-radius:9px"></div>
+      <p style="font-size:.64rem;color:#7c8a7c;line-height:1.5;margin:8px 0 12px">Honest-data note: your trek shows a blank tape until a real GPS recording exists — TCTP never draws a curve it doesn’t have.</p>
+      <button class="post-submit" onclick="atcsSaveNewTrek()" style="width:100%">★ Add my trek</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="modal-tm-confirm">
   <div class="modal-box" style="width:min(95vw,420px)">
     <div class="modal-hdr">
@@ -8962,6 +8991,7 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
 
     <!-- ── MAP PANEL ── -->
     <div id="fs-tab-map" class="card-fs-map-wrap" style="display:none">
+      <div id="fsMapOffline" style="display:none;background:#2a2417;color:#e8d9a0;font-size:.68rem;line-height:1.45;padding:6px 12px;flex-shrink:0">No signal — map tiles stream when you’re connected. Your trail line, waypoints, and the elevation profile work offline, always.</div>
       <div class="card-fs-map-controls">
         <div id="fs-map-gps-status" style="font-size:.63rem;color:rgba(174,198,174,.75);flex:1"></div>
         <button onclick="fsFindTrailOnMap()" style="padding:4px 10px;border-radius:10px;border:1.5px solid rgba(107,163,104,.4);background:rgba(107,163,104,.15);font-size:.68rem;font-weight:700;cursor:pointer;color:#aec6ae">🧭 Find Trail</button>
@@ -9038,6 +9068,7 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
     <div style="display:flex;border-bottom:1px solid var(--border);background:var(--stone)">
       <button id="sTabShare" onclick="switchShareTab('share')" style="flex:1;padding:9px 4px;font-size:.75rem;font-weight:700;border:none;background:transparent;cursor:pointer;color:var(--pine);border-bottom:2px solid var(--pine)">📸 Share Card</button>
       <button id="sTabFeed"  onclick="switchShareTab('feed')"  style="flex:1;padding:9px 4px;font-size:.75rem;font-weight:700;border:none;background:transparent;cursor:pointer;color:var(--subtle);border-bottom:2px solid transparent">🌍 Community Feed</button>
+      <button id="sTabMap"   onclick="openMapShareTab()" style="flex:1;padding:9px 4px;font-size:.75rem;font-weight:700;border:none;background:transparent;cursor:pointer;color:var(--subtle);border-bottom:2px solid transparent">🗺 Trail Map</button>
     </div>
 
     <!-- ── SHARE CARD TAB ── -->
@@ -9065,6 +9096,21 @@ window.tdRenderAlertBanner = tdRenderAlertBanner;
         </button>
       </div>
       <div class="share-tip">📱 Share to Instagram, Facebook, TikTok &amp; more<br><strong>triplecrowntrekplanner.com</strong>  ·  Free Forever 🌿</div>
+    </div>
+
+    <!-- ── TRAIL MAP TAB (map-of-dots) ── -->
+    <div id="sPane-map" style="display:none">
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border);background:var(--stone);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <label style="font-size:.72rem;font-weight:700;color:var(--subtle)">Your current mile</label>
+        <input type="range" id="mapShareMile" min="0" max="2192" value="0" step="1" style="flex:1;min-width:120px" oninput="renderMapShare()">
+        <span id="mapShareMileOut" style="font-size:.72rem;font-weight:700">0 mi</span>
+      </div>
+      <div class="share-preview" style="padding:10px"><div id="mapShareHost" style="width:300px;max-width:100%;margin:0 auto"></div></div>
+      <div class="share-actions">
+        <button class="share-dl-btn" onclick="downloadMapShare()">Save Image</button>
+        <button class="share-native-btn" onclick="nativeShareMap()">Share…</button>
+      </div>
+      <div class="share-tip">🗺 Your trail, your progress · drag the slider to your mile<br><strong>triplecrowntrekplanner.com</strong></div>
     </div>
 
     <!-- ── COMMUNITY FEED TAB ── -->
@@ -9618,18 +9664,46 @@ var ATCS_BLAZE={"White":{c:"#f4f1ea"},"Orange":{c:"#e8761e"},"Yellow":{c:"#f2c20
 var atcs={hike:null,side:"A",on:false,counter:0,timer:null,recTimer:null,prevTrail:null};
 function atcsEl(id){return document.getElementById(id);}
 function atcsEsc(s){return String(s).replace(/[&<>"']/g,function(m){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m];});}
-function atcsInit(){
+/* ── [ALLTREKS-AN A-NEW] Add New trek: hiker-named, device-local until the GPSG privacy
+     charter clears community submissions. Honest labels everywhere; no fake pins. ── */
+  var ATCS_MYTREKS_KEY='tctp_my_treks';
+  function atcsMyTreks(){ try{ return JSON.parse(localStorage.getItem(ATCS_MYTREKS_KEY)||'{}'); }catch(e){ return {}; } }
+  function atcsSaveMyTreks(o){ try{ localStorage.setItem(ATCS_MYTREKS_KEY, JSON.stringify(o)); }catch(e){} }
+  function atcsHikesFor(state){ var seed=(ATCS_SEED[state]&&ATCS_SEED[state].hikes)||[]; var mine=(atcsMyTreks()[state]||[]); return seed.concat(mine); }
+  function atcsHikeAt(state,i){ var all=atcsHikesFor(state); return all[i]||null; }
+  function atcsOpenNewTrek(){ var nm=atcsEl('atcsNewName'); if(nm)nm.value=''; var ln=atcsEl('atcsNewLen'); if(ln)ln.value=''; var stl=atcsEl('atcsNewState'); if(stl)stl.textContent=(ATCS_SEED[atcs.state]&&ATCS_SEED[atcs.state].name)||atcs.state; openModal('modal-atcs-new'); if(nm)setTimeout(function(){nm.focus();},50); }
+  function atcsSaveNewTrek(){
+    var nm=(atcsEl('atcsNewName').value||'').trim();
+    if(nm.length<3){ showToast('Give your trek a name (3+ characters).'); return; }
+    var lnRaw=(atcsEl('atcsNewLen').value||'').trim(); var ln=lnRaw?parseFloat(lnRaw):null;
+    if(ln!==null&&(!isFinite(ln)||ln<=0||ln>5000)){ showToast('Length looks off \u2014 leave it blank if unsure.'); return; }
+    var slug=nm.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'trek';
+    var h={ id:atcs.state+'-custom-'+slug+'-'+Date.now().toString(36), name:nm, len:ln,
+            blaze:'None', dif:'Unrated', feat:'Hiker-added', th:null, tm:null, custom:true };
+    var mine=atcsMyTreks(); (mine[atcs.state]=mine[atcs.state]||[]).push(h); atcsSaveMyTreks(mine);
+    closeModal('modal-atcs-new');
+    if(typeof atcsFillHikes==='function')atcsFillHikes();
+    var hk=atcsEl('atcsSelHike'); var idx=atcsHikesFor(atcs.state).length-1;
+    if(hk){ hk.value=String(idx); } atcsLoadLabel(idx);
+    showToast('\u2605 '+nm+' added \u2014 yours, on this device. Hike it with GPS on to record Side A.');
+  }
+  function atcsShareNewTrek(){
+    showToast('Community trek submissions open once the privacy charter clears \u2014 your trek and any recording stay on this device until then, by design.');
+  }
+  function atcsInit(){
   var st=atcsEl('atcsSelState'),hk=atcsEl('atcsSelHike');
   if(!st||st.options.length)return;
   atcs.state=atcs.state||'PA';
   st.innerHTML=Object.keys(ATCS_SEED).map(function(c){var s=ATCS_SEED[c];
     return '<option value="'+c+'"'+(c===atcs.state?' selected':'')+'>'+atcsEsc(s.name)+' \u00B7 '+s.hikes.length+(s.hikes.length===1?' trek':' treks')+'</option>';}).join('')+
     ATCS_COMING.map(function(n){return '<option disabled>'+atcsEsc(n)+' \u00B7 coming soon</option>';}).join('');
-  function fillHikes(){hk.innerHTML='<option value="">\u2014 pick your trek \u2014</option>'+
-    ATCS_SEED[atcs.state].hikes.map(function(h,i){return '<option value="'+i+'">'+atcsEsc(h.name)+'</option>';}).join('');}
+  function fillHikes(){var all=atcsHikesFor(atcs.state);hk.innerHTML='<option value="">\u2014 pick your trek \u2014</option>'+
+    all.map(function(h,i){return '<option value="'+i+'">'+(h.custom?'\u2605 ':'')+atcsEsc(h.name)+'</option>';}).join('')+
+    '<option value="__new">\u2795 Add a new trek\u2026</option>';}
+  window.atcsFillHikes=fillHikes; /* [ALLTREKS-AN] */
   fillHikes();
   st.onchange=function(){atcs.state=st.value;fillHikes();atcsLoadLabel(NaN);};
-  hk.onchange=function(){atcsLoadLabel(parseInt(hk.value,10));};
+  hk.onchange=function(){ if(hk.value==='__new'){ hk.value=''; atcsOpenNewTrek(); return; } atcsLoadLabel(parseInt(hk.value,10)); };
   atcsEl('atcsGo').onclick=atcsPlay;
   atcsEl('atcsEject').onclick=function(){atcsStop(false);};
   atcsEl('atcsSideBtn').addEventListener('click',atcsFlip);
@@ -9659,7 +9733,7 @@ function atcsLoadLabel(i){
     atcsEl('atcsSub').textContent=ATCS_SEED[atcs.state].name+' \u00B7 All Treks';
     atcsEl('atcsLenTxt').textContent='\u2014 mi';atcsEl('atcsChips').innerHTML='';
     atcsEl('atcsBlank').classList.remove('atcs-show');atcsCardSetTeaser(null);return;}
-  var h=ATCS_SEED[atcs.state].hikes[i];atcs.hike=h;
+  var h=atcsHikeAt(atcs.state,i);if(!h){atcs.hike=null;return;}atcs.hike=h; /* [ALLTREKS-AN] */
   atcsSetName(h.name,true); /* the label crawl */
   atcsEl('atcsSub').textContent=ATCS_SEED[atcs.state].name+' \u00B7 '+(atcs.side==='A'?'trailhead \u2192 terminus':'terminus \u2192 trailhead');
   atcsEl('atcsLenTxt').textContent=(h.len!=null?h.len+' mi':'\u2014 mi');
@@ -9717,7 +9791,56 @@ function atcsProfileSource(h){
   return null;
 }
 /* ── [ALLTREKS-FU F1] the On-Trail View card (in-tab, expandable) ── */
-function atcsCardSetTeaser(h){
+/* ── [ALLTREKS-FU F4] Big-3 parity seam: _fsCtx lets the REAL fullscreen On-Trail View
+     (elevation + map tabs) serve an All Treks hike riding Big-3 geometry. Null = Big-3
+     behavior, untouched. No band, no data → no fullscreen (honest blank tape stands). ── */
+  var _fsCtx = null;
+  function _fsGeoPickFor(tag, kind){
+    var M={AT:{c:'AT_TRAIL_COORDS',w:'AT_WAYPOINTS',r:'AT_RESUPPLY'},
+           PCT:{c:'PCT_TRAIL_COORDS',w:'PCT_WAYPOINTS',r:'PCT_RESUPPLY'},
+           CDT:{c:'CDT_TRAIL_COORDS',w:'CDT_WAYPOINTS',r:'CDT_RESUPPLY'}};
+    var n=M[tag]&&M[tag][kind]; var v=n?window[n]:null; return v||[];
+  }
+  function _fsGeoPick(kind){ return _fsGeoPickFor(_fsCtx&&_fsCtx.tag, kind); }
+  function atcsOpenFullscreen(){
+    var h=atcs.hike; if(!h) return;
+    var b=atcsBig3Band(h), s=atcsProfileSource(h);
+    if(!b||!s){ showToast('Full On-Trail View needs recorded profile data \u2014 this trek is still blank tape.'); return; }
+    _fsCtx={tag:b.tag, trail:b.trail, lo:s.lo, hi:s.hi, name:h.name};
+    var t=document.getElementById('cardFsTitle'); if(t) t.textContent='\uD83D\uDCC8 '+h.name+' \u00B7 On-Trail View';
+    fsShowFullRoute=false;
+    openCardFullscreen();
+  }
+  function atcsAttachScrub(wrap, cv, src, PAD, W, H){
+    if(!wrap||!cv||!src||!src.pts||src.pts.length<2) return;
+    var line=document.createElement('div'); line.className='atcs-scrub-line';
+    var lab=document.createElement('div'); lab.className='atcs-scrub-label';
+    wrap.appendChild(line); wrap.appendChild(lab);
+    var b=atcsBig3Band(atcs.hike)||{};
+    var wps=_fsGeoPickFor(b.tag,'w').filter(function(w){return w[0]>=src.lo&&w[0]<=src.hi;});
+    function show(clientX){
+      var rect=cv.getBoundingClientRect(); var x=clientX-rect.left;
+      var inner=W-PAD.l-PAD.r; var fx=(x-PAD.l)/inner;
+      if(fx<0||fx>1){hide();return;}
+      var mile=src.lo+fx*(src.hi-src.lo);
+      var pt=src.pts.reduce(function(a,q){return Math.abs(q[0]-mile)<Math.abs(a[0]-mile)?q:a;});
+      var near=null; wps.forEach(function(w){ if(!near||Math.abs(w[0]-mile)<Math.abs(near[0]-mile)) near=w; });
+      var nextW=null,nextS=null;
+      wps.forEach(function(w){ if(w[0]>=mile){ if(w[5]===1&&(!nextW||w[0]<nextW[0]))nextW=w; if(w[6]===1&&(!nextS||w[0]<nextS[0]))nextS=w; } });
+      line.style.left=x+'px'; line.style.display='block';
+      var hh='<b>Mile '+(Math.round(mile*10)/10)+'</b> \u00B7 '+Math.round(pt[1]).toLocaleString()+' ft';
+      if(near&&Math.abs(near[0]-mile)<=5){ var ic=(near[5]===1?'\uD83D\uDCA7':'')+(near[6]===1?'\u26FA':''); hh+='<br>'+ic+' '+atcsEsc(String(near[1]))+' \u00B7 mi '+near[0]; }
+      if(nextW) hh+='<br>\uD83D\uDCA7 next water: '+(Math.round((nextW[0]-mile)*10)/10)+' mi';
+      if(nextS) hh+='<br>\u26FA next shelter: '+(Math.round((nextS[0]-mile)*10)/10)+' mi';
+      lab.innerHTML=hh; lab.style.display='block';
+      lab.style.left=Math.min(Math.max(0,x+8), W-155)+'px';
+    }
+    function hide(){ line.style.display='none'; lab.style.display='none'; }
+    cv.addEventListener('pointermove', function(e){ show(e.clientX); });
+    cv.addEventListener('pointerdown', function(e){ show(e.clientX); });
+    cv.addEventListener('pointerleave', hide);
+  }
+  function atcsCardSetTeaser(h){
   var card=atcsEl('atcsCard');if(!card)return;
   if(!h){card.style.display='none';atcsCardCollapse();return;}
   card.style.display='';
@@ -9749,12 +9872,13 @@ function atcsCardRender(){
     /* honest blank tape — the recruitment state, never a silent canvas */
     var unmapped=!(h.th&&h.tm&&h.th.lat!=null);
     var pins=unmapped?'Trailhead and terminus not yet pinned.':('Trailhead pinned \u00B7 Terminus pinned'+((h.th&&h.th.conf==='approx')?' (approx)':'')+(h.len!=null?' \u00B7 '+h.len+' mi':''));
+    if(h.custom){ pins='\u2605 Hiker-named trek \u2014 local to this device. '+pins+' <button type="button" class="atcs-share-btn" onclick="atcsShareNewTrek()">Share with TCTP\u2026</button>'; } /* [ALLTREKS-AN] */
     body.innerHTML='<div class="atcs-card-tape"><div class="atcs-tapeline"><i class="l"></i><i class="r"></i></div></div>'+
       '<p class="atcs-card-blanktxt"><b>Blank tape</b> \u2014 no one has recorded this profile yet. Hike it with GPS on and <span class="atcs-recw">your trek writes Side A</span> for every hiker after you.</p>'+
-      '<p class="atcs-card-pins">'+atcsEsc(pins)+'</p>';
+      '<p class="atcs-card-pins">'+(h.custom?pins:atcsEsc(pins))+'</p>';
     return;
   }
-  body.innerHTML='<p class="atcs-card-src">'+atcsEsc(src.label)+'</p><div class="atcs-card-wrap"><canvas id="atcsCardCanvas"></canvas></div>';
+  body.innerHTML='<p class="atcs-card-src">'+atcsEsc(src.label)+'<button type="button" class="atcs-card-fsbtn" onclick="atcsOpenFullscreen()" title="Expand \u2014 full On-Trail View" aria-label="Expand to full screen">\u2922</button></p><div class="atcs-card-wrap"><canvas id="atcsCardCanvas"></canvas></div>';
   var wrap=body.querySelector('.atcs-card-wrap'),cv=atcsEl('atcsCardCanvas');
   var dpr=window.devicePixelRatio||1,W=wrap.clientWidth,H=wrap.clientHeight;
   if(!W||!H)return;
@@ -9784,6 +9908,7 @@ function atcsCardRender(){
   ctx.textAlign='left';ctx.fillStyle='#2d5a27';ctx.font='bold 10px "DM Sans",sans-serif';
   ctx.fillText(Math.round(maxE).toLocaleString()+' ft',W-PAD.r+6,PAD.t+8);
   ctx.fillText(Math.round(minE).toLocaleString()+' ft',W-PAD.r+6,H-PAD.b);
+  atcsAttachScrub(wrap, cv, src, PAD, W, H);
 }
 function atcsBuildTrail(h){
   if(!h||!h.th||!h.tm||h.th.lat==null)return null; /* unmapped: no synthetic trail, no fake curve */
@@ -9836,6 +9961,224 @@ function atcsStop(silent){
 }
 document.addEventListener('DOMContentLoaded',atcsInit);
 if(document.readyState!=='loading')atcsInit();
+</script>
+
+
+<!-- map-of-dots wiring (PostMind primitive v0.2 + TCTP adapter) — added v43 2026-06-18 -->
+<script>/*PMMD:BEGIN comp sha:28866eba4aaf47e96e83ce5191e5bb2e48cad3c8b4eda1ec0e73e39aa9c84dda*/
+/* ============================================================================
+ * PostMind — MAP-OF-DOTS  ·  shared primitive  ·  v0.2  ·  2026-06-18
+ * v0.2 adds: progressIndex -> two-tone connecting path (completed vs ahead),
+ * for "my progress" share maps. Back-compatible with v0.1 (progressIndex
+ * optional; omit it and behaviour is identical to v0.1).
+ * Frameworkless, offline, zero-dependency. No tiles, no external libs.
+ *
+ * API
+ *   PostMindMapDots.buildSVG(config) -> svgString            (pure; headless-safe)
+ *   PostMindMapDots.render(el, config) -> { svg, exportPNG }  (browser; DOM + PNG)
+ * config = {
+ *   title, subtitle, brand='PostMind',
+ *   points: [{ lat, lon, label?, kind? }]   kind: 'dot'|'milestone'|'here'
+ *   connect=false,            // path through points in order
+ *   progressIndex=-1,         // NEW: index of current position; path[0..i]=done, [i..]=ahead
+ *   width=1080, height=1350, theme={}
+ * }
+ * Honest-state: points plotted by TRUE lat/lon. No invented landmass outline;
+ * reference frame = faint graticule + the path. Basemap outline is a future,
+ * SOURCED enhancement.
+ * ========================================================================== */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.PostMindMapDots = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var THEME = {
+    bg:'#0f1115', panel:'#161922', grid:'#262b38',
+    line:'#7aa2ff',      // trail ahead / default route
+    done:'#4ade80',      // completed portion
+    dot:'#8b93a7', milestone:'#ffd166', here:'#4ade80',
+    text:'#e8ebf2', sub:'#9aa3b5', accent:'#7aa2ff'
+  };
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function num(n){ return Math.round(n*100)/100; }
+
+  function makeProjector(points, w, h, pad){
+    var lats=points.map(function(p){return p.lat;}), lons=points.map(function(p){return p.lon;});
+    var minLat=Math.min.apply(null,lats), maxLat=Math.max.apply(null,lats);
+    var minLon=Math.min.apply(null,lons), maxLon=Math.max.apply(null,lons);
+    var kx=Math.cos(((minLat+maxLat)/2)*Math.PI/180)||1;
+    var x0=minLon*kx, y1=maxLat;
+    var dx=((maxLon-minLon)*kx)||1, dy=(maxLat-minLat)||1;
+    var availW=w-2*pad, availH=h-2*pad;
+    var s=Math.min(availW/dx, availH/dy);
+    var offX=pad+(availW-dx*s)/2, offY=pad+(availH-dy*s)/2;
+    return function(lat,lon){ return [num(offX+(lon*kx-x0)*s), num(offY+(y1-lat)*s)]; };
+  }
+
+  function buildSVG(cfg){
+    cfg = cfg||{};
+    var t = Object.assign({}, THEME, cfg.theme||{});
+    var W=cfg.width||1080, H=cfg.height||1350;
+    var pts=(cfg.points||[]).filter(function(p){return isFinite(p.lat)&&isFinite(p.lon);});
+    var pad=Math.round(W*0.11);
+    var headerH=Math.round(H*0.13), footerH=Math.round(H*0.07);
+    var mapTop=headerH, mapBottom=H-footerH;
+    var proj=pts.length?makeProjector(pts,W,(mapBottom-mapTop),pad):function(){return [W/2,H/2];};
+    function P(p){ var xy=proj(p.lat,p.lon); return [xy[0], xy[1]+mapTop]; }
+    var pi = (typeof cfg.progressIndex==='number') ? cfg.progressIndex : -1;
+
+    var o=[];
+    o.push('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" style="max-width:100%;height:auto;display:block" role="img" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">');
+    o.push('<title>'+esc(cfg.title||'Map of dots')+'</title><desc>'+pts.length+' points plotted by latitude and longitude'+(cfg.connect?', connected in order':'')+'.</desc>');
+    o.push('<rect width="'+W+'" height="'+H+'" fill="'+t.bg+'"/>');
+    o.push('<rect x="'+(pad*0.4)+'" y="'+mapTop+'" width="'+(W-pad*0.8)+'" height="'+(mapBottom-mapTop)+'" rx="18" fill="'+t.panel+'"/>');
+    if(pts.length){
+      var lats=pts.map(function(p){return p.lat;}), lons=pts.map(function(p){return p.lon;});
+      var loLat=Math.floor(Math.min.apply(null,lats)), hiLat=Math.ceil(Math.max.apply(null,lats));
+      var loLon=Math.floor(Math.min.apply(null,lons)), hiLon=Math.ceil(Math.max.apply(null,lons));
+      var sLat=Math.max(1,Math.round((hiLat-loLat)/6)), sLon=Math.max(1,Math.round((hiLon-loLon)/6));
+      for(var la=loLat; la<=hiLat; la+=sLat){ var a=P({lat:la,lon:loLon}),b=P({lat:la,lon:hiLon});
+        o.push('<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="'+t.grid+'" stroke-width="1"/>'); }
+      for(var lo=loLon; lo<=hiLon; lo+=sLon){ var c=P({lat:loLat,lon:lo}),d=P({lat:hiLat,lon:lo});
+        o.push('<line x1="'+c[0]+'" y1="'+c[1]+'" x2="'+d[0]+'" y2="'+d[1]+'" stroke="'+t.grid+'" stroke-width="1"/>'); }
+    }
+    if(cfg.connect && pts.length>1){
+      function seg(a,b){ return pts.slice(a,b).map(function(p,i){ var xy=P(p); return (i?'L':'M')+xy[0]+' '+xy[1]; }).join(' '); }
+      if(pi>0 && pi<pts.length){
+        o.push('<path d="'+seg(0,pi+1)+'" fill="none" stroke="'+t.done+'" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>');
+        o.push('<path d="'+seg(pi,pts.length)+'" fill="none" stroke="'+t.line+'" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round" opacity="0.7"/>');
+      } else {
+        o.push('<path d="'+seg(0,pts.length)+'" fill="none" stroke="'+t.line+'" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/>');
+      }
+    }
+    pts.forEach(function(p){
+      var xy=P(p), kind=p.kind||'dot';
+      var r=kind==='here'?13:kind==='milestone'?8:5;
+      var fill=kind==='here'?t.here:kind==='milestone'?t.milestone:t.dot;
+      if(kind==='here') o.push('<circle cx="'+xy[0]+'" cy="'+xy[1]+'" r="'+(r+9)+'" fill="'+fill+'" opacity="0.18"/>');
+      o.push('<circle cx="'+xy[0]+'" cy="'+xy[1]+'" r="'+r+'" fill="'+fill+'" stroke="'+t.bg+'" stroke-width="2"/>');
+      if(p.label && (kind==='milestone'||kind==='here'))
+        o.push('<text x="'+(xy[0]+r+6)+'" y="'+(xy[1]+5)+'" fill="'+t.text+'" font-size="'+(kind==='here'?22:18)+'" font-weight="'+(kind==='here'?700:600)+'">'+esc(p.label)+'</text>');
+    });
+    o.push('<text x="'+(pad*0.6)+'" y="'+(headerH*0.46)+'" fill="'+t.text+'" font-size="46" font-weight="800">'+esc(cfg.title||'')+'</text>');
+    if(cfg.subtitle) o.push('<text x="'+(pad*0.6)+'" y="'+(headerH*0.78)+'" fill="'+t.sub+'" font-size="25" font-weight="500">'+esc(cfg.subtitle)+'</text>');
+    o.push('<text x="'+(pad*0.6)+'" y="'+(H-footerH*0.35)+'" fill="'+t.sub+'" font-size="22" font-weight="600">'+esc(cfg.brand||'PostMind')+'</text>');
+    o.push('<text x="'+(W-pad*0.6)+'" y="'+(H-footerH*0.35)+'" fill="'+t.sub+'" font-size="22" text-anchor="end">'+pts.length+' points</text>');
+    o.push('</svg>');
+    return o.join('');
+  }
+
+  function render(el, cfg){
+    var svg=buildSVG(cfg);
+    if(el && el.innerHTML!==undefined) el.innerHTML=svg;
+    function exportPNG(filename, scale){
+      scale=scale||2; var W=(cfg.width||1080), H=(cfg.height||1350);
+      var img=new Image(), blob=new Blob([svg],{type:'image/svg+xml;charset=utf-8'}), url=URL.createObjectURL(blob);
+      img.onload=function(){ var c=document.createElement('canvas'); c.width=W*scale; c.height=H*scale;
+        var x=c.getContext('2d'); x.scale(scale,scale); x.drawImage(img,0,0); URL.revokeObjectURL(url);
+        var a=document.createElement('a'); a.download=filename||'map-of-dots.png'; a.href=c.toDataURL('image/png'); a.click(); };
+      img.src=url;
+    }
+    return { svg:svg, exportPNG:exportPNG };
+  }
+
+  return { VERSION:'v0.2', THEME:THEME, buildSVG:buildSVG, render:render };
+});
+
+/*PMMD:END comp*/</script>
+<script>/*PMMD:BEGIN adapter sha:ae3aa85268141338a7102c2e6f143270f5aff06c9c321c365bb64dbb36ed50ea*/
+/* ============================================================================
+ * TCTP -> Map-of-Dots ADAPTER  ·  v0.1  ·  2026-06-18
+ * Turns TCTP's real waypoint rows [mile, name, state, lat, lon] into a config
+ * for PostMindMapDots. Honest milestones only: the two termini + the FIRST
+ * appearance of each state (state-boundary crossings) get labels — derived from
+ * mile + state, NOT from the seed's ambiguous flag columns (those are left for a
+ * future pass once their semantics are confirmed). The waypoint nearest the
+ * hiker's currentMile becomes the 'here' marker + progressIndex (two-tone path).
+ *
+ * tctpDotSet(rows, opts) -> config for PostMindMapDots.buildSVG/render
+ *   rows : [[mile,name,state,lat,lon], ...]   (any order; sorted by mile here)
+ *   opts : { trail:'AT'|'PCT'|'CDT', currentMile?:Number, title?, brand? }
+ * ========================================================================== */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.tctpDotSet = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  var TRAIL_NAME = { AT:'Appalachian Trail', PCT:'Pacific Crest Trail', CDT:'Continental Divide Trail' };
+
+  return function tctpDotSet(rows, opts){
+    opts = opts || {};
+    rows = (rows||[]).filter(function(r){ return isFinite(r[3]) && isFinite(r[4]); })
+                     .slice().sort(function(a,b){ return a[0]-b[0]; });
+    if(!rows.length) return { title: opts.title||'TCTP', points: [], connect:true };
+
+    var seen = {}, pts = [], hereIdx = -1, bestD = Infinity;
+    rows.forEach(function(r,i){
+      var mile=r[0], name=r[1], st=r[2], lat=r[3], lon=r[4];
+      var terminus = (i===0 || i===rows.length-1);
+      var firstInState = !seen[st]; seen[st]=1;
+      var kind='dot', label;
+      if(terminus){ kind='milestone'; label=name; }
+      else if(firstInState){ kind='milestone'; label=st; }   // state code at first crossing
+      pts.push({ lat:lat, lon:lon, kind:kind, label:label, mile:mile, name:name, state:st });
+      if(opts.currentMile!=null){ var dd=Math.abs(mile-opts.currentMile); if(dd<bestD){ bestD=dd; hereIdx=i; } }
+    });
+
+    var progressIndex=-1, subtitle;
+    if(hereIdx>=0){
+      pts[hereIdx].kind='here'; pts[hereIdx].label=pts[hereIdx].name; progressIndex=hereIdx;
+      var total=rows[rows.length-1][0], pct=Math.round((pts[hereIdx].mile/total)*100);
+      subtitle='Mile '+Math.round(pts[hereIdx].mile)+' of '+Math.round(total)+' · '+pct+'% · at '+pts[hereIdx].name;
+    } else {
+      subtitle=rows.length+' waypoints · '+rows[0][2]+' to '+rows[rows.length-1][2];
+    }
+    var trail = opts.trail || '';
+    return {
+      title: opts.title || ((TRAIL_NAME[trail]||trail||'Trek') + (opts.currentMile!=null?' — my progress':'')),
+      subtitle: subtitle,
+      brand: opts.brand || ('PostMind · TCTP'+(trail?(' · '+trail):'')),
+      points: pts, connect: true, progressIndex: progressIndex
+    };
+  };
+});
+
+/*PMMD:END adapter*/</script>
+<script>
+/* TCTP map-share glue — isolated; wraps switchShareTab, never edits it */
+(function(){
+  function trails(){var o={};try{o.AT=AT_WAYPOINTS;}catch(e){}try{o.PCT=PCT_WAYPOINTS;}catch(e){}try{o.CDT=CDT_WAYPOINTS;}catch(e){}return o;}
+  var _api=null;
+  window.renderMapShare=function(){
+    var trail=(typeof currentTrail!=='undefined'&&currentTrail)||'AT';
+    var all=trails(), raw=all[trail];
+    var host=document.getElementById('mapShareHost'); if(!host) return;
+    if(!raw||!raw.length){ host.innerHTML='<p style="color:var(--subtle);font-size:.8rem;text-align:center;padding:20px">No waypoints loaded for '+trail+'.</p>'; return; }
+    var rows=raw.map(function(r){return [r[0],r[1],r[2],r[3],r[4]];});
+    var sl=document.getElementById('mapShareMile'), max=Math.round(rows[rows.length-1][0]);
+    if(sl){ sl.max=max; if(+sl.value>max) sl.value=max; }
+    var mile=sl?+sl.value:0;
+    var cfg=tctpDotSet(rows,{trail:trail,currentMile: mile>0?mile:null});
+    var out=document.getElementById('mapShareMileOut'); var hp=(cfg.progressIndex>=0)?cfg.points[cfg.progressIndex]:null;
+    if(out) out.textContent=(hp?Math.round(hp.mile):mile)+' mi';
+    _api=PostMindMapDots.render(host,cfg);
+  };
+  window.openMapShareTab=function(){
+    var s=document.getElementById('sPane-share'), f=document.getElementById('sPane-feed'), m=document.getElementById('sPane-map');
+    if(s)s.style.display='none'; if(f)f.style.display='none'; if(m)m.style.display='block';
+    ['sTabShare','sTabFeed'].forEach(function(id){var b=document.getElementById(id); if(b){b.style.color='var(--subtle)';b.style.borderBottomColor='transparent';}});
+    var t=document.getElementById('sTabMap'); if(t){t.style.color='var(--pine)';t.style.borderBottomColor='var(--pine)';}
+    var h=document.getElementById('shareHdrTitle'); if(h)h.textContent='🗺 Your Trail Map';
+    window.renderMapShare();
+  };
+  window.downloadMapShare=function(){ if(_api) _api.exportPNG('tctp-'+((typeof currentTrail!=='undefined'&&currentTrail)||'AT')+'-progress.png'); };
+  window.nativeShareMap=function(){ window.downloadMapShare(); };
+  var orig=window.switchShareTab;
+  if(typeof orig==='function'){ window.switchShareTab=function(tab){ var mp=document.getElementById('sPane-map'); if(mp)mp.style.display='none'; var t=document.getElementById('sTabMap'); if(t){t.style.color='var(--subtle)';t.style.borderBottomColor='transparent';} return orig.apply(this,arguments); }; }
+})();
 </script>
 
 </body>
