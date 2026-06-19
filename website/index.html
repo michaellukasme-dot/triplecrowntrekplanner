@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- TCTP landing v2 2026-06-18 :: + interactive map-of-dots showcase (trail switch + mile slider, light trail palette); compare table verified 18 Jun 2026 (sizes corrected, trackers grounded in disclosures, size-% row added). -->
+<!-- TCTP landing v3 2026-06-18 :: map-of-dots v45 — canonical-miles % (AT 2185/PCT 2653/CDT 3043) + label-clean (strips condition/date suffixes); responsive SVG. Surgical comp/adapter swap on the deployed v2 (single inline preserved). -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -382,7 +382,7 @@ footer{padding:46px 0 60px}
 });
 
 </script>
-<script>/*PMMD adapter sha:ae3aa85268141338a7102c2e6f143270f5aff06c9c321c365bb64dbb36ed50ea*/
+<script>/*PMMD adapter sha:fcfbc47243d5594e81914d011f69a4a87f306ca77ebe8ee94fedfc2390136577*/
 /* ============================================================================
  * TCTP -> Map-of-Dots ADAPTER  ·  v0.1  ·  2026-06-18
  * Turns TCTP's real waypoint rows [mile, name, state, lat, lon] into a config
@@ -401,7 +401,18 @@ footer{padding:46px 0 60px}
   else root.tctpDotSet = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
-  var TRAIL_NAME = { AT:'Appalachian Trail', PCT:'Pacific Crest Trail', CDT:'Continental Divide Trail' };
+  var TRAIL_NAME  = { AT:'Appalachian Trail', PCT:'Pacific Crest Trail', CDT:'Continental Divide Trail' };
+  // Canonical full-trail lengths (match the app's displayed totals) — the % denominator,
+  // so progress isn't divided by the last-waypoint mile. Override per call via opts.trailMiles.
+  var TRAIL_MILES = { AT:2185, PCT:2653, CDT:3043 };
+  // Strip condition/date annotations that ride in some waypoint names, e.g.
+  // "Willow Creek good - 07/14" -> "Willow Creek". Conservative; leaves real names intact.
+  function cleanLabel(s){
+    return String(s||'')
+      .replace(/\s*[-–]\s*\d{1,2}\/\d{1,2}\s*$/,'')               // trailing " - 07/14"
+      .replace(/\s+(good|fair|poor|dry|low|flowing|murky|seasonal|none|ok)\s*$/i,'') // trailing condition word
+      .trim();
+  }
 
   return function tctpDotSet(rows, opts){
     opts = opts || {};
@@ -415,7 +426,7 @@ footer{padding:46px 0 60px}
       var terminus = (i===0 || i===rows.length-1);
       var firstInState = !seen[st]; seen[st]=1;
       var kind='dot', label;
-      if(terminus){ kind='milestone'; label=name; }
+      if(terminus){ kind='milestone'; label=cleanLabel(name); }
       else if(firstInState){ kind='milestone'; label=st; }   // state code at first crossing
       pts.push({ lat:lat, lon:lon, kind:kind, label:label, mile:mile, name:name, state:st });
       if(opts.currentMile!=null){ var dd=Math.abs(mile-opts.currentMile); if(dd<bestD){ bestD=dd; hereIdx=i; } }
@@ -423,9 +434,9 @@ footer{padding:46px 0 60px}
 
     var progressIndex=-1, subtitle;
     if(hereIdx>=0){
-      pts[hereIdx].kind='here'; pts[hereIdx].label=pts[hereIdx].name; progressIndex=hereIdx;
-      var total=rows[rows.length-1][0], pct=Math.round((pts[hereIdx].mile/total)*100);
-      subtitle='Mile '+Math.round(pts[hereIdx].mile)+' of '+Math.round(total)+' · '+pct+'% · at '+pts[hereIdx].name;
+      pts[hereIdx].kind='here'; pts[hereIdx].label=cleanLabel(pts[hereIdx].name); progressIndex=hereIdx;
+      var total=opts.trailMiles||TRAIL_MILES[opts.trail]||rows[rows.length-1][0], pct=Math.round((pts[hereIdx].mile/total)*100);
+      subtitle='Mile '+Math.round(pts[hereIdx].mile)+' of '+Math.round(total)+' · '+pct+'% · at '+cleanLabel(pts[hereIdx].name);
     } else {
       subtitle=rows.length+' waypoints · '+rows[0][2]+' to '+rows[rows.length-1][2];
     }
