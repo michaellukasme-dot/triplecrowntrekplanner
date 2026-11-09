@@ -1,0 +1,17 @@
+{
+  "name": "Triple Crown Trek Planner",
+  "short_name": "Triple Crown Planner",
+  "description": "Free offline hike planner for the Appalachian, Pacific Crest, and Continental Divide Trails. GPS tracking, water and shelter reports, bear alerts. No account, no ads.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#1e3a1e",
+  "theme_color": "#1e3a1e",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

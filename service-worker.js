@@ -14,12 +14,20 @@
  * ----------------------------------------------------------------------------
  */
 
-const CACHE_VERSION = 'v44';                       // v44: map-of-dots share tab + responsive SVG fix
+const CACHE_VERSION = 'v47';                       // v46: local Leaflet bundle + CARTO tiles + native bridge + real manifest (native-ready)
 const SHELL_CACHE  = 'tctp-shell-'  + CACHE_VERSION;
 const ASSET_CACHE  = 'tctp-assets-' + CACHE_VERSION;
 
-// Same-origin shell kept available offline.
-const SHELL_URLS = ['/', '/index.html', '/manifest.webmanifest'];
+// Same-origin shell kept available offline. Now includes the locally-bundled Leaflet (so the map
+// renders inside the native WebView / fully offline) and the native geolocation bridge.
+const SHELL_URLS = [
+  '/', '/index.html', '/manifest.webmanifest',
+  '/tctp_native_bridge.js',
+  '/leaflet/leaflet.js', '/leaflet/leaflet.css',
+  '/leaflet/images/marker-icon.png', '/leaflet/images/marker-icon-2x.png', '/leaflet/images/marker-shadow.png',
+  '/leaflet/images/layers.png', '/leaflet/images/layers-2x.png',
+  '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png'
+];
 
 // Cross-origin hosts that are safe to cache-first (versioned / immutable).
 const ASSET_HOSTS = [
